@@ -26,7 +26,7 @@ public class Mythica : ModuleRules
 			new string[]
 			{
 				"Core",
-                "UMG"
+				"UMG"
 				// ... add other public dependencies that you statically link with here ...
 			}
 			);
@@ -40,7 +40,7 @@ public class Mythica : ModuleRules
 				"Engine",
 				"Slate",
 				"SlateCore",
-                "UnrealEd"
+				"UnrealEd"
 				// ... add private dependencies that you statically link with here ...	
 			}
 			);
