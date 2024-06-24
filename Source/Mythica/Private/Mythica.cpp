@@ -10,7 +10,6 @@
 
 void FMythicaModule::StartupModule()
 {
-	// Add menu option
 	TSharedPtr<FExtender> MenuExtender = MakeShareable(new FExtender);
 	MenuExtender->AddMenuExtension(
 		"GetContent",
@@ -20,16 +19,10 @@ void FMythicaModule::StartupModule()
 
 	FLevelEditorModule& LevelEditorModule = FModuleManager::LoadModuleChecked<FLevelEditorModule>("LevelEditor");
 	LevelEditorModule.GetMenuExtensibilityManager()->AddExtender(MenuExtender);
-
-	// Add panel type
-	FGlobalTabmanager::Get()->RegisterNomadTabSpawner("MythicaTab", FOnSpawnTab::CreateRaw(this, &FMythicaModule::SpawnTab))
-		.SetDisplayName(FText::FromString("Mythica Packages"))
-		.SetMenuType(ETabSpawnerMenuType::Hidden);
 }
 
 void FMythicaModule::ShutdownModule()
 {
-	FGlobalTabmanager::Get()->UnregisterNomadTabSpawner("MythicaTab");
 }
 
 void FMythicaModule::AddMenu(FMenuBuilder& MenuBuilder)
@@ -44,16 +37,32 @@ void FMythicaModule::AddMenu(FMenuBuilder& MenuBuilder)
 
 void FMythicaModule::OnMenuItemClick()
 {
-	FGlobalTabmanager::Get()->TryInvokeTab(FName("MythicaTab"));
+	if (Window.IsValid())
+	{
+		Window->BringToFront();
+	}
+	else
+	{
+		Window = SNew(SWindow)
+			.Title(FText::FromString("Mythica Package Manager"))
+			.ClientSize(FVector2D(800, 600))
+			.MinWidth(800)
+			.MinHeight(600)
+			.SupportsMinimize(false)
+			.SupportsMaximize(false)
+			[
+				SNew(SMythicaPackageManagerWidget)
+			];
+
+		Window->SetOnWindowClosed(FOnWindowClosed::CreateRaw(this, &FMythicaModule::OnWindowClosed));
+
+		FSlateApplication::Get().AddWindow(Window.ToSharedRef());
+	}
 }
 
-TSharedRef<SDockTab> FMythicaModule::SpawnTab(const FSpawnTabArgs& SpawnTabArgs)
+void FMythicaModule::OnWindowClosed(const TSharedRef<SWindow>& InWindow)
 {
-	return SNew(SDockTab)
-		.TabRole(ETabRole::MajorTab)
-		[
-			SNew(SMythicaPackageManagerWidget)
-		];
+	Window.Reset();
 }
 
 #undef LOCTEXT_NAMESPACE
