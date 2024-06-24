@@ -35,6 +35,7 @@ public class Mythica : ModuleRules
 			new string[]
 			{
 				"CoreUObject",
+				"DeveloperSettings",
 				"Engine",
 				"Slate",
 				"SlateCore",
