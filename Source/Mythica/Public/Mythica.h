@@ -12,4 +12,11 @@ public:
 	/** IModuleInterface implementation */
 	virtual void StartupModule() override;
 	virtual void ShutdownModule() override;
+
+private:
+	void AddMenu(FMenuBuilder& MenuBuilder);
+	void OnMenuItemClick();
+	void OnWindowClosed(const TSharedRef<SWindow>& InWindow);
+
+	TSharedPtr<SWindow> Window;
 };
