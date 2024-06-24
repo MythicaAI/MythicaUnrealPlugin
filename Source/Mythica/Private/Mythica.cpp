@@ -2,9 +2,9 @@
 
 #include "Mythica.h"
 
-#include "MythicaPackageManagerWidget.h"
 #include "Framework/MultiBox/MultiBoxBuilder.h"
 #include "LevelEditor.h"
+#include "MythicaPackageManagerWidget.h"
 
 #define LOCTEXT_NAMESPACE "FMythicaModule"
 
