@@ -15,5 +15,6 @@ public:
 
 private:
 	void AddMenu(FMenuBuilder& MenuBuilder);
-	void OnMenuClick();
+	void OnMenuItemClick();
+	TSharedRef<SDockTab> SpawnTab(const FSpawnTabArgs& SpawnTabArgs);
 };
