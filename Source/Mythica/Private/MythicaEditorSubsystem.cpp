@@ -1,7 +1,7 @@
 #include "MythicaEditorSubsystem.h"
 
-#include "MythicaDeveloperSettings.h"
 #include "HttpModule.h"
+#include "MythicaDeveloperSettings.h"
 
 void UMythicaEditorSubsystem::Initialize(FSubsystemCollectionBase& Collection)
 {
@@ -16,14 +16,18 @@ void UMythicaEditorSubsystem::Deinitialize()
 void UMythicaEditorSubsystem::CreateSession()
 {
     const UMythicaDeveloperSettings* Settings = GetDefault<UMythicaDeveloperSettings>();
-
     if (Settings->ProfileId.IsEmpty())
     {
         UE_LOG(LogTemp, Error, TEXT("Profile ID is empty"));
         return;
     }
+    if (Settings->ServerHost.IsEmpty())
+    {
+        UE_LOG(LogTemp, Error, TEXT("ServerHost is empty"));
+        return;
+    }
 
-    FString Url = FString::Printf(TEXT("http://localhost:50555/api/v1/profiles/start_session/%s"), *Settings->ProfileId);
+    FString Url = FString::Printf(TEXT("http://%s:%d/api/v1/profiles/start_session/%s"), *Settings->ServerHost, Settings->ServerPort, *Settings->ProfileId);
 
     TSharedRef<IHttpRequest, ESPMode::ThreadSafe> Request = FHttpModule::Get().CreateRequest();
     Request->SetURL(Url);

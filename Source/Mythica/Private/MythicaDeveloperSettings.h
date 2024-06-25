@@ -13,10 +13,10 @@ public:
 	UMythicaDeveloperSettings(const FObjectInitializer& ObjectInitializer);
 
 	UPROPERTY(Config, EditAnywhere, Category = Server)
-	FString PackageServerHost = TEXT("localhost");
+	FString ServerHost = TEXT("localhost");
 
 	UPROPERTY(Config, EditAnywhere, Category = Server)
-	int32 PackageServerPort = 5055;
+	int32 ServerPort = 50555;
 
 	UPROPERTY(Config, EditAnywhere, Category = Server)
 	FString PackageInstallDirectory = TEXT("/Game/Mythica");
