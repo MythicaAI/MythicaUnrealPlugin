@@ -22,8 +22,5 @@ public:
 	FString PackageInstallDirectory = TEXT("/Game/Mythica");
 
 	UPROPERTY(Config, EditAnywhere, Category = User)
-	FString Username;
-
-	UPROPERTY(Config, EditAnywhere, Category = User)
-	FString AuthKey;
+	FString ProfileId;
 };
