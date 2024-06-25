@@ -17,13 +17,11 @@ class UMythicaEditorSubsystem : public UEditorSubsystem
 	virtual void Deinitialize();
 
 public:
-
 	UFUNCTION(BlueprintCallable, Category = "Mythica")
-	void RequestFact();
-
-	UPROPERTY(BlueprintAssignable, Category = "Mythica")
-	FOnFactReceived OnFactReceived;
+	void CreateSession();
 
 private:
-	void OnResponseReceived(FHttpRequestPtr Request, FHttpResponsePtr Response, bool bWasSuccessful);
+	void OnCreateSessionResponse(FHttpRequestPtr Request, FHttpResponsePtr Response, bool bWasSuccessful);
+
+	FString AuthToken;
 };

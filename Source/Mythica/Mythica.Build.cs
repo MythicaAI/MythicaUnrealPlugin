@@ -40,6 +40,7 @@ public class Mythica : ModuleRules
 				"EditorSubsystem",
 				"Engine",
 				"HTTP",
+				"Json",
 				"Slate",
 				"SlateCore",
 				"UnrealEd"
