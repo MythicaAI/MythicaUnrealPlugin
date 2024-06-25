@@ -37,6 +37,7 @@ public class Mythica : ModuleRules
 			{
 				"CoreUObject",
 				"DeveloperSettings",
+				"EditorSubsystem",
 				"Engine",
 				"Slate",
 				"SlateCore",
