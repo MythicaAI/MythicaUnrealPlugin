@@ -12,15 +12,15 @@ class MYTHICA_API UMythicaDeveloperSettings : public UDeveloperSettings
 public:
 	UMythicaDeveloperSettings(const FObjectInitializer& ObjectInitializer);
 
-	UPROPERTY(Config, EditAnywhere, Category = Server)
+	UPROPERTY(Config, EditAnywhere, BlueprintReadOnly, Category = Server)
 	FString ServerHost = TEXT("localhost");
 
-	UPROPERTY(Config, EditAnywhere, Category = Server)
+	UPROPERTY(Config, EditAnywhere, BlueprintReadOnly, Category = Server)
 	int32 ServerPort = 50555;
 
-	UPROPERTY(Config, EditAnywhere, Category = Server)
+	UPROPERTY(Config, EditAnywhere, BlueprintReadOnly, Category = Server)
 	FString PackageInstallDirectory = TEXT("/Game/Mythica");
 
-	UPROPERTY(Config, EditAnywhere, Category = User)
+	UPROPERTY(Config, EditAnywhere, BlueprintReadOnly, Category = User)
 	FString ProfileId;
 };

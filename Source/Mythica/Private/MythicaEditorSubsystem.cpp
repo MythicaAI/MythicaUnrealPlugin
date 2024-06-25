@@ -13,8 +13,18 @@ void UMythicaEditorSubsystem::Deinitialize()
     Super::Deinitialize();
 }
 
+bool UMythicaEditorSubsystem::IsAuthenticated()
+{
+    return !AuthToken.IsEmpty();
+}
+
 void UMythicaEditorSubsystem::CreateSession()
 {
+    if (IsAuthenticated())
+    {
+        return;
+    }
+
     const UMythicaDeveloperSettings* Settings = GetDefault<UMythicaDeveloperSettings>();
     if (Settings->ProfileId.IsEmpty())
     {

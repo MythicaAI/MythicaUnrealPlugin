@@ -17,6 +17,9 @@ class UMythicaEditorSubsystem : public UEditorSubsystem
 	virtual void Deinitialize();
 
 public:
+	UFUNCTION(BlueprintPure, Category = "Mythica")
+	bool IsAuthenticated();
+
 	UFUNCTION(BlueprintCallable, Category = "Mythica")
 	void CreateSession();
 
