@@ -4,7 +4,7 @@
 #include "CoreMinimal.h"
 #include "Blueprint/UserWidget.h"
 
-#define PACKAGE_MANAGER_WIDGET_ASSET TEXT("/Mythica/WBP_PackageManager.WBP_PackageManager_C")
+#define PACKAGE_MANAGER_WIDGET_ASSET TEXT("/Mythica/UI/WBP_PackageManager.WBP_PackageManager_C")
 
 void SMythicaPackageManagerWidget::Construct(const FArguments& InArgs)
 {
