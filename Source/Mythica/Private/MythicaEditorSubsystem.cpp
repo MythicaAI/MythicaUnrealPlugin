@@ -111,21 +111,41 @@ void UMythicaEditorSubsystem::OnGetAssetsResponse(FHttpRequestPtr Request, FHttp
         return;
     }
 
-    AssetList.Reset();
-    AssetList.Push({ "Mythica Flora", "Library of plants and trees." });
-    AssetList.Push({ "Stair Tool", "Converts geometry into stairs." });
-
-    OnAssetListUpdated.Broadcast();
-
-    /*
     FString ResponseContent = Response->GetContentAsString();
     TSharedRef<TJsonReader<>> Reader = TJsonReaderFactory<>::Create(ResponseContent);
 
-    TSharedPtr<FJsonObject> JsonObject;
-    if (!FJsonSerializer::Deserialize(Reader, JsonObject) || !JsonObject.IsValid())
+    TSharedPtr<FJsonValue> JsonValue;
+    if (!FJsonSerializer::Deserialize(Reader, JsonValue) || !JsonValue.IsValid())
     {
         UE_LOG(LogTemp, Error, TEXT("Failed to parse JSON string"));
         return;
     }
-    */
+
+    if (JsonValue->Type != EJson::Array)
+    {
+        UE_LOG(LogTemp, Error, TEXT("JSON value is not an array"));
+        return;
+    }
+
+    AssetList.Reset();
+
+    TArray<TSharedPtr<FJsonValue>> Array = JsonValue->AsArray();
+    for (TSharedPtr<FJsonValue> Value : Array)
+    {
+        TSharedPtr<FJsonObject> JsonObject = Value->AsObject();
+        if (!JsonObject.IsValid())
+        {
+            continue;
+        }
+
+        FString Name = JsonObject->GetStringField(TEXT("name"));
+        FString Description = JsonObject->GetStringField(TEXT("description"));
+
+        AssetList.Push({ Name, Description });
+    }
+
+    AssetList.Push({ "Mythica Flora", "Library of plants and trees." });
+    AssetList.Push({ "Stair Tool", "Converts geometry into stairs." });
+
+    OnAssetListUpdated.Broadcast();
 }
