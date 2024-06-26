@@ -18,6 +18,11 @@ bool UMythicaEditorSubsystem::IsAuthenticated()
     return !AuthToken.IsEmpty();
 }
 
+TArray<FMythicaAsset> UMythicaEditorSubsystem::GetAssetList()
+{
+    return AssetList;
+}
+
 void UMythicaEditorSubsystem::CreateSession()
 {
     if (IsAuthenticated())
@@ -73,4 +78,54 @@ void UMythicaEditorSubsystem::OnCreateSessionResponse(FHttpRequestPtr Request, F
     }
 
     AuthToken = Token;
+
+    OnSessionCreated.Broadcast();
+}
+
+void UMythicaEditorSubsystem::UpdateAssetList()
+{
+    if (!IsAuthenticated())
+    {
+        return;
+    }
+
+    const UMythicaDeveloperSettings* Settings = GetDefault<UMythicaDeveloperSettings>();
+
+    FString Url = FString::Printf(TEXT("http://%s:%d/api/v1/assets/all"), *Settings->ServerHost, Settings->ServerPort);
+
+    TSharedRef<IHttpRequest, ESPMode::ThreadSafe> Request = FHttpModule::Get().CreateRequest();
+    Request->SetURL(Url);
+    Request->SetHeader("Authorization", FString::Printf(TEXT("Bearer %s"), *AuthToken));
+    Request->SetVerb("GET");
+    Request->SetHeader("Content-Type", "application/json");
+    Request->OnProcessRequestComplete().BindUObject(this, &UMythicaEditorSubsystem::OnGetAssetsResponse);
+
+    Request->ProcessRequest();
+}
+
+void UMythicaEditorSubsystem::OnGetAssetsResponse(FHttpRequestPtr Request, FHttpResponsePtr Response, bool bWasSuccessful)
+{
+    if (!bWasSuccessful || !Response.IsValid())
+    {
+        UE_LOG(LogTemp, Error, TEXT("Failed to get assets"));
+        return;
+    }
+
+    AssetList.Reset();
+    AssetList.Push({ "Mythica Flora", "Library of plants and trees." });
+    AssetList.Push({ "Stair Tool", "Converts geometry into stairs." });
+
+    OnAssetListUpdated.Broadcast();
+
+    /*
+    FString ResponseContent = Response->GetContentAsString();
+    TSharedRef<TJsonReader<>> Reader = TJsonReaderFactory<>::Create(ResponseContent);
+
+    TSharedPtr<FJsonObject> JsonObject;
+    if (!FJsonSerializer::Deserialize(Reader, JsonObject) || !JsonObject.IsValid())
+    {
+        UE_LOG(LogTemp, Error, TEXT("Failed to parse JSON string"));
+        return;
+    }
+    */
 }

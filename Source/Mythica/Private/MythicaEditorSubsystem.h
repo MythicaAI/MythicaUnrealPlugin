@@ -6,7 +6,20 @@
 #include "Interfaces/IHttpResponse.h"
 #include "MythicaEditorSubsystem.generated.h"
 
-DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnFactReceived, const FString&, Fact);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnSessionCreated);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnAssetListUpdated);
+
+USTRUCT(BlueprintType)
+struct FMythicaAsset
+{
+    GENERATED_BODY()
+
+    UPROPERTY(BlueprintReadOnly)
+    FString Name;
+
+	UPROPERTY(BlueprintReadOnly)
+	FString Description;
+};
 
 UCLASS()
 class UMythicaEditorSubsystem : public UEditorSubsystem
@@ -17,14 +30,31 @@ class UMythicaEditorSubsystem : public UEditorSubsystem
 	virtual void Deinitialize();
 
 public:
+	// Getters
 	UFUNCTION(BlueprintPure, Category = "Mythica")
 	bool IsAuthenticated();
 
 	UFUNCTION(BlueprintCallable, Category = "Mythica")
+	TArray<FMythicaAsset> GetAssetList();
+
+	// Requests
+	UFUNCTION(BlueprintCallable, Category = "Mythica")
 	void CreateSession();
+
+	UFUNCTION(BlueprintCallable, Category = "Mythica")
+	void UpdateAssetList();
+
+	// Delegates
+	UPROPERTY(BlueprintAssignable, Category = "Mythica")
+	FOnSessionCreated OnSessionCreated;
+
+	UPROPERTY(BlueprintAssignable, Category = "Mythica")
+	FOnAssetListUpdated OnAssetListUpdated;
 
 private:
 	void OnCreateSessionResponse(FHttpRequestPtr Request, FHttpResponsePtr Response, bool bWasSuccessful);
+	void OnGetAssetsResponse(FHttpRequestPtr Request, FHttpResponsePtr Response, bool bWasSuccessful);
 
 	FString AuthToken;
+	TArray<FMythicaAsset> AssetList;
 };
