@@ -149,3 +149,15 @@ void UMythicaEditorSubsystem::OnGetAssetsResponse(FHttpRequestPtr Request, FHttp
 
     OnAssetListUpdated.Broadcast();
 }
+
+void UMythicaEditorSubsystem::InstallAsset(const FString& Name)
+{
+    FMythicaAsset* Asset = AssetList.FindByPredicate([Name](const FMythicaAsset& InAsset) { return InAsset.Name == Name; });
+    if (!Asset)
+    {
+        UE_LOG(LogTemp, Error, TEXT("Unknown asset type %s"), *Name);
+        return;
+    }
+
+    UE_LOG(LogTemp, Display, TEXT("Installing %s"), *Name);
+}

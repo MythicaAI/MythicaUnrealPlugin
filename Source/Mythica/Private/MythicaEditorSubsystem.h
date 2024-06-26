@@ -44,6 +44,9 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "Mythica")
 	void UpdateAssetList();
 
+	UFUNCTION(BlueprintCallable, Category = "Mythica")
+	void InstallAsset(const FString& Name);
+
 	// Delegates
 	UPROPERTY(BlueprintAssignable, Category = "Mythica")
 	FOnSessionCreated OnSessionCreated;
