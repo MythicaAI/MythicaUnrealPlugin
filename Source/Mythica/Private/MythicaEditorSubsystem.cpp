@@ -3,6 +3,8 @@
 #include "HttpModule.h"
 #include "MythicaDeveloperSettings.h"
 
+DEFINE_LOG_CATEGORY(LogMythica);
+
 void UMythicaEditorSubsystem::Initialize(FSubsystemCollectionBase& Collection)
 {
     Super::Initialize(Collection);
@@ -33,12 +35,12 @@ void UMythicaEditorSubsystem::CreateSession()
     const UMythicaDeveloperSettings* Settings = GetDefault<UMythicaDeveloperSettings>();
     if (Settings->ProfileId.IsEmpty())
     {
-        UE_LOG(LogTemp, Error, TEXT("Profile ID is empty"));
+        UE_LOG(LogMythica, Error, TEXT("Profile ID is empty"));
         return;
     }
     if (Settings->ServerHost.IsEmpty())
     {
-        UE_LOG(LogTemp, Error, TEXT("ServerHost is empty"));
+        UE_LOG(LogMythica, Error, TEXT("ServerHost is empty"));
         return;
     }
 
@@ -57,7 +59,7 @@ void UMythicaEditorSubsystem::OnCreateSessionResponse(FHttpRequestPtr Request, F
 {
     if (!bWasSuccessful || !Response.IsValid())
     {
-        UE_LOG(LogTemp, Error, TEXT("Failed to create session"));
+        UE_LOG(LogMythica, Error, TEXT("Failed to create session"));
         return;
     }
 
@@ -67,14 +69,14 @@ void UMythicaEditorSubsystem::OnCreateSessionResponse(FHttpRequestPtr Request, F
     TSharedPtr<FJsonObject> JsonObject;
     if (!FJsonSerializer::Deserialize(Reader, JsonObject) || !JsonObject.IsValid())
     {
-        UE_LOG(LogTemp, Error, TEXT("Failed to parse JSON string"));
+        UE_LOG(LogMythica, Error, TEXT("Failed to parse JSON string"));
         return;
     }
 
     FString Token;
     if (!JsonObject->TryGetStringField(TEXT("token"), Token))
     {
-        UE_LOG(LogTemp, Error, TEXT("Failed to get token from JSON string"));
+        UE_LOG(LogMythica, Error, TEXT("Failed to get token from JSON string"));
     }
 
     AuthToken = Token;
@@ -107,7 +109,7 @@ void UMythicaEditorSubsystem::OnGetAssetsResponse(FHttpRequestPtr Request, FHttp
 {
     if (!bWasSuccessful || !Response.IsValid())
     {
-        UE_LOG(LogTemp, Error, TEXT("Failed to get assets"));
+        UE_LOG(LogMythica, Error, TEXT("Failed to get assets"));
         return;
     }
 
@@ -117,13 +119,13 @@ void UMythicaEditorSubsystem::OnGetAssetsResponse(FHttpRequestPtr Request, FHttp
     TSharedPtr<FJsonValue> JsonValue;
     if (!FJsonSerializer::Deserialize(Reader, JsonValue) || !JsonValue.IsValid())
     {
-        UE_LOG(LogTemp, Error, TEXT("Failed to parse JSON string"));
+        UE_LOG(LogMythica, Error, TEXT("Failed to parse JSON string"));
         return;
     }
 
     if (JsonValue->Type != EJson::Array)
     {
-        UE_LOG(LogTemp, Error, TEXT("JSON value is not an array"));
+        UE_LOG(LogMythica, Error, TEXT("JSON value is not an array"));
         return;
     }
 
@@ -155,9 +157,9 @@ void UMythicaEditorSubsystem::InstallAsset(const FString& Name)
     FMythicaAsset* Asset = AssetList.FindByPredicate([Name](const FMythicaAsset& InAsset) { return InAsset.Name == Name; });
     if (!Asset)
     {
-        UE_LOG(LogTemp, Error, TEXT("Unknown asset type %s"), *Name);
+        UE_LOG(LogMythica, Error, TEXT("Unknown asset type %s"), *Name);
         return;
     }
 
-    UE_LOG(LogTemp, Display, TEXT("Installing %s"), *Name);
+    UE_LOG(LogMythica, Display, TEXT("Installing %s"), *Name);
 }

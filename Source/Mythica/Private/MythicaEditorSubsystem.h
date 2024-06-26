@@ -6,6 +6,8 @@
 #include "Interfaces/IHttpResponse.h"
 #include "MythicaEditorSubsystem.generated.h"
 
+DECLARE_LOG_CATEGORY_EXTERN(LogMythica, Log, All);
+
 DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnSessionCreated);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnAssetListUpdated);
 
