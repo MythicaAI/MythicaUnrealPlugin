@@ -27,6 +27,11 @@ TArray<FMythicaAsset> UMythicaEditorSubsystem::GetAssetList()
     return AssetList;
 }
 
+bool UMythicaEditorSubsystem::IsAssetInstalled(const FString& PackageId)
+{
+    return InstalledAssets.Contains(PackageId);
+}
+
 void UMythicaEditorSubsystem::CreateSession()
 {
     if (IsAuthenticated())
@@ -156,6 +161,12 @@ void UMythicaEditorSubsystem::OnGetAssetsResponse(FHttpRequestPtr Request, FHttp
 
 void UMythicaEditorSubsystem::InstallAsset(const FString& PackageId)
 {
+    if (InstalledAssets.Contains(PackageId))
+    {
+        UE_LOG(LogMythica, Error, TEXT("Package already installed %s"), *PackageId);
+        return;
+    }
+
     FMythicaAsset* Asset = AssetList.FindByPredicate([PackageId](const FMythicaAsset& InAsset) { return InAsset.PackageId == PackageId; });
     if (!Asset)
     {
@@ -205,8 +216,8 @@ void UMythicaEditorSubsystem::OnDownloadAssetResponse(FHttpRequestPtr Request, F
 #endif
 
     // Save package to disk
-    FString PackageName = FPaths::GetBaseFilename(Request->GetURL());
-    FString PackagePath = FPaths::Combine(FPaths::ProjectIntermediateDir(), TEXT("MythicaCache"), PackageName, PackageName + ".zip");
+    FString PackageId = FPaths::GetBaseFilename(Request->GetURL());
+    FString PackagePath = FPaths::Combine(FPaths::ProjectIntermediateDir(), TEXT("MythicaCache"), PackageId, PackageId + ".zip");
 
     bool PackageWritten = FFileHelper::SaveArrayToFile(PackageData, *PackagePath);
     if (!PackageWritten)
@@ -244,7 +255,7 @@ void UMythicaEditorSubsystem::OnDownloadAssetResponse(FHttpRequestPtr Request, F
             continue;
         }
 
-        FString FilePath = FPaths::Combine(FPaths::ProjectIntermediateDir(), TEXT("MythicaCache"), PackageName, File);
+        FString FilePath = FPaths::Combine(FPaths::ProjectIntermediateDir(), TEXT("MythicaCache"), PackageId, File);
         bool FileWritten = FFileHelper::SaveArrayToFile(FileData, *FilePath);
         if (!FileWritten)
         {
@@ -262,14 +273,15 @@ void UMythicaEditorSubsystem::OnDownloadAssetResponse(FHttpRequestPtr Request, F
     const UMythicaDeveloperSettings* Settings = GetDefault<UMythicaDeveloperSettings>();
     
     FAssetToolsModule& AssetToolsModule = FModuleManager::GetModuleChecked<FAssetToolsModule>("AssetTools");
-    IAssetTools& AssetTools = AssetToolsModule.Get();
 
-    for (const FString& Path : HDAFilePaths)
+    TArray<UObject*> ImportedObject = AssetToolsModule.Get().ImportAssets({ HDAFilePaths }, Settings->ImportDirectory);
+    if (ImportedObject.Num() != HDAFilePaths.Num())
     {
-        TArray<UObject*> ImportedObject = AssetToolsModule.Get().ImportAssets({ Path }, Settings->ImportDirectory);
-        if (ImportedObject.Num() == 0)
-        {
-            UE_LOG(LogMythica, Error, TEXT("Failed to import HDA %s"), *Path);
-        }
+        UE_LOG(LogMythica, Error, TEXT("Failed to import HDA from package %s"), *PackageId);
+        return;
     }
+
+    InstalledAssets.Add(PackageId);
+
+    OnAssetInstalled.Broadcast(PackageId);
 }
