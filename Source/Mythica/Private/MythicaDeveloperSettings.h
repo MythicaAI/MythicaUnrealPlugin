@@ -19,7 +19,7 @@ public:
 	int32 ServerPort = 50555;
 
 	UPROPERTY(Config, EditAnywhere, BlueprintReadOnly, Category = Server)
-	FString PackageInstallDirectory = TEXT("/Game/Mythica");
+	FString ImportDirectory = TEXT("/Game/Mythica");
 
 	UPROPERTY(Config, EditAnywhere, BlueprintReadOnly, Category = User)
 	FString ProfileId;

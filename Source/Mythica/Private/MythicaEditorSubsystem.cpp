@@ -1,5 +1,6 @@
 #include "MythicaEditorSubsystem.h"
 
+#include "AssetToolsModule.h"
 #include "HttpModule.h"
 #include "MythicaDeveloperSettings.h"
 
@@ -161,5 +162,98 @@ void UMythicaEditorSubsystem::InstallAsset(const FString& Name)
         return;
     }
 
-    UE_LOG(LogMythica, Display, TEXT("Installing %s"), *Name);
+    const UMythicaDeveloperSettings* Settings = GetDefault<UMythicaDeveloperSettings>();
+
+    FString Url = FString::Printf(TEXT("http://%s:%d/api/v1/asset/zip/%s"), *Settings->ServerHost, Settings->ServerPort, *Name);
+
+    TSharedRef<IHttpRequest, ESPMode::ThreadSafe> Request = FHttpModule::Get().CreateRequest();
+    Request->SetURL(Url);
+    Request->SetHeader("Authorization", FString::Printf(TEXT("Bearer %s"), *AuthToken));
+    Request->SetVerb("GET");
+    Request->SetHeader("Content-Type", "application/octet-stream");
+    Request->OnProcessRequestComplete().BindUObject(this, &UMythicaEditorSubsystem::OnDownloadAssetResponse);
+
+#if 0
+    Request->ProcessRequest();
+#else
+    OnDownloadAssetResponse(Request, nullptr, true);
+#endif
+}
+
+void UMythicaEditorSubsystem::OnDownloadAssetResponse(FHttpRequestPtr Request, FHttpResponsePtr Response, bool bWasSuccessful)
+{
+#if 0
+    if (!bWasSuccessful || !Response.IsValid())
+    {
+        UE_LOG(LogMythica, Error, TEXT("Failed to download asset"));
+        return;
+    }
+
+    TArray<uint8> PackageData = Response->GetContent();
+
+#else
+    FString TestPackage = "D:/TestPackage.zip";
+
+    TArray<uint8> PackageData;
+    bool PackageLoaded = FFileHelper::LoadFileToArray(PackageData, *TestPackage);
+    if (!PackageLoaded)
+    {
+        UE_LOG(LogMythica, Error, TEXT("Failed to load test package %s"), *TestPackage);
+        return;
+    }
+#endif
+
+    // Save package to disk
+    FString PackageName = FPaths::GetBaseFilename(Request->GetURL());
+    FString PackagePath = FPaths::Combine(FPaths::ProjectIntermediateDir(), TEXT("MythicaCache"), PackageName + ".zip");
+
+    bool FileWritten = FFileHelper::SaveArrayToFile(PackageData, *PackagePath);
+    if (!FileWritten)
+    {
+        UE_LOG(LogMythica, Error, TEXT("Failed to write file %s"), *PackagePath);
+        return;
+    }
+
+    // Unzip package
+    TArray<FString> HDAFilePaths;
+#if 0
+    // TODO: Link in a zip library
+#else
+    FString TestHDA = "D:/TestHDA.hda";
+
+    TArray<uint8> HDAData;
+    bool HDALoaded = FFileHelper::LoadFileToArray(HDAData, *TestHDA);
+    if (!HDALoaded)
+    {
+        UE_LOG(LogMythica, Error, TEXT("Failed to load test package %s"), *TestPackage);
+        return;
+    }
+
+    FString HDAName = FPaths::GetBaseFilename(TestHDA);
+    FString HDAPath = FPaths::Combine(FPaths::ProjectIntermediateDir(), TEXT("MythicaCache"), PackageName + ".hda");
+
+    bool HDAWritten = FFileHelper::SaveArrayToFile(HDAData, *HDAPath);
+    if (!HDAWritten)
+    {
+        UE_LOG(LogMythica, Error, TEXT("Failed to write HDA file %s"), *HDAPath);
+        return;
+    }
+
+    HDAFilePaths.Add(HDAPath);
+#endif
+
+    // Import HDA files into Unreal
+    const UMythicaDeveloperSettings* Settings = GetDefault<UMythicaDeveloperSettings>();
+    
+    FAssetToolsModule& AssetToolsModule = FModuleManager::GetModuleChecked<FAssetToolsModule>("AssetTools");
+    IAssetTools& AssetTools = AssetToolsModule.Get();
+
+    for (const FString& Path : HDAFilePaths)
+    {
+        TArray<UObject*> ImportedObject = AssetToolsModule.Get().ImportAssets({ Path }, Settings->ImportDirectory);
+        if (ImportedObject.Num() == 0)
+        {
+            UE_LOG(LogMythica, Error, TEXT("Failed to import HDA %s"), *Path);
+        }
+    }
 }
