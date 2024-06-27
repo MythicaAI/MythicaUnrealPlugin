@@ -40,6 +40,7 @@ public class Mythica : ModuleRules
 				"DeveloperSettings",
 				"EditorSubsystem",
 				"Engine",
+				"FileUtilities",
 				"HTTP",
 				"Json",
 				"Slate",
