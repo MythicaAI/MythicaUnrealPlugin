@@ -188,28 +188,56 @@ void UMythicaEditorSubsystem::OnDownloadAssetResponse(FHttpRequestPtr Request, F
         return;
     }
 
-    TArray<uint8> FileData = Response->GetContent();
+    TArray<uint8> PackageData = Response->GetContent();
 
 #else
     FString TestPackage = "D:/TestPackage.zip";
 
-    TArray<uint8> FileData;
-    bool FileLoaded = FFileHelper::LoadFileToArray(FileData, *TestPackage);
-    if (!FileLoaded)
+    TArray<uint8> PackageData;
+    bool PackageLoaded = FFileHelper::LoadFileToArray(PackageData, *TestPackage);
+    if (!PackageLoaded)
     {
         UE_LOG(LogMythica, Error, TEXT("Failed to load test package %s"), *TestPackage);
         return;
     }
 #endif
 
+    // Save package to disk
     FString Name = FPaths::GetBaseFilename(Request->GetURL());
-    FString Path = FPaths::Combine(FPaths::ProjectIntermediateDir(), TEXT("MythicaCache"), Name + ".zip");
+    FString PackagePath = FPaths::Combine(FPaths::ProjectIntermediateDir(), TEXT("MythicaCache"), Name + ".zip");
 
-    // Write buffer to file
-    bool FileWritten = FFileHelper::SaveArrayToFile(FileData, *Path);
+    bool FileWritten = FFileHelper::SaveArrayToFile(PackageData, *PackagePath);
     if (!FileWritten)
     {
-        UE_LOG(LogMythica, Error, TEXT("Failed to write file %s"), *Path);
+        UE_LOG(LogMythica, Error, TEXT("Failed to write file %s"), *PackagePath);
         return;
     }
+
+    // Unzip package
+#if 0
+    // TODO: Link in a zip library
+#else
+    FString TestHDA = "D:/TestHDA.hda";
+
+    TArray<uint8> HDAData;
+    bool HDALoaded = FFileHelper::LoadFileToArray(HDAData, *TestHDA);
+    if (!HDALoaded)
+    {
+        UE_LOG(LogMythica, Error, TEXT("Failed to load test package %s"), *TestPackage);
+        return;
+    }
+
+    FString HDAName = FPaths::GetBaseFilename(TestHDA);
+    FString HDAPath = FPaths::Combine(FPaths::ProjectIntermediateDir(), TEXT("MythicaCache"), HDAName + ".hda");
+
+    bool HDAWritten = FFileHelper::SaveArrayToFile(HDAData, *HDAPath);
+    if (!HDAWritten)
+    {
+        UE_LOG(LogMythica, Error, TEXT("Failed to write HDA file %s"), *HDAPath);
+        return;
+    }
+#endif
+
+    // Import HDA files into Unreal
+
 }
