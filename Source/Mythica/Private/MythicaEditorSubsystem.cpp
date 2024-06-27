@@ -161,5 +161,55 @@ void UMythicaEditorSubsystem::InstallAsset(const FString& Name)
         return;
     }
 
-    UE_LOG(LogMythica, Display, TEXT("Installing %s"), *Name);
+    const UMythicaDeveloperSettings* Settings = GetDefault<UMythicaDeveloperSettings>();
+
+    FString Url = FString::Printf(TEXT("http://%s:%d/api/v1/asset/zip/%s"), *Settings->ServerHost, Settings->ServerPort, *Name);
+
+    TSharedRef<IHttpRequest, ESPMode::ThreadSafe> Request = FHttpModule::Get().CreateRequest();
+    Request->SetURL(Url);
+    Request->SetHeader("Authorization", FString::Printf(TEXT("Bearer %s"), *AuthToken));
+    Request->SetVerb("GET");
+    Request->SetHeader("Content-Type", "application/octet-stream");
+    Request->OnProcessRequestComplete().BindUObject(this, &UMythicaEditorSubsystem::OnDownloadAssetResponse);
+
+#if 0
+    Request->ProcessRequest();
+#else
+    OnDownloadAssetResponse(Request, nullptr, true);
+#endif
+}
+
+void UMythicaEditorSubsystem::OnDownloadAssetResponse(FHttpRequestPtr Request, FHttpResponsePtr Response, bool bWasSuccessful)
+{
+#if 0
+    if (!bWasSuccessful || !Response.IsValid())
+    {
+        UE_LOG(LogMythica, Error, TEXT("Failed to download asset"));
+        return;
+    }
+
+    TArray<uint8> FileData = Response->GetContent();
+
+#else
+    FString TestPackage = "D:/TestPackage.zip";
+
+    TArray<uint8> FileData;
+    bool FileLoaded = FFileHelper::LoadFileToArray(FileData, *TestPackage);
+    if (!FileLoaded)
+    {
+        UE_LOG(LogMythica, Error, TEXT("Failed to load test package %s"), *TestPackage);
+        return;
+    }
+#endif
+
+    FString Name = FPaths::GetBaseFilename(Request->GetURL());
+    FString Path = FPaths::Combine(FPaths::ProjectIntermediateDir(), TEXT("MythicaCache"), Name + ".zip");
+
+    // Write buffer to file
+    bool FileWritten = FFileHelper::SaveArrayToFile(FileData, *Path);
+    if (!FileWritten)
+    {
+        UE_LOG(LogMythica, Error, TEXT("Failed to write file %s"), *Path);
+        return;
+    }
 }
