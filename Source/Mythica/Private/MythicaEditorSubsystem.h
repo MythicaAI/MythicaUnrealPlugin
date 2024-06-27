@@ -16,7 +16,10 @@ struct FMythicaAsset
 {
     GENERATED_BODY()
 
-    UPROPERTY(BlueprintReadOnly)
+	UPROPERTY(BlueprintReadOnly)
+	FString PackageId;
+	
+	UPROPERTY(BlueprintReadOnly)
     FString Name;
 
 	UPROPERTY(BlueprintReadOnly)
@@ -47,7 +50,7 @@ public:
 	void UpdateAssetList();
 
 	UFUNCTION(BlueprintCallable, Category = "Mythica")
-	void InstallAsset(const FString& Name);
+	void InstallAsset(const FString& PackageId);
 
 	// Delegates
 	UPROPERTY(BlueprintAssignable, Category = "Mythica")

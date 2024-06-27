@@ -147,24 +147,24 @@ void UMythicaEditorSubsystem::OnGetAssetsResponse(FHttpRequestPtr Request, FHttp
         AssetList.Push({ Name, Description });
     }
 
-    AssetList.Push({ "Mythica Flora", "Library of plants and trees." });
-    AssetList.Push({ "Stair Tool", "Converts geometry into stairs." });
+    AssetList.Push({ "921f6530-da50-469a-90e7-983332ac6a0c", "Mythica Flora", "Library of plants and trees." });
+    AssetList.Push({ "b249f5ee-5edf-4377-a5a3-6bf244915b97", "Stair Tool", "Converts geometry into stairs." });
 
     OnAssetListUpdated.Broadcast();
 }
 
-void UMythicaEditorSubsystem::InstallAsset(const FString& Name)
+void UMythicaEditorSubsystem::InstallAsset(const FString& PackageId)
 {
-    FMythicaAsset* Asset = AssetList.FindByPredicate([Name](const FMythicaAsset& InAsset) { return InAsset.Name == Name; });
+    FMythicaAsset* Asset = AssetList.FindByPredicate([PackageId](const FMythicaAsset& InAsset) { return InAsset.PackageId == PackageId; });
     if (!Asset)
     {
-        UE_LOG(LogMythica, Error, TEXT("Unknown asset type %s"), *Name);
+        UE_LOG(LogMythica, Error, TEXT("Unknown asset type %s"), *PackageId);
         return;
     }
 
     const UMythicaDeveloperSettings* Settings = GetDefault<UMythicaDeveloperSettings>();
 
-    FString Url = FString::Printf(TEXT("http://%s:%d/api/v1/asset/zip/%s"), *Settings->ServerHost, Settings->ServerPort, *Name);
+    FString Url = FString::Printf(TEXT("http://%s:%d/api/v1/asset/zip/%s"), *Settings->ServerHost, Settings->ServerPort, *PackageId);
 
     TSharedRef<IHttpRequest, ESPMode::ThreadSafe> Request = FHttpModule::Get().CreateRequest();
     Request->SetURL(Url);
@@ -205,7 +205,7 @@ void UMythicaEditorSubsystem::OnDownloadAssetResponse(FHttpRequestPtr Request, F
 
     // Save package to disk
     FString PackageName = FPaths::GetBaseFilename(Request->GetURL());
-    FString PackagePath = FPaths::Combine(FPaths::ProjectIntermediateDir(), TEXT("MythicaCache"), PackageName + ".zip");
+    FString PackagePath = FPaths::Combine(FPaths::ProjectIntermediateDir(), TEXT("MythicaCache"), PackageName, PackageName + ".zip");
 
     bool FileWritten = FFileHelper::SaveArrayToFile(PackageData, *PackagePath);
     if (!FileWritten)
@@ -230,7 +230,7 @@ void UMythicaEditorSubsystem::OnDownloadAssetResponse(FHttpRequestPtr Request, F
     }
 
     FString HDAName = FPaths::GetBaseFilename(TestHDA);
-    FString HDAPath = FPaths::Combine(FPaths::ProjectIntermediateDir(), TEXT("MythicaCache"), PackageName + ".hda");
+    FString HDAPath = FPaths::Combine(FPaths::ProjectIntermediateDir(), TEXT("MythicaCache"), PackageName, PackageName + ".hda");
 
     bool HDAWritten = FFileHelper::SaveArrayToFile(HDAData, *HDAPath);
     if (!HDAWritten)
