@@ -1,5 +1,6 @@
 #include "MythicaEditorSubsystem.h"
 
+#include "AssetToolsModule.h"
 #include "HttpModule.h"
 #include "MythicaDeveloperSettings.h"
 
@@ -203,8 +204,8 @@ void UMythicaEditorSubsystem::OnDownloadAssetResponse(FHttpRequestPtr Request, F
 #endif
 
     // Save package to disk
-    FString Name = FPaths::GetBaseFilename(Request->GetURL());
-    FString PackagePath = FPaths::Combine(FPaths::ProjectIntermediateDir(), TEXT("MythicaCache"), Name + ".zip");
+    FString PackageName = FPaths::GetBaseFilename(Request->GetURL());
+    FString PackagePath = FPaths::Combine(FPaths::ProjectIntermediateDir(), TEXT("MythicaCache"), PackageName + ".zip");
 
     bool FileWritten = FFileHelper::SaveArrayToFile(PackageData, *PackagePath);
     if (!FileWritten)
@@ -214,6 +215,7 @@ void UMythicaEditorSubsystem::OnDownloadAssetResponse(FHttpRequestPtr Request, F
     }
 
     // Unzip package
+    TArray<FString> HDAFilePaths;
 #if 0
     // TODO: Link in a zip library
 #else
@@ -228,7 +230,7 @@ void UMythicaEditorSubsystem::OnDownloadAssetResponse(FHttpRequestPtr Request, F
     }
 
     FString HDAName = FPaths::GetBaseFilename(TestHDA);
-    FString HDAPath = FPaths::Combine(FPaths::ProjectIntermediateDir(), TEXT("MythicaCache"), HDAName + ".hda");
+    FString HDAPath = FPaths::Combine(FPaths::ProjectIntermediateDir(), TEXT("MythicaCache"), PackageName + ".hda");
 
     bool HDAWritten = FFileHelper::SaveArrayToFile(HDAData, *HDAPath);
     if (!HDAWritten)
@@ -236,8 +238,22 @@ void UMythicaEditorSubsystem::OnDownloadAssetResponse(FHttpRequestPtr Request, F
         UE_LOG(LogMythica, Error, TEXT("Failed to write HDA file %s"), *HDAPath);
         return;
     }
+
+    HDAFilePaths.Add(HDAPath);
 #endif
 
     // Import HDA files into Unreal
+    const UMythicaDeveloperSettings* Settings = GetDefault<UMythicaDeveloperSettings>();
+    
+    FAssetToolsModule& AssetToolsModule = FModuleManager::GetModuleChecked<FAssetToolsModule>("AssetTools");
+    IAssetTools& AssetTools = AssetToolsModule.Get();
 
+    for (const FString& Path : HDAFilePaths)
+    {
+        TArray<UObject*> ImportedObject = AssetToolsModule.Get().ImportAssets({ Path }, Settings->ImportDirectory);
+        if (ImportedObject.Num() == 0)
+        {
+            UE_LOG(LogMythica, Error, TEXT("Failed to import HDA %s"), *Path);
+        }
+    }
 }
