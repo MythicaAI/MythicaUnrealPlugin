@@ -1,6 +1,7 @@
 #include "MythicaEditorSubsystem.h"
 
 #include "AssetToolsModule.h"
+#include "FileUtilities/ZipArchiveReader.h"
 #include "HttpModule.h"
 #include "MythicaDeveloperSettings.h"
 
@@ -207,40 +208,55 @@ void UMythicaEditorSubsystem::OnDownloadAssetResponse(FHttpRequestPtr Request, F
     FString PackageName = FPaths::GetBaseFilename(Request->GetURL());
     FString PackagePath = FPaths::Combine(FPaths::ProjectIntermediateDir(), TEXT("MythicaCache"), PackageName, PackageName + ".zip");
 
-    bool FileWritten = FFileHelper::SaveArrayToFile(PackageData, *PackagePath);
-    if (!FileWritten)
+    bool PackageWritten = FFileHelper::SaveArrayToFile(PackageData, *PackagePath);
+    if (!PackageWritten)
     {
-        UE_LOG(LogMythica, Error, TEXT("Failed to write file %s"), *PackagePath);
+        UE_LOG(LogMythica, Error, TEXT("Failed to write package file %s"), *PackagePath);
         return;
     }
 
     // Unzip package
     TArray<FString> HDAFilePaths;
-#if 0
-    // TODO: Link in a zip library
-#else
-    FString TestHDA = "D:/TestHDA.hda";
 
-    TArray<uint8> HDAData;
-    bool HDALoaded = FFileHelper::LoadFileToArray(HDAData, *TestHDA);
-    if (!HDALoaded)
+    IPlatformFile& PlatformFile = FPlatformFileManager::Get().GetPlatformFile();
+    IFileHandle* FileHandle = PlatformFile.OpenRead(*PackagePath);
+    if (!FileHandle)
     {
-        UE_LOG(LogMythica, Error, TEXT("Failed to load test package %s"), *TestPackage);
+        UE_LOG(LogMythica, Error, TEXT("Failed to package file %s"), *PackagePath);
         return;
     }
 
-    FString HDAName = FPaths::GetBaseFilename(TestHDA);
-    FString HDAPath = FPaths::Combine(FPaths::ProjectIntermediateDir(), TEXT("MythicaCache"), PackageName, PackageName + ".hda");
-
-    bool HDAWritten = FFileHelper::SaveArrayToFile(HDAData, *HDAPath);
-    if (!HDAWritten)
+    FZipArchiveReader Reader(FileHandle);
+    if (!Reader.IsValid())
     {
-        UE_LOG(LogMythica, Error, TEXT("Failed to write HDA file %s"), *HDAPath);
+        UE_LOG(LogMythica, Error, TEXT("Failed to open zip archive %s"), *PackagePath);
         return;
     }
 
-    HDAFilePaths.Add(HDAPath);
-#endif
+    TArray<FString> Files = Reader.GetFileNames();
+    for (const FString& File : Files)
+    {
+        TArray<uint8> FileData;
+        bool FileRead = Reader.TryReadFile(File, FileData);
+        if (!FileRead)
+        {
+            UE_LOG(LogMythica, Error, TEXT("Failed to read file from archive %s"), *File);
+            continue;
+        }
+
+        FString FilePath = FPaths::Combine(FPaths::ProjectIntermediateDir(), TEXT("MythicaCache"), PackageName, File);
+        bool FileWritten = FFileHelper::SaveArrayToFile(FileData, *FilePath);
+        if (!FileWritten)
+        {
+            UE_LOG(LogMythica, Error, TEXT("Failed to write file %s"), *FilePath);
+            continue;
+        }
+
+        if (FPaths::GetExtension(FilePath) == TEXT("hda"))
+        {
+            HDAFilePaths.Add(FilePath);
+        }
+    }
 
     // Import HDA files into Unreal
     const UMythicaDeveloperSettings* Settings = GetDefault<UMythicaDeveloperSettings>();
