@@ -10,6 +10,7 @@ DECLARE_LOG_CATEGORY_EXTERN(LogMythica, Log, All);
 
 DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnSessionCreated);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnAssetListUpdated);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnAssetInstalled, const FString&, PackageId);
 
 USTRUCT(BlueprintType)
 struct FMythicaAsset
@@ -42,6 +43,9 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "Mythica")
 	TArray<FMythicaAsset> GetAssetList();
 
+	UFUNCTION(BlueprintPure, Category = "Mythica")
+	bool IsAssetInstalled(const FString& PackageId);
+
 	// Requests
 	UFUNCTION(BlueprintCallable, Category = "Mythica")
 	void CreateSession();
@@ -59,11 +63,15 @@ public:
 	UPROPERTY(BlueprintAssignable, Category = "Mythica")
 	FOnAssetListUpdated OnAssetListUpdated;
 
+	UPROPERTY(BlueprintAssignable, Category = "Mythica")
+	FOnAssetInstalled OnAssetInstalled;
+
 private:
 	void OnCreateSessionResponse(FHttpRequestPtr Request, FHttpResponsePtr Response, bool bWasSuccessful);
 	void OnGetAssetsResponse(FHttpRequestPtr Request, FHttpResponsePtr Response, bool bWasSuccessful);
 	void OnDownloadAssetResponse(FHttpRequestPtr Request, FHttpResponsePtr Response, bool bWasSuccessful);
 
 	FString AuthToken;
+	TArray<FString> InstalledAssets;
 	TArray<FMythicaAsset> AssetList;
 };
