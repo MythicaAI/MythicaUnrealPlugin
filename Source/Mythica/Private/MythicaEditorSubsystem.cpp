@@ -1,5 +1,6 @@
 #include "MythicaEditorSubsystem.h"
 
+#include "AssetRegistry/AssetRegistryModule.h"
 #include "AssetToolsModule.h"
 #include "FileUtilities/ZipArchiveReader.h"
 #include "HAL/FileManager.h"
@@ -317,6 +318,45 @@ void UMythicaEditorSubsystem::OnDownloadAssetResponse(FHttpRequestPtr Request, F
     AddInstalledAsset(PackageId, ImportData->DestinationPath);
 
     OnAssetInstalled.Broadcast(PackageId);
+}
+
+void UMythicaEditorSubsystem::UninstallAsset(const FString& PackageId)
+{
+    FString* InstallDirectory = InstalledAssets.Find(PackageId);
+    if (!InstallDirectory)
+    {
+        UE_LOG(LogMythica, Error, TEXT("Trying to uninstall package that isn't installed %s"), *PackageId);
+        return;
+    }
+
+    FString PackagePath = FPackageName::FilenameToLongPackageName(*InstallDirectory);
+
+    FAssetRegistryModule& AssetRegistryModule = FModuleManager::LoadModuleChecked<FAssetRegistryModule>("AssetRegistry");
+
+    TArray<FAssetData> Assets;
+    AssetRegistryModule.Get().GetAssetsByPath(*PackagePath, Assets, true, false);
+
+    int32 NumDeleted = ObjectTools::DeleteAssets(Assets, false);
+    if (NumDeleted != Assets.Num())
+    {
+        UE_LOG(LogMythica, Error, TEXT("Failed to delete assets from %s"), **InstallDirectory);
+        return;
+    }
+
+    IPlatformFile& PlatformFile = FPlatformFileManager::Get().GetPlatformFile();
+    bool DirectoryDeleted = PlatformFile.DeleteDirectoryRecursively(**InstallDirectory);
+    if (!DirectoryDeleted)
+    {
+        UE_LOG(LogMythica, Error, TEXT("Failed to delete directory %s"), **InstallDirectory);
+        return;
+    }
+
+    FString ConfigFileAbsolute = FPaths::Combine(*InstallDirectory, ConfigFile);
+    GConfig->UnloadFile(ConfigFileAbsolute);
+
+    InstalledAssets.Remove(PackageId);
+
+    OnAssetUninstalled.Broadcast(PackageId);
 }
 
 void UMythicaEditorSubsystem::LoadInstalledAssetList()

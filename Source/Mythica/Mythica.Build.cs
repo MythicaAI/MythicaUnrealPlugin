@@ -35,6 +35,7 @@ public class Mythica : ModuleRules
 		PrivateDependencyModuleNames.AddRange(
 			new string[]
 			{
+				"AssetRegistry",
 				"AssetTools",
 				"CoreUObject",
 				"DeveloperSettings",

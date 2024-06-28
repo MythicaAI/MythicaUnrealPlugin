@@ -11,6 +11,7 @@ DECLARE_LOG_CATEGORY_EXTERN(LogMythica, Log, All);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnSessionCreated);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnAssetListUpdated);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnAssetInstalled, const FString&, PackageId);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnAssetUninstalled, const FString&, PackageId);
 
 USTRUCT(BlueprintType)
 struct FMythicaAsset
@@ -56,6 +57,9 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "Mythica")
 	void InstallAsset(const FString& PackageId);
 
+	UFUNCTION(BlueprintCallable, Category = "Mythica")
+	void UninstallAsset(const FString& PackageId);
+
 	// Delegates
 	UPROPERTY(BlueprintAssignable, Category = "Mythica")
 	FOnSessionCreated OnSessionCreated;
@@ -65,6 +69,9 @@ public:
 
 	UPROPERTY(BlueprintAssignable, Category = "Mythica")
 	FOnAssetInstalled OnAssetInstalled;
+
+	UPROPERTY(BlueprintAssignable, Category = "Mythica")
+	FOnAssetInstalled OnAssetUninstalled;
 
 private:
 	void OnCreateSessionResponse(FHttpRequestPtr Request, FHttpResponsePtr Response, bool bWasSuccessful);
