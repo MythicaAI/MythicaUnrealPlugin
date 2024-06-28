@@ -319,6 +319,28 @@ void UMythicaEditorSubsystem::OnDownloadAssetResponse(FHttpRequestPtr Request, F
     OnAssetInstalled.Broadcast(PackageId);
 }
 
+void UMythicaEditorSubsystem::UninstallAsset(const FString& PackageId)
+{
+    FString* InstallDirectory = InstalledAssets.Find(PackageId);
+    if (!InstallDirectory)
+    {
+        UE_LOG(LogMythica, Error, TEXT("Trying to uninstall package that isn't installed %s"), *PackageId);
+        return;
+    }
+
+    IPlatformFile& PlatformFile = FPlatformFileManager::Get().GetPlatformFile();
+    bool DirectoryDeleted = PlatformFile.DeleteDirectoryRecursively(**InstallDirectory);
+    if (!DirectoryDeleted)
+    {
+        UE_LOG(LogMythica, Error, TEXT("Failed to delete directory %s"), **InstallDirectory);
+        return;
+    }
+
+    InstalledAssets.Remove(PackageId);
+
+    OnAssetUninstalled.Broadcast(PackageId);
+}
+
 void UMythicaEditorSubsystem::LoadInstalledAssetList()
 {
     const UMythicaDeveloperSettings* Settings = GetDefault<UMythicaDeveloperSettings>();
