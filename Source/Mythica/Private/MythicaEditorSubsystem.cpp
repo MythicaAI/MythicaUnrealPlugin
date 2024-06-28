@@ -351,6 +351,9 @@ void UMythicaEditorSubsystem::UninstallAsset(const FString& PackageId)
         return;
     }
 
+    FString ConfigFileAbsolute = FPaths::Combine(*InstallDirectory, ConfigFile);
+    GConfig->UnloadFile(ConfigFileAbsolute);
+
     InstalledAssets.Remove(PackageId);
 
     OnAssetUninstalled.Broadcast(PackageId);
