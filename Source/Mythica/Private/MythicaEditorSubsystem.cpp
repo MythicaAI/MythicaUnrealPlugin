@@ -6,6 +6,7 @@
 #include "HttpModule.h"
 #include "MythicaDeveloperSettings.h"
 #include "ObjectTools.h"
+#include "UObject/Package.h"
 
 DEFINE_LOG_CATEGORY(LogMythica);
 
@@ -304,6 +305,13 @@ void UMythicaEditorSubsystem::OnDownloadAssetResponse(FHttpRequestPtr Request, F
     {
         UE_LOG(LogMythica, Error, TEXT("Failed to import HDA from package %s"), *PackageId);
         return;
+    }
+
+    for (UObject* Object : ImportedObject)
+    {
+        UPackage* Package = Cast<UPackage>(Object->GetOuter());
+        FString Filename = FPackageName::LongPackageNameToFilename(Package->GetName(), FPackageName::GetAssetPackageExtension());
+        UPackage::SavePackage(Package, nullptr, EObjectFlags::RF_Public | EObjectFlags::RF_Standalone, *Filename);
     }
 
     AddInstalledAsset(PackageId, ImportData->DestinationPath);
