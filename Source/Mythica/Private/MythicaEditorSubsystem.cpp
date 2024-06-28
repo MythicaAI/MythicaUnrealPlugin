@@ -278,10 +278,14 @@ void UMythicaEditorSubsystem::OnDownloadAssetResponse(FHttpRequestPtr Request, F
 
     // Import HDA files into Unreal
     const UMythicaDeveloperSettings* Settings = GetDefault<UMythicaDeveloperSettings>();
-    FString ImportPath = FPaths::Combine(Settings->ImportDirectory, Asset->Name);
+
+    UAutomatedAssetImportData* ImportData = NewObject<UAutomatedAssetImportData>();
+    ImportData->bReplaceExisting = true;
+    ImportData->DestinationPath = FPaths::Combine(Settings->ImportDirectory, Asset->Name);
+    ImportData->Filenames = HDAFilePaths;
 
     FAssetToolsModule& AssetToolsModule = FModuleManager::GetModuleChecked<FAssetToolsModule>("AssetTools");
-    TArray<UObject*> ImportedObject = AssetToolsModule.Get().ImportAssets({ HDAFilePaths }, ImportPath);
+    TArray<UObject*> ImportedObject = AssetToolsModule.Get().ImportAssetsAutomated(ImportData);
     if (ImportedObject.Num() != HDAFilePaths.Num())
     {
         UE_LOG(LogMythica, Error, TEXT("Failed to import HDA from package %s"), *PackageId);
