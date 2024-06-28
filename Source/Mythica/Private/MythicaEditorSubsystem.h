@@ -71,9 +71,12 @@ private:
 	void OnGetAssetsResponse(FHttpRequestPtr Request, FHttpResponsePtr Response, bool bWasSuccessful);
 	void OnDownloadAssetResponse(FHttpRequestPtr Request, FHttpResponsePtr Response, bool bWasSuccessful);
 
+	void LoadInstalledAssetList();
+	void AddInstalledAsset(const FString& PackageId, const FString& ImportDirectory);
+
 	FMythicaAsset* FindAsset(const FString& PackageId);
 
 	FString AuthToken;
-	TArray<FString> InstalledAssets;
+	TMap<FString, FString> InstalledAssets;
 	TArray<FMythicaAsset> AssetList;
 };

@@ -2,14 +2,22 @@
 
 #include "AssetToolsModule.h"
 #include "FileUtilities/ZipArchiveReader.h"
+#include "HAL/FileManager.h"
 #include "HttpModule.h"
 #include "MythicaDeveloperSettings.h"
+#include "ObjectTools.h"
 
 DEFINE_LOG_CATEGORY(LogMythica);
+
+const TCHAR* ConfigFile = TEXT("PackageInfo.ini");
+const TCHAR* ConfigPackageInfoSection = TEXT("PackageInfo");
+const TCHAR* ConfigPackageIdKey = TEXT("PackageId");
 
 void UMythicaEditorSubsystem::Initialize(FSubsystemCollectionBase& Collection)
 {
     Super::Initialize(Collection);
+
+    LoadInstalledAssetList();
 }
 
 void UMythicaEditorSubsystem::Deinitialize()
@@ -216,6 +224,12 @@ void UMythicaEditorSubsystem::OnDownloadAssetResponse(FHttpRequestPtr Request, F
 #endif
 
     FString PackageId = FPaths::GetBaseFilename(Request->GetURL());
+    if (InstalledAssets.Contains(PackageId))
+    {
+        UE_LOG(LogMythica, Error, TEXT("Package already installed %s"), *PackageId);
+        return;
+    }
+
     FMythicaAsset* Asset = FindAsset(PackageId);
     if (!Asset)
     {
@@ -281,7 +295,7 @@ void UMythicaEditorSubsystem::OnDownloadAssetResponse(FHttpRequestPtr Request, F
 
     UAutomatedAssetImportData* ImportData = NewObject<UAutomatedAssetImportData>();
     ImportData->bReplaceExisting = true;
-    ImportData->DestinationPath = FPaths::Combine(Settings->ImportDirectory, Asset->Name);
+    ImportData->DestinationPath = FPaths::Combine(Settings->ImportDirectory, ObjectTools::SanitizeObjectPath(Asset->Name));
     ImportData->Filenames = HDAFilePaths;
 
     FAssetToolsModule& AssetToolsModule = FModuleManager::GetModuleChecked<FAssetToolsModule>("AssetTools");
@@ -292,9 +306,61 @@ void UMythicaEditorSubsystem::OnDownloadAssetResponse(FHttpRequestPtr Request, F
         return;
     }
 
-    InstalledAssets.Add(PackageId);
+    AddInstalledAsset(PackageId, ImportData->DestinationPath);
 
     OnAssetInstalled.Broadcast(PackageId);
+}
+
+void UMythicaEditorSubsystem::LoadInstalledAssetList()
+{
+    const UMythicaDeveloperSettings* Settings = GetDefault<UMythicaDeveloperSettings>();
+
+    FString ImportFolderRelative = FPackageName::LongPackageNameToFilename(Settings->ImportDirectory);
+    FString ImportFolderAbsolute = FPaths::ConvertRelativePathToFull(ImportFolderRelative);
+    FString MatchPattern = ImportFolderAbsolute + "/*";
+
+    TArray<FString> Directories;
+    IFileManager::Get().FindFiles(Directories, *MatchPattern, false, true);
+    for (const FString& Directory : Directories)
+    {
+        FString DirectoryAbsolute = FPaths::Combine(ImportFolderAbsolute, Directory);
+        FString FileAbsolute = FPaths::Combine(DirectoryAbsolute, ConfigFile);
+        if (!FPaths::FileExists(FileAbsolute))
+        {
+            UE_LOG(LogMythica, Error, TEXT("Failed to get package info file from %s"), *FileAbsolute);
+            continue;
+        }
+
+        FString PackageId;
+        bool Result = GConfig->GetString(ConfigPackageInfoSection, ConfigPackageIdKey, PackageId, FileAbsolute);
+        if (!Result)
+        {
+            UE_LOG(LogMythica, Error, TEXT("Failed to read PackageId from %s"), *FileAbsolute);
+            continue;
+        }
+
+        if (InstalledAssets.Contains(PackageId))
+        {
+            UE_LOG(LogMythica, Error, TEXT("Duplicate package found at %s"), *FileAbsolute);
+            continue;
+        }
+
+        InstalledAssets.Add(PackageId, DirectoryAbsolute);
+    }
+}
+
+void UMythicaEditorSubsystem::AddInstalledAsset(const FString& PackageId, const FString& ImportDirectory)
+{
+    const UMythicaDeveloperSettings* Settings = GetDefault<UMythicaDeveloperSettings>();
+
+    FString DirectoryRelative = FPackageName::LongPackageNameToFilename(ImportDirectory);
+    FString DirectoryAbsolute = FPaths::ConvertRelativePathToFull(DirectoryRelative);
+    FString FileAbsolute = FPaths::Combine(DirectoryAbsolute, ConfigFile);
+
+    GConfig->SetString(ConfigPackageInfoSection, ConfigPackageIdKey, *PackageId, *FileAbsolute);
+    GConfig->Flush(false, *FileAbsolute);
+
+    InstalledAssets.Add(PackageId, DirectoryAbsolute);
 }
 
 FMythicaAsset* UMythicaEditorSubsystem::FindAsset(const FString& PackageId)
