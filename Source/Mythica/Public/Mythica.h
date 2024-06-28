@@ -17,6 +17,7 @@ private:
 	void AddMenu(FMenuBuilder& MenuBuilder);
 	void OnMenuItemClick();
 	void OnWindowClosed(const TSharedRef<SWindow>& InWindow);
+	void OnMapChanged(UWorld* InWorld, EMapChangeType InMapChangeType);
 
 	TSharedPtr<SWindow> Window;
 };
