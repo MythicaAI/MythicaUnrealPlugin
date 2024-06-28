@@ -167,7 +167,7 @@ void UMythicaEditorSubsystem::InstallAsset(const FString& PackageId)
         return;
     }
 
-    FMythicaAsset* Asset = AssetList.FindByPredicate([PackageId](const FMythicaAsset& InAsset) { return InAsset.PackageId == PackageId; });
+    FMythicaAsset* Asset = FindAsset(PackageId);
     if (!Asset)
     {
         UE_LOG(LogMythica, Error, TEXT("Unknown asset type %s"), *PackageId);
@@ -215,8 +215,15 @@ void UMythicaEditorSubsystem::OnDownloadAssetResponse(FHttpRequestPtr Request, F
     }
 #endif
 
-    // Save package to disk
     FString PackageId = FPaths::GetBaseFilename(Request->GetURL());
+    FMythicaAsset* Asset = FindAsset(PackageId);
+    if (!Asset)
+    {
+        UE_LOG(LogMythica, Error, TEXT("Unknown asset type %s"), *PackageId);
+        return;
+    }
+
+    // Save package to disk
     FString PackagePath = FPaths::Combine(FPaths::ProjectIntermediateDir(), TEXT("MythicaCache"), PackageId, PackageId + ".zip");
 
     bool PackageWritten = FFileHelper::SaveArrayToFile(PackageData, *PackagePath);
@@ -271,10 +278,14 @@ void UMythicaEditorSubsystem::OnDownloadAssetResponse(FHttpRequestPtr Request, F
 
     // Import HDA files into Unreal
     const UMythicaDeveloperSettings* Settings = GetDefault<UMythicaDeveloperSettings>();
-    
-    FAssetToolsModule& AssetToolsModule = FModuleManager::GetModuleChecked<FAssetToolsModule>("AssetTools");
 
-    TArray<UObject*> ImportedObject = AssetToolsModule.Get().ImportAssets({ HDAFilePaths }, Settings->ImportDirectory);
+    UAutomatedAssetImportData* ImportData = NewObject<UAutomatedAssetImportData>();
+    ImportData->bReplaceExisting = true;
+    ImportData->DestinationPath = FPaths::Combine(Settings->ImportDirectory, Asset->Name);
+    ImportData->Filenames = HDAFilePaths;
+
+    FAssetToolsModule& AssetToolsModule = FModuleManager::GetModuleChecked<FAssetToolsModule>("AssetTools");
+    TArray<UObject*> ImportedObject = AssetToolsModule.Get().ImportAssetsAutomated(ImportData);
     if (ImportedObject.Num() != HDAFilePaths.Num())
     {
         UE_LOG(LogMythica, Error, TEXT("Failed to import HDA from package %s"), *PackageId);
@@ -284,4 +295,9 @@ void UMythicaEditorSubsystem::OnDownloadAssetResponse(FHttpRequestPtr Request, F
     InstalledAssets.Add(PackageId);
 
     OnAssetInstalled.Broadcast(PackageId);
+}
+
+FMythicaAsset* UMythicaEditorSubsystem::FindAsset(const FString& PackageId)
+{
+    return AssetList.FindByPredicate([PackageId](const FMythicaAsset& InAsset) { return InAsset.PackageId == PackageId; });
 }
