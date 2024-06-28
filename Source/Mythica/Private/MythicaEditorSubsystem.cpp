@@ -1,5 +1,6 @@
 #include "MythicaEditorSubsystem.h"
 
+#include "AssetRegistry/AssetRegistryModule.h"
 #include "AssetToolsModule.h"
 #include "FileUtilities/ZipArchiveReader.h"
 #include "HAL/FileManager.h"
@@ -325,6 +326,20 @@ void UMythicaEditorSubsystem::UninstallAsset(const FString& PackageId)
     if (!InstallDirectory)
     {
         UE_LOG(LogMythica, Error, TEXT("Trying to uninstall package that isn't installed %s"), *PackageId);
+        return;
+    }
+
+    FString PackagePath = FPackageName::FilenameToLongPackageName(*InstallDirectory);
+
+    FAssetRegistryModule& AssetRegistryModule = FModuleManager::LoadModuleChecked<FAssetRegistryModule>("AssetRegistry");
+
+    TArray<FAssetData> Assets;
+    AssetRegistryModule.Get().GetAssetsByPath(*PackagePath, Assets, true, false);
+
+    int32 NumDeleted = ObjectTools::DeleteAssets(Assets, false);
+    if (NumDeleted != Assets.Num())
+    {
+        UE_LOG(LogMythica, Error, TEXT("Failed to delete assets from %s"), **InstallDirectory);
         return;
     }
 
