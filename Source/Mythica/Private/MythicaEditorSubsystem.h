@@ -71,6 +71,10 @@ private:
 	void OnGetAssetsResponse(FHttpRequestPtr Request, FHttpResponsePtr Response, bool bWasSuccessful);
 	void OnDownloadAssetResponse(FHttpRequestPtr Request, FHttpResponsePtr Response, bool bWasSuccessful);
 
+	FString GetConfigFilePath();
+	void LoadInstalledAssetList();
+	void SaveInstalledAssetList();
+	
 	FMythicaAsset* FindAsset(const FString& PackageId);
 
 	FString AuthToken;

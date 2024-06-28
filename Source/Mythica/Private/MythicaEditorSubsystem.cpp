@@ -7,9 +7,15 @@
 
 DEFINE_LOG_CATEGORY(LogMythica);
 
+const TCHAR* ConfigFile = TEXT("Mythica.ini");
+const TCHAR* ConfigPackagesSection = TEXT("InstalledPackages");
+const TCHAR* ConfigPackageKey = TEXT("Package");
+
 void UMythicaEditorSubsystem::Initialize(FSubsystemCollectionBase& Collection)
 {
     Super::Initialize(Collection);
+
+    LoadInstalledAssetList();
 }
 
 void UMythicaEditorSubsystem::Deinitialize()
@@ -293,8 +299,35 @@ void UMythicaEditorSubsystem::OnDownloadAssetResponse(FHttpRequestPtr Request, F
     }
 
     InstalledAssets.Add(PackageId);
+    SaveInstalledAssetList();
 
     OnAssetInstalled.Broadcast(PackageId);
+}
+
+FString UMythicaEditorSubsystem::GetConfigFilePath()
+{
+    const UMythicaDeveloperSettings* Settings = GetDefault<UMythicaDeveloperSettings>();
+
+    FString RelativePath = FPaths::Combine(Settings->ImportDirectory, ConfigFile);
+    FString FullPath = FPackageName::LongPackageNameToFilename(RelativePath);
+    FString AbsolutePath = FPaths::ConvertRelativePathToFull(FullPath);
+
+    return AbsolutePath;
+}
+
+void UMythicaEditorSubsystem::LoadInstalledAssetList()
+{
+    FString AbsolutePath = GetConfigFilePath();
+
+    GConfig->GetArray(ConfigPackagesSection, ConfigPackageKey, InstalledAssets, AbsolutePath);
+}
+
+void UMythicaEditorSubsystem::SaveInstalledAssetList()
+{
+    FString AbsolutePath = GetConfigFilePath();
+
+    GConfig->SetArray(ConfigPackagesSection, ConfigPackageKey, InstalledAssets, AbsolutePath);
+    GConfig->Flush(false);
 }
 
 FMythicaAsset* UMythicaEditorSubsystem::FindAsset(const FString& PackageId)
