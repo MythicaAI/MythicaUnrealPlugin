@@ -323,28 +323,29 @@ void UMythicaEditorSubsystem::LoadInstalledAssetList()
     IFileManager::Get().FindFiles(Directories, *MatchPattern, false, true);
     for (const FString& Directory : Directories)
     {
-        FString FileAbsolutePath = FPaths::Combine(ImportFolderAbsolute, Directory, ConfigFile);
-        if (!FPaths::FileExists(FileAbsolutePath))
+        FString DirectoryAbsolute = FPaths::Combine(ImportFolderAbsolute, Directory);
+        FString FileAbsolute = FPaths::Combine(DirectoryAbsolute, ConfigFile);
+        if (!FPaths::FileExists(FileAbsolute))
         {
-            UE_LOG(LogMythica, Error, TEXT("Failed to get package info file from %s"), *FileAbsolutePath);
+            UE_LOG(LogMythica, Error, TEXT("Failed to get package info file from %s"), *FileAbsolute);
             continue;
         }
 
         FString PackageId;
-        bool Result = GConfig->GetString(ConfigPackageInfoSection, ConfigPackageIdKey, PackageId, FileAbsolutePath);
+        bool Result = GConfig->GetString(ConfigPackageInfoSection, ConfigPackageIdKey, PackageId, FileAbsolute);
         if (!Result)
         {
-            UE_LOG(LogMythica, Error, TEXT("Failed to read PackageId from %s"), *FileAbsolutePath);
+            UE_LOG(LogMythica, Error, TEXT("Failed to read PackageId from %s"), *FileAbsolute);
             continue;
         }
 
         if (InstalledAssets.Contains(PackageId))
         {
-            UE_LOG(LogMythica, Error, TEXT("Duplicate package found at %s"), *FileAbsolutePath);
+            UE_LOG(LogMythica, Error, TEXT("Duplicate package found at %s"), *FileAbsolute);
             continue;
         }
 
-        InstalledAssets.Add(PackageId, FileAbsolutePath);
+        InstalledAssets.Add(PackageId, DirectoryAbsolute);
     }
 }
 
@@ -352,14 +353,14 @@ void UMythicaEditorSubsystem::AddInstalledAsset(const FString& PackageId, const 
 {
     const UMythicaDeveloperSettings* Settings = GetDefault<UMythicaDeveloperSettings>();
 
-    FString FilePackagePath = FPaths::Combine(ImportDirectory, ConfigFile);
-    FString FileRelativePath = FPackageName::LongPackageNameToFilename(FilePackagePath);
-    FString FileAbsolutePath = FPaths::ConvertRelativePathToFull(FileRelativePath);
+    FString DirectoryRelative = FPackageName::LongPackageNameToFilename(ImportDirectory);
+    FString DirectoryAbsolute = FPaths::ConvertRelativePathToFull(DirectoryRelative);
+    FString FileAbsolute = FPaths::Combine(DirectoryAbsolute, ConfigFile);
 
-    GConfig->SetString(ConfigPackageInfoSection, ConfigPackageIdKey, *PackageId, *FileAbsolutePath);
-    GConfig->Flush(false, *FileAbsolutePath);
+    GConfig->SetString(ConfigPackageInfoSection, ConfigPackageIdKey, *PackageId, *FileAbsolute);
+    GConfig->Flush(false, *FileAbsolute);
 
-    InstalledAssets.Add(PackageId, FileAbsolutePath);
+    InstalledAssets.Add(PackageId, DirectoryAbsolute);
 }
 
 FMythicaAsset* UMythicaEditorSubsystem::FindAsset(const FString& PackageId)
