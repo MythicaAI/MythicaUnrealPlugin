@@ -19,6 +19,7 @@ void FMythicaModule::StartupModule()
 
 	FLevelEditorModule& LevelEditorModule = FModuleManager::LoadModuleChecked<FLevelEditorModule>("LevelEditor");
 	LevelEditorModule.GetMenuExtensibilityManager()->AddExtender(MenuExtender);
+	LevelEditorModule.OnMapChanged().AddRaw(this, &FMythicaModule::OnMapChanged);
 }
 
 void FMythicaModule::ShutdownModule()
@@ -43,9 +44,6 @@ void FMythicaModule::OnMenuItemClick()
 	}
 	else
 	{
-		FLevelEditorModule& LevelEditor = FModuleManager::LoadModuleChecked<FLevelEditorModule>("LevelEditor");
-		LevelEditor.OnMapChanged().AddRaw(this, &FMythicaModule::OnMapChanged);
-
 		Window = SNew(SWindow)
 			.Title(FText::FromString("Mythica Package Manager"))
 			.ClientSize(FVector2D(800, 600))
