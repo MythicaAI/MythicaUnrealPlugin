@@ -19,6 +19,7 @@ void FMythicaModule::StartupModule()
 
 	FLevelEditorModule& LevelEditorModule = FModuleManager::LoadModuleChecked<FLevelEditorModule>("LevelEditor");
 	LevelEditorModule.GetMenuExtensibilityManager()->AddExtender(MenuExtender);
+	LevelEditorModule.OnMapChanged().AddRaw(this, &FMythicaModule::OnMapChanged);
 }
 
 void FMythicaModule::ShutdownModule()
@@ -63,6 +64,14 @@ void FMythicaModule::OnMenuItemClick()
 void FMythicaModule::OnWindowClosed(const TSharedRef<SWindow>& InWindow)
 {
 	Window.Reset();
+}
+
+void FMythicaModule::OnMapChanged(UWorld* InWorld, EMapChangeType InMapChangeType)
+{
+	if (Window.IsValid() && InMapChangeType == EMapChangeType::TearDownWorld)
+	{
+		FSlateApplication::Get().RequestDestroyWindow(Window.ToSharedRef());
+	}
 }
 
 #undef LOCTEXT_NAMESPACE

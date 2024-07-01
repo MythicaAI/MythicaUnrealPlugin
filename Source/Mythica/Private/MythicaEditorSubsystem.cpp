@@ -7,7 +7,7 @@
 #include "HttpModule.h"
 #include "MythicaDeveloperSettings.h"
 #include "ObjectTools.h"
-#include "UObject/Package.h"
+#include "UObject/SavePackage.h"
 
 DEFINE_LOG_CATEGORY(LogMythica);
 
@@ -312,7 +312,11 @@ void UMythicaEditorSubsystem::OnDownloadAssetResponse(FHttpRequestPtr Request, F
     {
         UPackage* Package = Cast<UPackage>(Object->GetOuter());
         FString Filename = FPackageName::LongPackageNameToFilename(Package->GetName(), FPackageName::GetAssetPackageExtension());
-        UPackage::SavePackage(Package, nullptr, EObjectFlags::RF_Public | EObjectFlags::RF_Standalone, *Filename);
+
+        FSavePackageArgs SaveArgs;
+        SaveArgs.TopLevelFlags = EObjectFlags::RF_Public | EObjectFlags::RF_Standalone;
+
+        UPackage::SavePackage(Package, nullptr, *Filename, SaveArgs);
     }
 
     AddInstalledAsset(PackageId, ImportData->DestinationPath);
