@@ -46,13 +46,7 @@ bool UMythicaEditorSubsystem::IsAssetInstalled(const FString& PackageId)
 
 UTexture2D* UMythicaEditorSubsystem::GetThumbnail(const FString& PackageId)
 {
-    FMythicaAsset* Asset = FindAsset(PackageId);
-    if (!Asset)
-    {
-        return nullptr;
-    }
-
-    UTexture2D** Texture = ThumbnailCache.Find(Asset->ThumbnailFileId);
+    UTexture2D** Texture = ThumbnailCache.Find(PackageId);
     return Texture ? *Texture : nullptr;
 }
 
@@ -488,7 +482,7 @@ void UMythicaEditorSubsystem::LoadThumbnails()
 {
     for (FMythicaAsset& Asset : AssetList)
     {
-        if (Asset.ThumbnailFileId.IsEmpty() || ThumbnailCache.Contains(Asset.ThumbnailFileId))
+        if (Asset.ThumbnailFileId.IsEmpty() || ThumbnailCache.Contains(Asset.PackageId))
         {
             continue;
         }
@@ -588,7 +582,7 @@ void UMythicaEditorSubsystem::OnThumbnailDownloadResponse(FHttpRequestPtr Reques
         return;
     }
 
-    ThumbnailCache.Add(ThumbnailFileID, NewTexture);
+    ThumbnailCache.Add(PackageID, NewTexture);
 
     OnThumbnailLoaded.Broadcast(PackageID);
 }
