@@ -581,7 +581,7 @@ void UMythicaEditorSubsystem::OnThumbnailDownloadResponse(FHttpRequestPtr Reques
 
     const int32 Width = Image.GetWidth();
     const int32 Height = Image.GetHeight();
-    UTexture2D* NewTexture = UTexture2D::CreateTransient(Width, Height, PixelFormat);
+    UTexture2D* NewTexture = UTexture2D::CreateTransient(Width, Height, PixelFormat, NAME_None, Image.RawData);
     if (!NewTexture)
     {
         UE_LOG(LogMythica, Error, TEXT("Failed to create texture for thumbnail %s"), *ThumbnailFileID);
