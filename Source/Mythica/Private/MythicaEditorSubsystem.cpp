@@ -165,7 +165,7 @@ void UMythicaEditorSubsystem::OnGetAssetsResponse(FHttpRequestPtr Request, FHttp
             continue;
         }
 
-        FString PackageId = JsonObject->GetStringField(TEXT("package_id"));
+        FString PackageId = JsonObject->GetStringField(TEXT("asset_id"));
         FString Name = JsonObject->GetStringField(TEXT("name"));
         FString Description = JsonObject->GetStringField(TEXT("description"));
 
@@ -176,7 +176,7 @@ void UMythicaEditorSubsystem::OnGetAssetsResponse(FHttpRequestPtr Request, FHttp
         }
 
         FString ThumbnailFileId;
-        TArray<TSharedPtr<FJsonValue>> ThumbnailObject = JsonObject->GetArrayField(TEXT("thumbnails"));
+        TArray<TSharedPtr<FJsonValue>> ThumbnailObject = ContentsObject->GetArrayField(TEXT("thumbnails"));
         if (ThumbnailObject.Num() > 0)
         {
             ThumbnailFileId = ThumbnailObject[0]->AsObject()->GetStringField(TEXT("file_id"));
@@ -184,16 +184,6 @@ void UMythicaEditorSubsystem::OnGetAssetsResponse(FHttpRequestPtr Request, FHttp
 
         AssetList.Push({ PackageId, Name, Description, ThumbnailFileId });
     }
-
-    AssetList.Push({ "921f6530-da50-469a-90e7-983332ac6a0c", "Mythica Flora", "Library of plants and trees.", "00000000-0000-0000-0000-000000000000" });
-    AssetList.Push({ "b249f5ee-5edf-4377-a5a3-6bf244915b97", "Stair Tool", "Converts geometry into stairs.", "00000000-0000-0000-0000-000000000000" });
-
-#if 1
-    for (FMythicaAsset& Asset : AssetList)
-    {
-        Asset.ThumbnailFileId = "488fcd8e-5228-4aee-aa44-bfdf75863a3e";
-    }
-#endif
 
     OnAssetListUpdated.Broadcast();
 
