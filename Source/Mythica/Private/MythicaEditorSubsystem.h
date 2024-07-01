@@ -10,6 +10,7 @@ DECLARE_LOG_CATEGORY_EXTERN(LogMythica, Log, All);
 
 DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnSessionCreated);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnAssetListUpdated);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnThumbnailLoaded, const FString&, PackageId);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnAssetInstalled, const FString&, PackageId);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnAssetUninstalled, const FString&, PackageId);
 
@@ -26,6 +27,9 @@ struct FMythicaAsset
 
 	UPROPERTY(BlueprintReadOnly)
 	FString Description;
+
+	UPROPERTY()
+	FString ThumbnailFileId;
 };
 
 UCLASS()
@@ -46,6 +50,9 @@ public:
 
 	UFUNCTION(BlueprintPure, Category = "Mythica")
 	bool IsAssetInstalled(const FString& PackageId);
+
+	UFUNCTION(BlueprintPure, Category = "Mythica")
+	UTexture2D* GetThumbnail(const FString& PackageId);
 
 	// Requests
 	UFUNCTION(BlueprintCallable, Category = "Mythica")
@@ -68,6 +75,9 @@ public:
 	FOnAssetListUpdated OnAssetListUpdated;
 
 	UPROPERTY(BlueprintAssignable, Category = "Mythica")
+	FOnThumbnailLoaded OnThumbnailLoaded;
+
+	UPROPERTY(BlueprintAssignable, Category = "Mythica")
 	FOnAssetInstalled OnAssetInstalled;
 
 	UPROPERTY(BlueprintAssignable, Category = "Mythica")
@@ -82,9 +92,15 @@ private:
 	void LoadInstalledAssetList();
 	void AddInstalledAsset(const FString& PackageId, const FString& ImportDirectory);
 
+	void LoadThumbnails();
+	void OnThumbnailDownloadInfoResponse(FHttpRequestPtr Request, FHttpResponsePtr Response, bool bWasSuccessful, const FString& PackageId, const FString& ThumbnailFileID);
+	void OnThumbnailDownloadResponse(FHttpRequestPtr Request, FHttpResponsePtr Response, bool bWasSuccessful, const FString& PackageId, const FString& ThumbnailFileID);
+
 	FMythicaAsset* FindAsset(const FString& PackageId);
 
 	FString AuthToken;
 	TMap<FString, FString> InstalledAssets;
 	TArray<FMythicaAsset> AssetList;
+
+	TMap<FString, UTexture2D*> ThumbnailCache;
 };

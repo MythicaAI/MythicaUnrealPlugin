@@ -43,6 +43,7 @@ public class Mythica : ModuleRules
 				"Engine",
 				"FileUtilities",
 				"HTTP",
+				"ImageCore",
 				"Json",
 				"Slate",
 				"SlateCore",

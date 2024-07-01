@@ -5,6 +5,8 @@
 #include "FileUtilities/ZipArchiveReader.h"
 #include "HAL/FileManager.h"
 #include "HttpModule.h"
+#include "ImageCoreUtils.h"
+#include "ImageUtils.h"
 #include "MythicaDeveloperSettings.h"
 #include "ObjectTools.h"
 #include "UObject/SavePackage.h"
@@ -40,6 +42,12 @@ TArray<FMythicaAsset> UMythicaEditorSubsystem::GetAssetList()
 bool UMythicaEditorSubsystem::IsAssetInstalled(const FString& PackageId)
 {
     return InstalledAssets.Contains(PackageId);
+}
+
+UTexture2D* UMythicaEditorSubsystem::GetThumbnail(const FString& PackageId)
+{
+    UTexture2D** Texture = ThumbnailCache.Find(PackageId);
+    return Texture ? *Texture : nullptr;
 }
 
 void UMythicaEditorSubsystem::CreateSession()
@@ -157,16 +165,39 @@ void UMythicaEditorSubsystem::OnGetAssetsResponse(FHttpRequestPtr Request, FHttp
             continue;
         }
 
+        FString PackageId = JsonObject->GetStringField(TEXT("package_id"));
         FString Name = JsonObject->GetStringField(TEXT("name"));
         FString Description = JsonObject->GetStringField(TEXT("description"));
 
-        AssetList.Push({ Name, Description });
+        TSharedPtr<FJsonObject> ContentsObject = JsonObject->GetObjectField(TEXT("contents"));
+        if (!ContentsObject.IsValid())
+        {
+            continue;
+        }
+
+        FString ThumbnailFileId;
+        TArray<TSharedPtr<FJsonValue>> ThumbnailObject = JsonObject->GetArrayField(TEXT("thumbnails"));
+        if (ThumbnailObject.Num() > 0)
+        {
+            ThumbnailFileId = ThumbnailObject[0]->AsObject()->GetStringField(TEXT("file_id"));
+        }
+
+        AssetList.Push({ PackageId, Name, Description, ThumbnailFileId });
     }
 
-    AssetList.Push({ "921f6530-da50-469a-90e7-983332ac6a0c", "Mythica Flora", "Library of plants and trees." });
-    AssetList.Push({ "b249f5ee-5edf-4377-a5a3-6bf244915b97", "Stair Tool", "Converts geometry into stairs." });
+    AssetList.Push({ "921f6530-da50-469a-90e7-983332ac6a0c", "Mythica Flora", "Library of plants and trees.", "00000000-0000-0000-0000-000000000000" });
+    AssetList.Push({ "b249f5ee-5edf-4377-a5a3-6bf244915b97", "Stair Tool", "Converts geometry into stairs.", "00000000-0000-0000-0000-000000000000" });
+
+#if 1
+    for (FMythicaAsset& Asset : AssetList)
+    {
+        Asset.ThumbnailFileId = "488fcd8e-5228-4aee-aa44-bfdf75863a3e";
+    }
+#endif
 
     OnAssetListUpdated.Broadcast();
+
+    LoadThumbnails();
 }
 
 void UMythicaEditorSubsystem::InstallAsset(const FString& PackageId)
@@ -445,6 +476,115 @@ void UMythicaEditorSubsystem::AddInstalledAsset(const FString& PackageId, const 
     GConfig->Flush(false, *FileAbsolute);
 
     InstalledAssets.Add(PackageId, DirectoryAbsolute);
+}
+
+void UMythicaEditorSubsystem::LoadThumbnails()
+{
+    for (FMythicaAsset& Asset : AssetList)
+    {
+        if (Asset.ThumbnailFileId.IsEmpty() || ThumbnailCache.Contains(Asset.PackageId))
+        {
+            continue;
+        }
+
+        const UMythicaDeveloperSettings* Settings = GetDefault<UMythicaDeveloperSettings>();
+
+        FString Url = FString::Printf(TEXT("http://%s:%d/api/v1/download/info/%s"), *Settings->ServerHost, Settings->ServerPort, *Asset.ThumbnailFileId);
+
+        auto Callback = [this, &Asset](FHttpRequestPtr Request, FHttpResponsePtr Response, bool bConnectedSuccessfully)
+        {
+            OnThumbnailDownloadInfoResponse(Request, Response, bConnectedSuccessfully, Asset.PackageId, Asset.ThumbnailFileId);
+        };
+
+        TSharedRef<IHttpRequest, ESPMode::ThreadSafe> Request = FHttpModule::Get().CreateRequest();
+        Request->SetURL(Url);
+        Request->SetHeader("Authorization", FString::Printf(TEXT("Bearer %s"), *AuthToken));
+        Request->SetVerb("GET");
+        Request->SetHeader("Content-Type", "application/octet-stream");
+        Request->OnProcessRequestComplete().BindLambda(Callback);
+
+        Request->ProcessRequest();
+    }
+}
+
+void UMythicaEditorSubsystem::OnThumbnailDownloadInfoResponse(FHttpRequestPtr Request, FHttpResponsePtr Response, bool bWasSuccessful, const FString& PackageID, const FString& ThumbnailFileID)
+{
+    if (!bWasSuccessful || !Response.IsValid())
+    {
+        UE_LOG(LogMythica, Error, TEXT("Failed to get download info for thumbnail %s"), *ThumbnailFileID);
+        return;
+    }
+
+    FString ResponseContent = Response->GetContentAsString();
+    TSharedRef<TJsonReader<>> Reader = TJsonReaderFactory<>::Create(ResponseContent);
+
+    TSharedPtr<FJsonObject> JsonObject;
+    if (!FJsonSerializer::Deserialize(Reader, JsonObject) || !JsonObject.IsValid())
+    {
+        UE_LOG(LogMythica, Error, TEXT("Failed to parse download info JSON string"));
+        return;
+    }
+
+    FString DownloadURL = JsonObject->GetStringField(TEXT("url"));
+    FString ContentType = JsonObject->GetStringField(TEXT("content_type"));
+    if (DownloadURL.IsEmpty())
+    {
+        UE_LOG(LogMythica, Error, TEXT("Failed to get download URL for file %s"), *ThumbnailFileID);
+        return;
+    }
+
+    auto Callback = [this, PackageID, ThumbnailFileID](FHttpRequestPtr Request, FHttpResponsePtr Response, bool bConnectedSuccessfully)
+    {
+        OnThumbnailDownloadResponse(Request, Response, bConnectedSuccessfully, PackageID, ThumbnailFileID);
+    };
+
+    TSharedRef<IHttpRequest, ESPMode::ThreadSafe> DownloadRequest = FHttpModule::Get().CreateRequest();
+    DownloadRequest->SetURL(DownloadURL);
+    DownloadRequest->SetVerb("GET");
+    DownloadRequest->SetHeader("Content-Type", *ContentType);
+    DownloadRequest->OnProcessRequestComplete().BindLambda(Callback);
+
+    DownloadRequest->ProcessRequest();
+}
+
+void UMythicaEditorSubsystem::OnThumbnailDownloadResponse(FHttpRequestPtr Request, FHttpResponsePtr Response, bool bWasSuccessful, const FString& PackageID, const FString& ThumbnailFileID)
+{
+    if (!bWasSuccessful || !Response.IsValid())
+    {
+        UE_LOG(LogMythica, Error, TEXT("Failed to download thumbnail %s"), *ThumbnailFileID);
+        return;
+    }
+
+    TArray<uint8> PackageData = Response->GetContent();
+
+    FImage Image;
+    bool Decompressed = FImageUtils::DecompressImage(PackageData.GetData(), PackageData.Num(), Image);
+    if (!Decompressed)
+    {
+        UE_LOG(LogMythica, Error, TEXT("Failed to decompress image for thumbnail %s"), *ThumbnailFileID);
+        return;
+    }
+
+    ERawImageFormat::Type NewFormat;
+    EPixelFormat PixelFormat = FImageCoreUtils::GetPixelFormatForRawImageFormat(Image.Format, &NewFormat);
+    if (Image.Format != NewFormat)
+    {
+        Image.ChangeFormat(NewFormat, ERawImageFormat::GetDefaultGammaSpace(NewFormat));
+        PixelFormat = FImageCoreUtils::GetPixelFormatForRawImageFormat(Image.Format);
+    }
+
+    const int32 Width = Image.GetWidth();
+    const int32 Height = Image.GetHeight();
+    UTexture2D* NewTexture = UTexture2D::CreateTransient(Width, Height, PixelFormat, NAME_None, Image.RawData);
+    if (!NewTexture)
+    {
+        UE_LOG(LogMythica, Error, TEXT("Failed to create texture for thumbnail %s"), *ThumbnailFileID);
+        return;
+    }
+
+    ThumbnailCache.Add(PackageID, NewTexture);
+
+    OnThumbnailLoaded.Broadcast(PackageID);
 }
 
 FMythicaAsset* UMythicaEditorSubsystem::FindAsset(const FString& PackageId)
