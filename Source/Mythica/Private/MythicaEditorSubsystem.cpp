@@ -231,11 +231,8 @@ void UMythicaEditorSubsystem::OnDownloadInfoResponse(FHttpRequestPtr Request, FH
         return;
     }   
 
-    DownloadURL = DownloadURL.Replace(TEXT("minio"), TEXT("localhost"));
-
     TSharedRef<IHttpRequest, ESPMode::ThreadSafe> DownloadRequest = FHttpModule::Get().CreateRequest();
     DownloadRequest->SetURL(DownloadURL);
-    DownloadRequest->SetHeader("Authorization", FString::Printf(TEXT("Bearer %s"), *AuthToken));
     DownloadRequest->SetVerb("GET");
     DownloadRequest->SetHeader("Content-Type", *ContentType);
     DownloadRequest->OnProcessRequestComplete().BindUObject(this, &UMythicaEditorSubsystem::OnDownloadAssetResponse);
@@ -245,7 +242,7 @@ void UMythicaEditorSubsystem::OnDownloadInfoResponse(FHttpRequestPtr Request, FH
 
 void UMythicaEditorSubsystem::OnDownloadAssetResponse(FHttpRequestPtr Request, FHttpResponsePtr Response, bool bWasSuccessful)
 {
-#if 0
+#if 1
     if (!bWasSuccessful || !Response.IsValid())
     {
         UE_LOG(LogMythica, Error, TEXT("Failed to download asset"));
