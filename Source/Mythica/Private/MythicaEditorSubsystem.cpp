@@ -194,19 +194,23 @@ void UMythicaEditorSubsystem::InstallAsset(const FString& PackageId)
 
     FString Url = FString::Printf(TEXT("http://%s:%d/api/v1/download/info/%s"), *Settings->ServerHost, Settings->ServerPort, *DownloadId);
 
+    auto Callback = [this, PackageId](FHttpRequestPtr Request, FHttpResponsePtr Response, bool bConnectedSuccessfully)
+    {
+        OnDownloadInfoResponse(Request, Response, bConnectedSuccessfully, PackageId);
+    };
+
     TSharedRef<IHttpRequest, ESPMode::ThreadSafe> Request = FHttpModule::Get().CreateRequest();
     Request->SetURL(Url);
     Request->SetHeader("Authorization", FString::Printf(TEXT("Bearer %s"), *AuthToken));
     Request->SetVerb("GET");
     Request->SetHeader("Content-Type", "application/octet-stream");
-    Request->OnProcessRequestComplete().BindUObject(this, &UMythicaEditorSubsystem::OnDownloadInfoResponse);
+    Request->OnProcessRequestComplete().BindLambda(Callback);
 
     Request->ProcessRequest();
 }
 
-void UMythicaEditorSubsystem::OnDownloadInfoResponse(FHttpRequestPtr Request, FHttpResponsePtr Response, bool bWasSuccessful)
+void UMythicaEditorSubsystem::OnDownloadInfoResponse(FHttpRequestPtr Request, FHttpResponsePtr Response, bool bWasSuccessful, const FString& PackageId)
 {
-    FString PackageId = FPaths::GetBaseFilename(Request->GetURL());
     if (!bWasSuccessful || !Response.IsValid())
     {
         UE_LOG(LogMythica, Error, TEXT("Failed to get download info for package %s"), *PackageId);
@@ -231,39 +235,28 @@ void UMythicaEditorSubsystem::OnDownloadInfoResponse(FHttpRequestPtr Request, FH
         return;
     }   
 
+    auto Callback = [this, PackageId](FHttpRequestPtr Request, FHttpResponsePtr Response, bool bConnectedSuccessfully)
+    {
+        OnDownloadAssetResponse(Request, Response, bConnectedSuccessfully, PackageId);
+    };
+
     TSharedRef<IHttpRequest, ESPMode::ThreadSafe> DownloadRequest = FHttpModule::Get().CreateRequest();
     DownloadRequest->SetURL(DownloadURL);
     DownloadRequest->SetVerb("GET");
     DownloadRequest->SetHeader("Content-Type", *ContentType);
-    DownloadRequest->OnProcessRequestComplete().BindUObject(this, &UMythicaEditorSubsystem::OnDownloadAssetResponse);
+    DownloadRequest->OnProcessRequestComplete().BindLambda(Callback);
 
     DownloadRequest->ProcessRequest();
 }
 
-void UMythicaEditorSubsystem::OnDownloadAssetResponse(FHttpRequestPtr Request, FHttpResponsePtr Response, bool bWasSuccessful)
+void UMythicaEditorSubsystem::OnDownloadAssetResponse(FHttpRequestPtr Request, FHttpResponsePtr Response, bool bWasSuccessful, const FString& PackageId)
 {
-#if 1
     if (!bWasSuccessful || !Response.IsValid())
     {
         UE_LOG(LogMythica, Error, TEXT("Failed to download asset"));
         return;
     }
 
-    TArray<uint8> PackageData = Response->GetContent();
-
-#else
-    FString TestPackage = "D:/TestPackage.zip";
-
-    TArray<uint8> PackageData;
-    bool PackageLoaded = FFileHelper::LoadFileToArray(PackageData, *TestPackage);
-    if (!PackageLoaded)
-    {
-        UE_LOG(LogMythica, Error, TEXT("Failed to load test package %s"), *TestPackage);
-        return;
-    }
-#endif
-
-    FString PackageId = FPaths::GetBaseFilename(Request->GetURL());
     if (InstalledAssets.Contains(PackageId))
     {
         UE_LOG(LogMythica, Error, TEXT("Package already installed %s"), *PackageId);
@@ -280,6 +273,7 @@ void UMythicaEditorSubsystem::OnDownloadAssetResponse(FHttpRequestPtr Request, F
     // Save package to disk
     FString PackagePath = FPaths::Combine(FPaths::ProjectIntermediateDir(), TEXT("MythicaCache"), PackageId, PackageId + ".zip");
 
+    TArray<uint8> PackageData = Response->GetContent();
     bool PackageWritten = FFileHelper::SaveArrayToFile(PackageData, *PackagePath);
     if (!PackageWritten)
     {
