@@ -186,20 +186,61 @@ void UMythicaEditorSubsystem::InstallAsset(const FString& PackageId)
 
     const UMythicaDeveloperSettings* Settings = GetDefault<UMythicaDeveloperSettings>();
 
-    FString Url = FString::Printf(TEXT("http://%s:%d/api/v1/asset/zip/%s"), *Settings->ServerHost, Settings->ServerPort, *PackageId);
+    FString DownloadId = PackageId;
+#if 1
+    // Work around not having automated zip file generation
+    DownloadId = "4a1e841d-29e5-4b30-9af7-de577479a438";
+#endif
+
+    FString Url = FString::Printf(TEXT("http://%s:%d/api/v1/download/info/%s"), *Settings->ServerHost, Settings->ServerPort, *DownloadId);
 
     TSharedRef<IHttpRequest, ESPMode::ThreadSafe> Request = FHttpModule::Get().CreateRequest();
     Request->SetURL(Url);
     Request->SetHeader("Authorization", FString::Printf(TEXT("Bearer %s"), *AuthToken));
     Request->SetVerb("GET");
     Request->SetHeader("Content-Type", "application/octet-stream");
-    Request->OnProcessRequestComplete().BindUObject(this, &UMythicaEditorSubsystem::OnDownloadAssetResponse);
+    Request->OnProcessRequestComplete().BindUObject(this, &UMythicaEditorSubsystem::OnDownloadInfoResponse);
 
-#if 0
     Request->ProcessRequest();
-#else
-    OnDownloadAssetResponse(Request, nullptr, true);
-#endif
+}
+
+void UMythicaEditorSubsystem::OnDownloadInfoResponse(FHttpRequestPtr Request, FHttpResponsePtr Response, bool bWasSuccessful)
+{
+    FString PackageId = FPaths::GetBaseFilename(Request->GetURL());
+    if (!bWasSuccessful || !Response.IsValid())
+    {
+        UE_LOG(LogMythica, Error, TEXT("Failed to get download info for package %s"), *PackageId);
+        return;
+    }
+
+    FString ResponseContent = Response->GetContentAsString();
+    TSharedRef<TJsonReader<>> Reader = TJsonReaderFactory<>::Create(ResponseContent);
+
+    TSharedPtr<FJsonObject> JsonObject;
+    if (!FJsonSerializer::Deserialize(Reader, JsonObject) || !JsonObject.IsValid())
+    {
+        UE_LOG(LogMythica, Error, TEXT("Failed to parse download info JSON string"));
+        return;
+    }
+
+    FString DownloadURL = JsonObject->GetStringField(TEXT("url"));
+    FString ContentType = JsonObject->GetStringField(TEXT("content_type"));
+    if (DownloadURL.IsEmpty())
+    {
+        UE_LOG(LogMythica, Error, TEXT("Failed to get download URL for package %s"), *PackageId);
+        return;
+    }   
+
+    DownloadURL = DownloadURL.Replace(TEXT("minio"), TEXT("localhost"));
+
+    TSharedRef<IHttpRequest, ESPMode::ThreadSafe> DownloadRequest = FHttpModule::Get().CreateRequest();
+    DownloadRequest->SetURL(DownloadURL);
+    DownloadRequest->SetHeader("Authorization", FString::Printf(TEXT("Bearer %s"), *AuthToken));
+    DownloadRequest->SetVerb("GET");
+    DownloadRequest->SetHeader("Content-Type", *ContentType);
+    DownloadRequest->OnProcessRequestComplete().BindUObject(this, &UMythicaEditorSubsystem::OnDownloadAssetResponse);
+
+    DownloadRequest->ProcessRequest();
 }
 
 void UMythicaEditorSubsystem::OnDownloadAssetResponse(FHttpRequestPtr Request, FHttpResponsePtr Response, bool bWasSuccessful)
