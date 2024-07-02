@@ -27,7 +27,9 @@ struct FMythicaAssetVersion
 	
 	UPROPERTY(BlueprintReadOnly)
 	int32 Patch = 0;
-};	
+
+	bool operator<(const FMythicaAssetVersion& Other) const;
+};
 
 USTRUCT(BlueprintType)
 struct FMythicaAsset

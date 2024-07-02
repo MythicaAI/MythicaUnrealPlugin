@@ -17,6 +17,13 @@ const TCHAR* ConfigFile = TEXT("PackageInfo.ini");
 const TCHAR* ConfigPackageInfoSection = TEXT("PackageInfo");
 const TCHAR* ConfigPackageIdKey = TEXT("PackageId");
 
+bool FMythicaAssetVersion::operator<(const FMythicaAssetVersion& Other) const
+{
+    return Major < Other.Major
+        || (Major == Other.Major && Minor < Other.Minor)
+        || (Major == Other.Major && Minor == Other.Minor && Patch < Other.Patch);
+}
+
 void UMythicaEditorSubsystem::Initialize(FSubsystemCollectionBase& Collection)
 {
     Super::Initialize(Collection);
@@ -196,6 +203,12 @@ void UMythicaEditorSubsystem::OnGetAssetsResponse(FHttpRequestPtr Request, FHttp
 
         AssetList.Push({ PackageId, Name, Description, AssetVersion, ThumbnailFileId });
     }
+
+    AssetList.Sort([](const FMythicaAsset& a, const FMythicaAsset& b)
+    {
+        int32 compare = a.Name.Compare(b.Name);
+        return compare < 0 || compare == 0 && b.Version < a.Version;
+    });
 
     OnAssetListUpdated.Broadcast();
 
