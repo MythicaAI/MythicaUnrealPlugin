@@ -74,6 +74,9 @@ public:
 	UFUNCTION(BlueprintPure, Category = "Mythica")
 	EMythicaSessionState GetSessionState();
 
+	UFUNCTION(BlueprintPure, Category = "Mythica")
+	bool CanInstallAssets();
+
 	UFUNCTION(BlueprintCallable, Category = "Mythica")
 	TArray<FMythicaAsset> GetAssetList();
 

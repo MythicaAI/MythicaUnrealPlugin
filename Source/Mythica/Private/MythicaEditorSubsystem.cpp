@@ -41,6 +41,11 @@ EMythicaSessionState UMythicaEditorSubsystem::GetSessionState()
     return SessionState;
 }
 
+bool UMythicaEditorSubsystem::CanInstallAssets()
+{
+    return FModuleManager::Get().ModuleExists(TEXT("HoudiniEngine"));
+}
+
 TArray<FMythicaAsset> UMythicaEditorSubsystem::GetAssetList()
 {
     return AssetList;
