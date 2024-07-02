@@ -19,13 +19,13 @@ struct FMythicaAssetVersion
 {
 	GENERATED_BODY()
 	
-	UPROPERTY(BlueprintReadOnly)
+	UPROPERTY(BlueprintReadOnly, Category = "Version")
 	int32 Major = 0;
 	
-	UPROPERTY(BlueprintReadOnly)
+	UPROPERTY(BlueprintReadOnly, Category = "Version")
 	int32 Minor = 0;
 	
-	UPROPERTY(BlueprintReadOnly)
+	UPROPERTY(BlueprintReadOnly, Category = "Version")
 	int32 Patch = 0;
 
 	bool operator<(const FMythicaAssetVersion& Other) const;
@@ -36,16 +36,16 @@ struct FMythicaAsset
 {
     GENERATED_BODY()
 
-	UPROPERTY(BlueprintReadOnly)
+	UPROPERTY(BlueprintReadOnly, Category = "Data")
 	FString PackageId;
 	
-	UPROPERTY(BlueprintReadOnly)
+	UPROPERTY(BlueprintReadOnly, Category = "Data")
     FString Name;
 
-	UPROPERTY(BlueprintReadOnly)
+	UPROPERTY(BlueprintReadOnly, Category = "Data")
 	FString Description;
 
-	UPROPERTY(BlueprintReadOnly)
+	UPROPERTY(BlueprintReadOnly, Category = "Data")
 	FMythicaAssetVersion Version;
 
 	UPROPERTY()
