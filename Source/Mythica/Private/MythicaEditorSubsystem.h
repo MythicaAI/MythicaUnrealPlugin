@@ -8,7 +8,16 @@
 
 DECLARE_LOG_CATEGORY_EXTERN(LogMythica, Log, All);
 
-DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnSessionCreated);
+UENUM(BlueprintType)
+enum EMythicaSessionState
+{
+	None,
+	RequestingSession,
+	SessionFailed,
+	SessionCreated
+};
+
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnSessionStateChanged, EMythicaSessionState, State);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnAssetListUpdated);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnThumbnailLoaded, const FString&, PackageId);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnAssetInstalled, const FString&, PackageId);
@@ -63,7 +72,7 @@ class UMythicaEditorSubsystem : public UEditorSubsystem
 public:
 	// Getters
 	UFUNCTION(BlueprintPure, Category = "Mythica")
-	bool IsAuthenticated();
+	EMythicaSessionState GetSessionState();
 
 	UFUNCTION(BlueprintCallable, Category = "Mythica")
 	TArray<FMythicaAsset> GetAssetList();
@@ -89,7 +98,7 @@ public:
 
 	// Delegates
 	UPROPERTY(BlueprintAssignable, Category = "Mythica")
-	FOnSessionCreated OnSessionCreated;
+	FOnSessionStateChanged OnSessionStateChanged;
 
 	UPROPERTY(BlueprintAssignable, Category = "Mythica")
 	FOnAssetListUpdated OnAssetListUpdated;
@@ -109,6 +118,8 @@ private:
 	void OnDownloadInfoResponse(FHttpRequestPtr Request, FHttpResponsePtr Response, bool bWasSuccessful, const FString& PackageId);
 	void OnDownloadAssetResponse(FHttpRequestPtr Request, FHttpResponsePtr Response, bool bWasSuccessful, const FString& PackageId);
 
+	void SetSessionState(EMythicaSessionState NewState);
+
 	void LoadInstalledAssetList();
 	void AddInstalledAsset(const FString& PackageId, const FString& ImportDirectory);
 
@@ -118,7 +129,9 @@ private:
 
 	FMythicaAsset* FindAsset(const FString& PackageId);
 
+	EMythicaSessionState SessionState = EMythicaSessionState::None;
 	FString AuthToken;
+
 	TMap<FString, FString> InstalledAssets;
 	TArray<FMythicaAsset> AssetList;
 
