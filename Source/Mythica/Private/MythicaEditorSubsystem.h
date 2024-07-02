@@ -15,6 +15,23 @@ DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnAssetInstalled, const FString&, P
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnAssetUninstalled, const FString&, PackageId);
 
 USTRUCT(BlueprintType)
+struct FMythicaAssetVersion
+{
+	GENERATED_BODY()
+	
+	UPROPERTY(BlueprintReadOnly)
+	int32 Major = 0;
+	
+	UPROPERTY(BlueprintReadOnly)
+	int32 Minor = 0;
+	
+	UPROPERTY(BlueprintReadOnly)
+	int32 Patch = 0;
+
+	bool operator<(const FMythicaAssetVersion& Other) const;
+};
+
+USTRUCT(BlueprintType)
 struct FMythicaAsset
 {
     GENERATED_BODY()
@@ -27,6 +44,9 @@ struct FMythicaAsset
 
 	UPROPERTY(BlueprintReadOnly)
 	FString Description;
+
+	UPROPERTY(BlueprintReadOnly)
+	FMythicaAssetVersion Version;
 
 	UPROPERTY()
 	FString ThumbnailFileId;
