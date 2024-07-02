@@ -1,12 +1,12 @@
 {
 	"FileVersion": 3,
 	"Version": 1,
-	"VersionName": "1.0",
+	"VersionName": "1.0.0",
 	"FriendlyName": "Mythica",
-	"Description": "",
-	"Category": "Other",
+	"Description": "Library of procedural tools.",
+	"Category": "Procedural",
 	"CreatedBy": "Mythica",
-	"CreatedByURL": "",
+	"CreatedByURL": "https://www.mythica.ai/",
 	"DocsURL": "",
 	"MarketplaceURL": "",
 	"SupportURL": "",
@@ -19,6 +19,12 @@
 			"Name": "Mythica",
 			"Type": "Editor",
 			"LoadingPhase": "Default"
+		}
+	],
+	"Plugins": [
+		{
+			"Name": "HoudiniEngine",
+			"Enabled": true
 		}
 	]
 }
