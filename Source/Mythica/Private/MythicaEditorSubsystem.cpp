@@ -36,9 +36,14 @@ void UMythicaEditorSubsystem::Deinitialize()
     Super::Deinitialize();
 }
 
-bool UMythicaEditorSubsystem::IsAuthenticated()
+EMythicaSessionState UMythicaEditorSubsystem::GetSessionState()
 {
-    return !AuthToken.IsEmpty();
+    return SessionState;
+}
+
+bool UMythicaEditorSubsystem::CanInstallAssets()
+{
+    return FModuleManager::Get().ModuleExists(TEXT("HoudiniEngine"));
 }
 
 TArray<FMythicaAsset> UMythicaEditorSubsystem::GetAssetList()
@@ -59,7 +64,7 @@ UTexture2D* UMythicaEditorSubsystem::GetThumbnail(const FString& PackageId)
 
 void UMythicaEditorSubsystem::CreateSession()
 {
-    if (IsAuthenticated())
+    if (SessionState != EMythicaSessionState::None && SessionState != EMythicaSessionState::SessionFailed)
     {
         return;
     }
@@ -68,11 +73,13 @@ void UMythicaEditorSubsystem::CreateSession()
     if (Settings->ProfileId.IsEmpty())
     {
         UE_LOG(LogMythica, Error, TEXT("Profile ID is empty"));
+        SetSessionState(EMythicaSessionState::SessionFailed);
         return;
     }
     if (Settings->ServerHost.IsEmpty())
     {
         UE_LOG(LogMythica, Error, TEXT("ServerHost is empty"));
+        SetSessionState(EMythicaSessionState::SessionFailed);
         return;
     }
 
@@ -85,6 +92,8 @@ void UMythicaEditorSubsystem::CreateSession()
     Request->OnProcessRequestComplete().BindUObject(this, &UMythicaEditorSubsystem::OnCreateSessionResponse);
 
     Request->ProcessRequest();
+
+    SetSessionState(EMythicaSessionState::RequestingSession);
 }
 
 void UMythicaEditorSubsystem::OnCreateSessionResponse(FHttpRequestPtr Request, FHttpResponsePtr Response, bool bWasSuccessful)
@@ -92,6 +101,7 @@ void UMythicaEditorSubsystem::OnCreateSessionResponse(FHttpRequestPtr Request, F
     if (!bWasSuccessful || !Response.IsValid())
     {
         UE_LOG(LogMythica, Error, TEXT("Failed to create session"));
+        SetSessionState(EMythicaSessionState::SessionFailed);
         return;
     }
 
@@ -102,6 +112,7 @@ void UMythicaEditorSubsystem::OnCreateSessionResponse(FHttpRequestPtr Request, F
     if (!FJsonSerializer::Deserialize(Reader, JsonObject) || !JsonObject.IsValid())
     {
         UE_LOG(LogMythica, Error, TEXT("Failed to parse JSON string"));
+        SetSessionState(EMythicaSessionState::SessionFailed);
         return;
     }
 
@@ -109,16 +120,18 @@ void UMythicaEditorSubsystem::OnCreateSessionResponse(FHttpRequestPtr Request, F
     if (!JsonObject->TryGetStringField(TEXT("token"), Token))
     {
         UE_LOG(LogMythica, Error, TEXT("Failed to get token from JSON string"));
+        SetSessionState(EMythicaSessionState::SessionFailed);
+        return;
     }
 
     AuthToken = Token;
 
-    OnSessionCreated.Broadcast();
+    SetSessionState(EMythicaSessionState::SessionCreated);
 }
 
 void UMythicaEditorSubsystem::UpdateAssetList()
 {
-    if (!IsAuthenticated())
+    if (SessionState != EMythicaSessionState::SessionCreated)
     {
         return;
     }
@@ -439,6 +452,12 @@ void UMythicaEditorSubsystem::UninstallAsset(const FString& PackageId)
     InstalledAssets.Remove(PackageId);
 
     OnAssetUninstalled.Broadcast(PackageId);
+}
+
+void UMythicaEditorSubsystem::SetSessionState(EMythicaSessionState NewState)
+{
+    SessionState = NewState;
+    OnSessionStateChanged.Broadcast(NewState);
 }
 
 void UMythicaEditorSubsystem::LoadInstalledAssetList()
