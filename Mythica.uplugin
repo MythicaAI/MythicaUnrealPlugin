@@ -20,11 +20,5 @@
 			"Type": "Editor",
 			"LoadingPhase": "Default"
 		}
-	],
-	"Plugins": [
-		{
-			"Name": "HoudiniEngine",
-			"Enabled": true
-		}
 	]
 }
