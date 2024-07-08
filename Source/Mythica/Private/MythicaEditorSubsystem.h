@@ -124,6 +124,7 @@ private:
 	void SetSessionState(EMythicaSessionState NewState);
 
 	void LoadInstalledAssetList();
+	FString GetUniqueImportDirectory(const FString& PackageName);
 	void AddInstalledAsset(const FString& PackageId, const FString& ImportDirectory);
 
 	void LoadThumbnails();

@@ -380,11 +380,9 @@ void UMythicaEditorSubsystem::OnDownloadAssetResponse(FHttpRequestPtr Request, F
     }
 
     // Import HDA files into Unreal
-    const UMythicaDeveloperSettings* Settings = GetDefault<UMythicaDeveloperSettings>();
-
     UAutomatedAssetImportData* ImportData = NewObject<UAutomatedAssetImportData>();
     ImportData->bReplaceExisting = true;
-    ImportData->DestinationPath = FPaths::Combine(Settings->ImportDirectory, ObjectTools::SanitizeObjectPath(Asset->Name));
+    ImportData->DestinationPath = GetUniqueImportDirectory(ObjectTools::SanitizeObjectPath(Asset->Name));
     ImportData->Filenames = HDAFilePaths;
 
     FAssetToolsModule& AssetToolsModule = FModuleManager::GetModuleChecked<FAssetToolsModule>("AssetTools");
@@ -494,18 +492,35 @@ void UMythicaEditorSubsystem::LoadInstalledAssetList()
     }
 }
 
+FString UMythicaEditorSubsystem::GetUniqueImportDirectory(const FString& PackageName)
+{
+    const UMythicaDeveloperSettings* Settings = GetDefault<UMythicaDeveloperSettings>();
+
+    FString PackagePath = FPaths::Combine(Settings->ImportDirectory, PackageName);
+    FString DirectoryRelative = FPackageName::LongPackageNameToFilename(PackagePath);
+    FString DirectoryAbsolute = FPaths::ConvertRelativePathToFull(DirectoryRelative);
+
+    FString UniqueDirectory = DirectoryAbsolute;
+    uint32 Counter = 1;
+    while (IFileManager::Get().DirectoryExists(*UniqueDirectory))
+    {
+        UniqueDirectory = FString::Printf(TEXT("%s_%d"), *DirectoryAbsolute, Counter);
+        Counter++;
+    }
+
+    return UniqueDirectory;
+}
+
 void UMythicaEditorSubsystem::AddInstalledAsset(const FString& PackageId, const FString& ImportDirectory)
 {
     const UMythicaDeveloperSettings* Settings = GetDefault<UMythicaDeveloperSettings>();
 
-    FString DirectoryRelative = FPackageName::LongPackageNameToFilename(ImportDirectory);
-    FString DirectoryAbsolute = FPaths::ConvertRelativePathToFull(DirectoryRelative);
-    FString FileAbsolute = FPaths::Combine(DirectoryAbsolute, ConfigFile);
+    FString FileAbsolute = FPaths::Combine(ImportDirectory, ConfigFile);
 
     GConfig->SetString(ConfigPackageInfoSection, ConfigPackageIdKey, *PackageId, *FileAbsolute);
     GConfig->Flush(false, *FileAbsolute);
 
-    InstalledAssets.Add(PackageId, DirectoryAbsolute);
+    InstalledAssets.Add(PackageId, ImportDirectory);
 }
 
 void UMythicaEditorSubsystem::LoadThumbnails()
