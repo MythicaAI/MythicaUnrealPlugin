@@ -185,7 +185,7 @@ void UMythicaEditorSubsystem::OnGetAssetsResponse(FHttpRequestPtr Request, FHttp
             continue;
         }
 
-        FString PackageId = JsonObject->GetStringField(TEXT("asset_id"));
+        FString PackageId = JsonObject->GetStringField(TEXT("package_id"));
         FString Name = JsonObject->GetStringField(TEXT("name"));
         FString Description = JsonObject->GetStringField(TEXT("description"));
 
@@ -246,10 +246,6 @@ void UMythicaEditorSubsystem::InstallAsset(const FString& PackageId)
     const UMythicaDeveloperSettings* Settings = GetDefault<UMythicaDeveloperSettings>();
 
     FString DownloadId = PackageId;
-#if 1
-    // Work around not having automated zip file generation
-    DownloadId = "4a1e841d-29e5-4b30-9af7-de577479a438";
-#endif
 
     FString Url = FString::Printf(TEXT("http://%s:%d/api/v1/download/info/%s"), *Settings->ServerHost, Settings->ServerPort, *DownloadId);
 
