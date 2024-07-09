@@ -58,7 +58,7 @@ struct FMythicaAsset
 	FMythicaAssetVersion Version;
 
 	UPROPERTY()
-	FString ThumbnailFileId;
+	FString ThumbnailURL;
 };
 
 UCLASS()
@@ -128,8 +128,7 @@ private:
 	void AddInstalledAsset(const FString& PackageId, const FString& ImportDirectory);
 
 	void LoadThumbnails();
-	void OnThumbnailDownloadInfoResponse(FHttpRequestPtr Request, FHttpResponsePtr Response, bool bWasSuccessful, const FString& PackageId, const FString& ThumbnailFileID);
-	void OnThumbnailDownloadResponse(FHttpRequestPtr Request, FHttpResponsePtr Response, bool bWasSuccessful, const FString& PackageId, const FString& ThumbnailFileID);
+	void OnThumbnailDownloadResponse(FHttpRequestPtr Request, FHttpResponsePtr Response, bool bWasSuccessful, const FString& PackageId);
 
 	FMythicaAsset* FindAsset(const FString& PackageId);
 

@@ -13,10 +13,10 @@ public:
 	UMythicaDeveloperSettings(const FObjectInitializer& ObjectInitializer);
 
 	UPROPERTY(Config, EditAnywhere, BlueprintReadOnly, Category = Server)
-	FString ServerHost = TEXT("localhost");
+	FString ServiceURL = TEXT("api.mythica.ai");
 
 	UPROPERTY(Config, EditAnywhere, BlueprintReadOnly, Category = Server)
-	int32 ServerPort = 50555;
+	FString ImagesURL = TEXT("images.mythica.ai");
 
 	UPROPERTY(Config, EditAnywhere, BlueprintReadOnly, Category = Server)
 	FString ImportDirectory = TEXT("/Game/Mythica");

@@ -76,14 +76,14 @@ void UMythicaEditorSubsystem::CreateSession()
         SetSessionState(EMythicaSessionState::SessionFailed);
         return;
     }
-    if (Settings->ServerHost.IsEmpty())
+    if (Settings->ServiceURL.IsEmpty())
     {
-        UE_LOG(LogMythica, Error, TEXT("ServerHost is empty"));
+        UE_LOG(LogMythica, Error, TEXT("ServiceURL is empty"));
         SetSessionState(EMythicaSessionState::SessionFailed);
         return;
     }
 
-    FString Url = FString::Printf(TEXT("http://%s:%d/v1/profiles/start_session/%s"), *Settings->ServerHost, Settings->ServerPort, *Settings->ProfileId);
+    FString Url = FString::Printf(TEXT("http://%s/v1/profiles/start_session/%s"), *Settings->ServiceURL, *Settings->ProfileId);
 
     TSharedRef<IHttpRequest, ESPMode::ThreadSafe> Request = FHttpModule::Get().CreateRequest();
     Request->SetURL(Url);
@@ -138,7 +138,7 @@ void UMythicaEditorSubsystem::UpdateAssetList()
 
     const UMythicaDeveloperSettings* Settings = GetDefault<UMythicaDeveloperSettings>();
 
-    FString Url = FString::Printf(TEXT("http://%s:%d/v1/assets/all"), *Settings->ServerHost, Settings->ServerPort);
+    FString Url = FString::Printf(TEXT("http://%s/v1/assets/all"), *Settings->ServiceURL);
 
     TSharedRef<IHttpRequest, ESPMode::ThreadSafe> Request = FHttpModule::Get().CreateRequest();
     Request->SetURL(Url);
@@ -174,6 +174,8 @@ void UMythicaEditorSubsystem::OnGetAssetsResponse(FHttpRequestPtr Request, FHttp
         return;
     }
 
+    const UMythicaDeveloperSettings* Settings = GetDefault<UMythicaDeveloperSettings>();
+    
     AssetList.Reset();
 
     TArray<TSharedPtr<FJsonValue>> Array = JsonValue->AsArray();
@@ -207,14 +209,20 @@ void UMythicaEditorSubsystem::OnGetAssetsResponse(FHttpRequestPtr Request, FHttp
             continue;
         }
 
-        FString ThumbnailFileId;
-        TArray<TSharedPtr<FJsonValue>> ThumbnailObject = ContentsObject->GetArrayField(TEXT("thumbnails"));
-        if (ThumbnailObject.Num() > 0)
+        FString ThumbnailURL;
+        TArray<TSharedPtr<FJsonValue>> ThumbnailArray = ContentsObject->GetArrayField(TEXT("thumbnails"));
+        if (ThumbnailArray.Num() > 0)
         {
-            ThumbnailFileId = ThumbnailObject[0]->AsObject()->GetStringField(TEXT("file_id"));
+            TSharedPtr<FJsonObject> ThumbnailObject = ThumbnailArray[0]->AsObject();
+
+            FString ContentHash = ThumbnailObject->GetStringField(TEXT("content_hash"));
+            FString FileName = ThumbnailObject->GetStringField(TEXT("file_name"));
+            FString FileExtension = FPaths::GetExtension(FileName);
+
+            ThumbnailURL = FString::Printf(TEXT("http://%s/%s.%s"), *Settings->ImagesURL, *ContentHash, *FileExtension);
         }
 
-        AssetList.Push({ PackageId, Name, Description, AssetVersion, ThumbnailFileId });
+        AssetList.Push({ PackageId, Name, Description, AssetVersion, ThumbnailURL });
     }
 
     AssetList.Sort([](const FMythicaAsset& a, const FMythicaAsset& b)
@@ -247,7 +255,7 @@ void UMythicaEditorSubsystem::InstallAsset(const FString& PackageId)
 
     FString DownloadId = PackageId;
 
-    FString Url = FString::Printf(TEXT("http://%s:%d/v1/download/info/%s"), *Settings->ServerHost, Settings->ServerPort, *DownloadId);
+    FString Url = FString::Printf(TEXT("http://%s/v1/download/info/%s"), *Settings->ServiceURL, *DownloadId);
 
     auto Callback = [this, PackageId](FHttpRequestPtr Request, FHttpResponsePtr Response, bool bConnectedSuccessfully)
     {
@@ -527,23 +535,20 @@ void UMythicaEditorSubsystem::LoadThumbnails()
 {
     for (FMythicaAsset& Asset : AssetList)
     {
-        if (Asset.ThumbnailFileId.IsEmpty() || ThumbnailCache.Contains(Asset.PackageId))
+        if (Asset.ThumbnailURL.IsEmpty() || ThumbnailCache.Contains(Asset.PackageId))
         {
             continue;
         }
 
         const UMythicaDeveloperSettings* Settings = GetDefault<UMythicaDeveloperSettings>();
 
-        FString Url = FString::Printf(TEXT("http://%s:%d/v1/download/info/%s"), *Settings->ServerHost, Settings->ServerPort, *Asset.ThumbnailFileId);
-
         auto Callback = [this, &Asset](FHttpRequestPtr Request, FHttpResponsePtr Response, bool bConnectedSuccessfully)
         {
-            OnThumbnailDownloadInfoResponse(Request, Response, bConnectedSuccessfully, Asset.PackageId, Asset.ThumbnailFileId);
+            OnThumbnailDownloadResponse(Request, Response, bConnectedSuccessfully, Asset.PackageId);
         };
 
         TSharedRef<IHttpRequest, ESPMode::ThreadSafe> Request = FHttpModule::Get().CreateRequest();
-        Request->SetURL(Url);
-        Request->SetHeader("Authorization", FString::Printf(TEXT("Bearer %s"), *AuthToken));
+        Request->SetURL(Asset.ThumbnailURL);
         Request->SetVerb("GET");
         Request->SetHeader("Content-Type", "application/octet-stream");
         Request->OnProcessRequestComplete().BindLambda(Callback);
@@ -552,51 +557,11 @@ void UMythicaEditorSubsystem::LoadThumbnails()
     }
 }
 
-void UMythicaEditorSubsystem::OnThumbnailDownloadInfoResponse(FHttpRequestPtr Request, FHttpResponsePtr Response, bool bWasSuccessful, const FString& PackageID, const FString& ThumbnailFileID)
+void UMythicaEditorSubsystem::OnThumbnailDownloadResponse(FHttpRequestPtr Request, FHttpResponsePtr Response, bool bWasSuccessful, const FString& PackageID)
 {
     if (!bWasSuccessful || !Response.IsValid())
     {
-        UE_LOG(LogMythica, Error, TEXT("Failed to get download info for thumbnail %s"), *ThumbnailFileID);
-        return;
-    }
-
-    FString ResponseContent = Response->GetContentAsString();
-    TSharedRef<TJsonReader<>> Reader = TJsonReaderFactory<>::Create(ResponseContent);
-
-    TSharedPtr<FJsonObject> JsonObject;
-    if (!FJsonSerializer::Deserialize(Reader, JsonObject) || !JsonObject.IsValid())
-    {
-        UE_LOG(LogMythica, Error, TEXT("Failed to parse download info JSON string"));
-        return;
-    }
-
-    FString DownloadURL = JsonObject->GetStringField(TEXT("url"));
-    FString ContentType = JsonObject->GetStringField(TEXT("content_type"));
-    if (DownloadURL.IsEmpty())
-    {
-        UE_LOG(LogMythica, Error, TEXT("Failed to get download URL for file %s"), *ThumbnailFileID);
-        return;
-    }
-
-    auto Callback = [this, PackageID, ThumbnailFileID](FHttpRequestPtr Request, FHttpResponsePtr Response, bool bConnectedSuccessfully)
-    {
-        OnThumbnailDownloadResponse(Request, Response, bConnectedSuccessfully, PackageID, ThumbnailFileID);
-    };
-
-    TSharedRef<IHttpRequest, ESPMode::ThreadSafe> DownloadRequest = FHttpModule::Get().CreateRequest();
-    DownloadRequest->SetURL(DownloadURL);
-    DownloadRequest->SetVerb("GET");
-    DownloadRequest->SetHeader("Content-Type", *ContentType);
-    DownloadRequest->OnProcessRequestComplete().BindLambda(Callback);
-
-    DownloadRequest->ProcessRequest();
-}
-
-void UMythicaEditorSubsystem::OnThumbnailDownloadResponse(FHttpRequestPtr Request, FHttpResponsePtr Response, bool bWasSuccessful, const FString& PackageID, const FString& ThumbnailFileID)
-{
-    if (!bWasSuccessful || !Response.IsValid())
-    {
-        UE_LOG(LogMythica, Error, TEXT("Failed to download thumbnail %s"), *ThumbnailFileID);
+        UE_LOG(LogMythica, Error, TEXT("Failed to download thumbnail for package %s"), *PackageID);
         return;
     }
 
@@ -606,7 +571,7 @@ void UMythicaEditorSubsystem::OnThumbnailDownloadResponse(FHttpRequestPtr Reques
     bool Decompressed = FImageUtils::DecompressImage(PackageData.GetData(), PackageData.Num(), Image);
     if (!Decompressed)
     {
-        UE_LOG(LogMythica, Error, TEXT("Failed to decompress image for thumbnail %s"), *ThumbnailFileID);
+        UE_LOG(LogMythica, Error, TEXT("Failed to decompress image for thumbnail for package  %s"), *PackageID);
         return;
     }
 
@@ -623,7 +588,7 @@ void UMythicaEditorSubsystem::OnThumbnailDownloadResponse(FHttpRequestPtr Reques
     UTexture2D* NewTexture = UTexture2D::CreateTransient(Width, Height, PixelFormat, NAME_None, Image.RawData);
     if (!NewTexture)
     {
-        UE_LOG(LogMythica, Error, TEXT("Failed to create texture for thumbnail %s"), *ThumbnailFileID);
+        UE_LOG(LogMythica, Error, TEXT("Failed to create thumbnail texture for package package %s"), *PackageID);
         return;
     }
 
