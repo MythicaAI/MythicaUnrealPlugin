@@ -76,14 +76,14 @@ void UMythicaEditorSubsystem::CreateSession()
         SetSessionState(EMythicaSessionState::SessionFailed);
         return;
     }
-    if (Settings->ServerHost.IsEmpty())
+    if (Settings->ServiceURL.IsEmpty())
     {
-        UE_LOG(LogMythica, Error, TEXT("ServerHost is empty"));
+        UE_LOG(LogMythica, Error, TEXT("ServiceURL is empty"));
         SetSessionState(EMythicaSessionState::SessionFailed);
         return;
     }
 
-    FString Url = FString::Printf(TEXT("http://%s:%d/v1/profiles/start_session/%s"), *Settings->ServerHost, Settings->ServerPort, *Settings->ProfileId);
+    FString Url = FString::Printf(TEXT("http://%s/v1/profiles/start_session/%s"), *Settings->ServiceURL, *Settings->ProfileId);
 
     TSharedRef<IHttpRequest, ESPMode::ThreadSafe> Request = FHttpModule::Get().CreateRequest();
     Request->SetURL(Url);
@@ -138,7 +138,7 @@ void UMythicaEditorSubsystem::UpdateAssetList()
 
     const UMythicaDeveloperSettings* Settings = GetDefault<UMythicaDeveloperSettings>();
 
-    FString Url = FString::Printf(TEXT("http://%s:%d/v1/assets/all"), *Settings->ServerHost, Settings->ServerPort);
+    FString Url = FString::Printf(TEXT("http://%s/v1/assets/all"), *Settings->ServiceURL);
 
     TSharedRef<IHttpRequest, ESPMode::ThreadSafe> Request = FHttpModule::Get().CreateRequest();
     Request->SetURL(Url);
@@ -247,7 +247,7 @@ void UMythicaEditorSubsystem::InstallAsset(const FString& PackageId)
 
     FString DownloadId = PackageId;
 
-    FString Url = FString::Printf(TEXT("http://%s:%d/v1/download/info/%s"), *Settings->ServerHost, Settings->ServerPort, *DownloadId);
+    FString Url = FString::Printf(TEXT("http://%s/v1/download/info/%s"), *Settings->ServiceURL, *DownloadId);
 
     auto Callback = [this, PackageId](FHttpRequestPtr Request, FHttpResponsePtr Response, bool bConnectedSuccessfully)
     {
@@ -534,7 +534,7 @@ void UMythicaEditorSubsystem::LoadThumbnails()
 
         const UMythicaDeveloperSettings* Settings = GetDefault<UMythicaDeveloperSettings>();
 
-        FString Url = FString::Printf(TEXT("http://%s:%d/v1/download/info/%s"), *Settings->ServerHost, Settings->ServerPort, *Asset.ThumbnailFileId);
+        FString Url = FString::Printf(TEXT("http://%s/v1/download/info/%s"), *Settings->ServiceURL, *Asset.ThumbnailFileId);
 
         auto Callback = [this, &Asset](FHttpRequestPtr Request, FHttpResponsePtr Response, bool bConnectedSuccessfully)
         {
