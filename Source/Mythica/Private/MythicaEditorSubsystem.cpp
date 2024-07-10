@@ -111,7 +111,7 @@ void UMythicaEditorSubsystem::OnCreateSessionResponse(FHttpRequestPtr Request, F
     TSharedPtr<FJsonObject> JsonObject;
     if (!FJsonSerializer::Deserialize(Reader, JsonObject) || !JsonObject.IsValid())
     {
-        UE_LOG(LogMythica, Error, TEXT("Failed to parse JSON string"));
+        UE_LOG(LogMythica, Error, TEXT("Failed to parse create session JSON string"));
         SetSessionState(EMythicaSessionState::SessionFailed);
         return;
     }
@@ -164,7 +164,7 @@ void UMythicaEditorSubsystem::OnGetAssetsResponse(FHttpRequestPtr Request, FHttp
     TSharedPtr<FJsonValue> JsonValue;
     if (!FJsonSerializer::Deserialize(Reader, JsonValue) || !JsonValue.IsValid())
     {
-        UE_LOG(LogMythica, Error, TEXT("Failed to parse JSON string"));
+        UE_LOG(LogMythica, Error, TEXT("Failed to parse get assets JSON string"));
         return;
     }
 
@@ -190,6 +190,11 @@ void UMythicaEditorSubsystem::OnGetAssetsResponse(FHttpRequestPtr Request, FHttp
         FString PackageId = JsonObject->GetStringField(TEXT("package_id"));
         FString Name = JsonObject->GetStringField(TEXT("name"));
         FString Description = JsonObject->GetStringField(TEXT("description"));
+        if (PackageId.IsEmpty())
+        {
+            UE_LOG(LogMythica, Error, TEXT("Missing PackageId for package: %s"), *Name);
+            continue;
+        }
 
         TArray<TSharedPtr<FJsonValue>> Version = JsonObject->GetArrayField(TEXT("version"));
         if (Version.Num() != 3)
