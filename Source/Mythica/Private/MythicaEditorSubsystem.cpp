@@ -190,6 +190,11 @@ void UMythicaEditorSubsystem::OnGetAssetsResponse(FHttpRequestPtr Request, FHttp
         FString PackageId = JsonObject->GetStringField(TEXT("package_id"));
         FString Name = JsonObject->GetStringField(TEXT("name"));
         FString Description = JsonObject->GetStringField(TEXT("description"));
+        if (PackageId.IsEmpty())
+        {
+            UE_LOG(LogMythica, Error, TEXT("Missing PackageId for package: %s"), *Name);
+            continue;
+        }
 
         TArray<TSharedPtr<FJsonValue>> Version = JsonObject->GetArrayField(TEXT("version"));
         if (Version.Num() != 3)
