@@ -17,6 +17,26 @@ const TCHAR* ConfigFile = TEXT("PackageInfo.ini");
 const TCHAR* ConfigPackageInfoSection = TEXT("PackageInfo");
 const TCHAR* ConfigPackageIdKey = TEXT("PackageId");
 
+const TCHAR* ImportableFileExtensions[] = 
+{ 
+    TEXT("hda"), TEXT("hdalc"), TEXT("hdanc"),
+    TEXT("otl"), TEXT("otllc"), TEXT("otlnc")
+};
+
+static bool CanImportAsset(const FString& FilePath)
+{
+    FString Extension = FPaths::GetExtension(FilePath);
+
+    for (const TCHAR* ImportableExtension : ImportableFileExtensions)
+    {
+        if (Extension == ImportableExtension)
+        {
+            return true;
+        }
+    }
+    return false;
+}
+
 bool FMythicaAssetVersion::operator<(const FMythicaAssetVersion& Other) const
 {
     return Major < Other.Major
@@ -350,8 +370,6 @@ void UMythicaEditorSubsystem::OnDownloadAssetResponse(FHttpRequestPtr Request, F
     }
 
     // Unzip package
-    TArray<FString> HDAFilePaths;
-
     IPlatformFile& PlatformFile = FPlatformFileManager::Get().GetPlatformFile();
     IFileHandle* FileHandle = PlatformFile.OpenRead(*PackagePath);
     if (!FileHandle)
@@ -366,6 +384,8 @@ void UMythicaEditorSubsystem::OnDownloadAssetResponse(FHttpRequestPtr Request, F
         UE_LOG(LogMythica, Error, TEXT("Failed to open zip archive %s"), *PackagePath);
         return;
     }
+
+    TArray<FString> ImportFiles;
 
     TArray<FString> Files = Reader.GetFileNames();
     for (const FString& File : Files)
@@ -386,9 +406,9 @@ void UMythicaEditorSubsystem::OnDownloadAssetResponse(FHttpRequestPtr Request, F
             continue;
         }
 
-        if (FPaths::GetExtension(FilePath) == TEXT("hda"))
+        if (CanImportAsset(FilePath))
         {
-            HDAFilePaths.Add(FilePath);
+            ImportFiles.Add(FilePath);
         }
     }
 
@@ -396,11 +416,11 @@ void UMythicaEditorSubsystem::OnDownloadAssetResponse(FHttpRequestPtr Request, F
     UAutomatedAssetImportData* ImportData = NewObject<UAutomatedAssetImportData>();
     ImportData->bReplaceExisting = true;
     ImportData->DestinationPath = GetUniqueImportDirectory(ObjectTools::SanitizeObjectPath(Asset->Name));
-    ImportData->Filenames = HDAFilePaths;
+    ImportData->Filenames = ImportFiles;
 
     FAssetToolsModule& AssetToolsModule = FModuleManager::GetModuleChecked<FAssetToolsModule>("AssetTools");
     TArray<UObject*> ImportedObject = AssetToolsModule.Get().ImportAssetsAutomated(ImportData);
-    if (ImportedObject.Num() != HDAFilePaths.Num())
+    if (ImportedObject.Num() != ImportFiles.Num())
     {
         UE_LOG(LogMythica, Error, TEXT("Failed to import HDA from package %s"), *PackageId);
         return;
