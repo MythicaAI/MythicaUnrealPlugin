@@ -337,6 +337,12 @@ void UMythicaEditorSubsystem::OnDownloadInfoResponse(FHttpRequestPtr Request, FH
     DownloadRequest->ProcessRequest();
 }
 
+struct FFileImportData
+{
+    FString FilePath;
+    FString RelativeImportPath;
+};
+
 void UMythicaEditorSubsystem::OnDownloadAssetResponse(FHttpRequestPtr Request, FHttpResponsePtr Response, bool bWasSuccessful, const FString& PackageId)
 {
     if (!bWasSuccessful || !Response.IsValid())
@@ -385,7 +391,7 @@ void UMythicaEditorSubsystem::OnDownloadAssetResponse(FHttpRequestPtr Request, F
         return;
     }
 
-    TArray<FString> ImportFiles;
+    TArray<FFileImportData> ImportFiles;
 
     TArray<FString> Files = Reader.GetFileNames();
     for (const FString& File : Files)
@@ -408,25 +414,35 @@ void UMythicaEditorSubsystem::OnDownloadAssetResponse(FHttpRequestPtr Request, F
 
         if (CanImportAsset(FilePath))
         {
-            ImportFiles.Add(FilePath);
+            ImportFiles.Add({ FilePath, File });
         }
     }
 
     // Import HDA files into Unreal
-    UAutomatedAssetImportData* ImportData = NewObject<UAutomatedAssetImportData>();
-    ImportData->bReplaceExisting = true;
-    ImportData->DestinationPath = GetUniqueImportDirectory(ObjectTools::SanitizeObjectPath(Asset->Name));
-    ImportData->Filenames = ImportFiles;
-
     FAssetToolsModule& AssetToolsModule = FModuleManager::GetModuleChecked<FAssetToolsModule>("AssetTools");
-    TArray<UObject*> ImportedObject = AssetToolsModule.Get().ImportAssetsAutomated(ImportData);
-    if (ImportedObject.Num() != ImportFiles.Num())
+
+    TArray<UObject*> ImportedObjects;
+    FString BaseImportDirectory = GetUniqueImportDirectory(ObjectTools::SanitizeObjectPath(Asset->Name));
+    for (const FFileImportData& Data : ImportFiles)
     {
-        UE_LOG(LogMythica, Error, TEXT("Failed to import HDA from package %s"), *PackageId);
-        return;
+        FString FullImportDirectory = FPaths::GetPath(FPaths::Combine(BaseImportDirectory, Data.RelativeImportPath));
+        
+        UAutomatedAssetImportData* ImportData = NewObject<UAutomatedAssetImportData>();
+        ImportData->bReplaceExisting = true;
+        ImportData->DestinationPath = FullImportDirectory;
+        ImportData->Filenames = { Data.FilePath };
+
+        TArray<UObject*> Objects = AssetToolsModule.Get().ImportAssetsAutomated(ImportData);
+        if (Objects.Num() != 1)
+        {
+            UE_LOG(LogMythica, Error, TEXT("Failed to import HDA from package %s"), *PackageId);
+            return;
+        }
+
+        ImportedObjects.Add(Objects[0]);
     }
 
-    for (UObject* Object : ImportedObject)
+    for (UObject* Object : ImportedObjects)
     {
         UPackage* Package = Cast<UPackage>(Object->GetOuter());
         FString Filename = FPackageName::LongPackageNameToFilename(Package->GetName(), FPackageName::GetAssetPackageExtension());
@@ -437,7 +453,7 @@ void UMythicaEditorSubsystem::OnDownloadAssetResponse(FHttpRequestPtr Request, F
         UPackage::SavePackage(Package, nullptr, *Filename, SaveArgs);
     }
 
-    AddInstalledAsset(PackageId, ImportData->DestinationPath);
+    AddInstalledAsset(PackageId, BaseImportDirectory);
 
     OnAssetInstalled.Broadcast(PackageId);
 }
