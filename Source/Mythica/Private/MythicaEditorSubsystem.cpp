@@ -17,6 +17,12 @@ const TCHAR* ConfigFile = TEXT("PackageInfo.ini");
 const TCHAR* ConfigPackageInfoSection = TEXT("PackageInfo");
 const TCHAR* ConfigPackageIdKey = TEXT("PackageId");
 
+const TCHAR* ImportableFileExtensions[] = 
+{ 
+    TEXT("hda"), TEXT("hdalc"), TEXT("hdanc"),
+    TEXT("otl"), TEXT("otllc"), TEXT("otlnc")
+};
+
 bool FMythicaAssetVersion::operator<(const FMythicaAssetVersion& Other) const
 {
     return Major < Other.Major
@@ -386,7 +392,17 @@ void UMythicaEditorSubsystem::OnDownloadAssetResponse(FHttpRequestPtr Request, F
             continue;
         }
 
-        if (FPaths::GetExtension(FilePath) == TEXT("hda"))
+        FString Extension = FPaths::GetExtension(FilePath);
+        bool Importable = false;
+        for (const TCHAR* ImportableExtension : ImportableFileExtensions)
+        {
+            if (Extension == ImportableExtension)
+            {
+                Importable = true;
+                break;
+            }
+        }
+        if (Importable)
         {
             HDAFilePaths.Add(FilePath);
         }
