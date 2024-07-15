@@ -37,6 +37,7 @@ public class Mythica : ModuleRules
 			{
 				"AssetRegistry",
 				"AssetTools",
+				"Blutility",
 				"CoreUObject",
 				"DeveloperSettings",
 				"EditorSubsystem",
@@ -47,6 +48,7 @@ public class Mythica : ModuleRules
 				"Json",
 				"Slate",
 				"SlateCore",
+				"UMGEditor",
 				"UnrealEd"
 				// ... add private dependencies that you statically link with here ...	
 			}

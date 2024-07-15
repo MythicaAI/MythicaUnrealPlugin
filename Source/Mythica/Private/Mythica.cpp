@@ -2,11 +2,13 @@
 
 #include "Mythica.h"
 
-#include "Framework/MultiBox/MultiBoxBuilder.h"
+#include "EditorUtilitySubsystem.h"
+#include "EditorUtilityWidgetBlueprint.h"
 #include "LevelEditor.h"
-#include "MythicaPackageManagerWidget.h"
 
 #define LOCTEXT_NAMESPACE "FMythicaModule"
+
+#define PACKAGE_MANAGER_WIDGET_ASSET TEXT("/Mythica/UI/WBP_PackageManager.WBP_PackageManager")
 
 void FMythicaModule::StartupModule()
 {
@@ -19,7 +21,6 @@ void FMythicaModule::StartupModule()
 
 	FLevelEditorModule& LevelEditorModule = FModuleManager::LoadModuleChecked<FLevelEditorModule>("LevelEditor");
 	LevelEditorModule.GetMenuExtensibilityManager()->AddExtender(MenuExtender);
-	LevelEditorModule.OnMapChanged().AddRaw(this, &FMythicaModule::OnMapChanged);
 }
 
 void FMythicaModule::ShutdownModule()
@@ -38,40 +39,9 @@ void FMythicaModule::AddMenu(FMenuBuilder& MenuBuilder)
 
 void FMythicaModule::OnMenuItemClick()
 {
-	if (Window.IsValid())
-	{
-		Window->BringToFront();
-	}
-	else
-	{
-		Window = SNew(SWindow)
-			.Title(FText::FromString("Mythica Package Manager"))
-			.ClientSize(FVector2D(860, 600))
-			.MinWidth(860)
-			.MinHeight(600)
-			.SupportsMinimize(false)
-			.SupportsMaximize(false)
-			[
-				SNew(SMythicaPackageManagerWidget)
-			];
-
-		Window->SetOnWindowClosed(FOnWindowClosed::CreateRaw(this, &FMythicaModule::OnWindowClosed));
-
-		FSlateApplication::Get().AddWindow(Window.ToSharedRef());
-	}
-}
-
-void FMythicaModule::OnWindowClosed(const TSharedRef<SWindow>& InWindow)
-{
-	Window.Reset();
-}
-
-void FMythicaModule::OnMapChanged(UWorld* InWorld, EMapChangeType InMapChangeType)
-{
-	if (Window.IsValid() && InMapChangeType == EMapChangeType::TearDownWorld)
-	{
-		FSlateApplication::Get().RequestDestroyWindow(Window.ToSharedRef());
-	}
+	UEditorUtilitySubsystem* EditorUtilitySubsystem = GEditor->GetEditorSubsystem<UEditorUtilitySubsystem>();
+	UEditorUtilityWidgetBlueprint* UtilityWidgetBlueprint = LoadObject<UEditorUtilityWidgetBlueprint>(NULL, PACKAGE_MANAGER_WIDGET_ASSET, NULL, LOAD_None, NULL);
+	EditorUtilitySubsystem->SpawnAndRegisterTab(UtilityWidgetBlueprint);
 }
 
 #undef LOCTEXT_NAMESPACE
