@@ -16,7 +16,7 @@ public:
 	FString ServiceURL = TEXT("api.mythica.ai");
 
 	UPROPERTY(Config, EditAnywhere, BlueprintReadOnly, Category = Server)
-	FString ImagesURL = TEXT("images.mythica.ai");
+	FString ImagesURL = TEXT("api.mythica.ai/images");
 
 	UPROPERTY(Config, EditAnywhere, BlueprintReadOnly, Category = Server)
 	FString ImportDirectory = TEXT("/Game/Mythica");
