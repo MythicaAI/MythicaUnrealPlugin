@@ -252,7 +252,7 @@ void UMythicaEditorSubsystem::OnGetAssetsResponse(FHttpRequestPtr Request, FHttp
 
     AssetList.Sort([](const FMythicaAsset& a, const FMythicaAsset& b)
     {
-        int32 compare = a.Name.Compare(b.Name);
+        int32 compare = a.Name.Compare(b.Name, ESearchCase::IgnoreCase);
         return compare < 0 || compare == 0 && b.Version < a.Version;
     });
 
