@@ -235,10 +235,11 @@ void UMythicaEditorSubsystem::OnGetAssetsResponse(FHttpRequestPtr Request, FHttp
         }
 
         FString ThumbnailURL;
-        TArray<TSharedPtr<FJsonValue>> ThumbnailArray = ContentsObject->GetArrayField(TEXT("thumbnails"));
-        if (ThumbnailArray.Num() > 0)
+        const TArray<TSharedPtr<FJsonValue>>* ThumbnailArray = nullptr;
+        ContentsObject->TryGetArrayField(TEXT("thumbnails"), ThumbnailArray);
+        if (ThumbnailArray && ThumbnailArray->Num() > 0)
         {
-            TSharedPtr<FJsonObject> ThumbnailObject = ThumbnailArray[0]->AsObject();
+            TSharedPtr<FJsonObject> ThumbnailObject = (*ThumbnailArray)[0]->AsObject();
 
             FString ContentHash = ThumbnailObject->GetStringField(TEXT("content_hash"));
             FString FileName = ThumbnailObject->GetStringField(TEXT("file_name"));
@@ -252,7 +253,7 @@ void UMythicaEditorSubsystem::OnGetAssetsResponse(FHttpRequestPtr Request, FHttp
 
     AssetList.Sort([](const FMythicaAsset& a, const FMythicaAsset& b)
     {
-        int32 compare = a.Name.Compare(b.Name);
+        int32 compare = a.Name.Compare(b.Name, ESearchCase::IgnoreCase);
         return compare < 0 || compare == 0 && b.Version < a.Version;
     });
 
@@ -422,7 +423,7 @@ void UMythicaEditorSubsystem::OnDownloadAssetResponse(FHttpRequestPtr Request, F
     FAssetToolsModule& AssetToolsModule = FModuleManager::GetModuleChecked<FAssetToolsModule>("AssetTools");
 
     TArray<UObject*> ImportedObjects;
-    FString BaseImportDirectory = GetUniqueImportDirectory(ObjectTools::SanitizeObjectPath(Asset->Name));
+    FString BaseImportDirectory = GetUniqueImportDirectory(ObjectTools::SanitizeObjectName(Asset->Name));
     for (const FFileImportData& Data : ImportFiles)
     {
         FString FullImportDirectory = FPaths::GetPath(FPaths::Combine(BaseImportDirectory, Data.RelativeImportPath));
