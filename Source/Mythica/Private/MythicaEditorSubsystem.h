@@ -138,5 +138,6 @@ private:
 	TMap<FString, FString> InstalledAssets;
 	TArray<FMythicaAsset> AssetList;
 
+	UPROPERTY()
 	TMap<FString, UTexture2D*> ThumbnailCache;
 };
