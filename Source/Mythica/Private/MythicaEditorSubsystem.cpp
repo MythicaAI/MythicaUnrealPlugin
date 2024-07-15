@@ -422,7 +422,7 @@ void UMythicaEditorSubsystem::OnDownloadAssetResponse(FHttpRequestPtr Request, F
     FAssetToolsModule& AssetToolsModule = FModuleManager::GetModuleChecked<FAssetToolsModule>("AssetTools");
 
     TArray<UObject*> ImportedObjects;
-    FString BaseImportDirectory = GetUniqueImportDirectory(ObjectTools::SanitizeObjectPath(Asset->Name));
+    FString BaseImportDirectory = GetUniqueImportDirectory(ObjectTools::SanitizeObjectName(Asset->Name));
     for (const FFileImportData& Data : ImportFiles)
     {
         FString FullImportDirectory = FPaths::GetPath(FPaths::Combine(BaseImportDirectory, Data.RelativeImportPath));
