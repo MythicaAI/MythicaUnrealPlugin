@@ -235,10 +235,11 @@ void UMythicaEditorSubsystem::OnGetAssetsResponse(FHttpRequestPtr Request, FHttp
         }
 
         FString ThumbnailURL;
-        TArray<TSharedPtr<FJsonValue>> ThumbnailArray = ContentsObject->GetArrayField(TEXT("thumbnails"));
-        if (ThumbnailArray.Num() > 0)
+        const TArray<TSharedPtr<FJsonValue>>* ThumbnailArray = nullptr;
+        ContentsObject->TryGetArrayField(TEXT("thumbnails"), ThumbnailArray);
+        if (ThumbnailArray && ThumbnailArray->Num() > 0)
         {
-            TSharedPtr<FJsonObject> ThumbnailObject = ThumbnailArray[0]->AsObject();
+            TSharedPtr<FJsonObject> ThumbnailObject = (*ThumbnailArray)[0]->AsObject();
 
             FString ContentHash = ThumbnailObject->GetStringField(TEXT("content_hash"));
             FString FileName = ThumbnailObject->GetStringField(TEXT("file_name"));
