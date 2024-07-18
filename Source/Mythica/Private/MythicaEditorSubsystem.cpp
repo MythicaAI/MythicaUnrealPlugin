@@ -248,7 +248,7 @@ void UMythicaEditorSubsystem::OnGetAssetsResponse(FHttpRequestPtr Request, FHttp
             ThumbnailURL = FString::Printf(TEXT("http://%s/%s.%s"), *Settings->ImagesURL, *ContentHash, *FileExtension);
         }
 
-        AssetList.Push({ PackageId, Name, Description, AssetVersion, ThumbnailURL });
+        AssetList.Push({ PackageId, Name, Description, AssetVersion, {}, ThumbnailURL });
     }
 
     AssetList.Sort([](const FMythicaAsset& a, const FMythicaAsset& b)
