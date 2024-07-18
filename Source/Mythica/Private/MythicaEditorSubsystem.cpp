@@ -82,6 +82,11 @@ UTexture2D* UMythicaEditorSubsystem::GetThumbnail(const FString& PackageId)
     return Texture ? *Texture : nullptr;
 }
 
+FMythicaStats UMythicaEditorSubsystem::GetStats()
+{
+    return Stats;
+}
+
 void UMythicaEditorSubsystem::CreateSession()
 {
     if (SessionState != EMythicaSessionState::None && SessionState != EMythicaSessionState::SessionFailed)
@@ -207,6 +212,7 @@ void UMythicaEditorSubsystem::OnGetAssetsResponse(FHttpRequestPtr Request, FHttp
             continue;
         }
 
+        FString AssetId = JsonObject->GetStringField(TEXT("asset_id"));
         FString PackageId = JsonObject->GetStringField(TEXT("package_id"));
         FString Name = JsonObject->GetStringField(TEXT("name"));
         FString Description = JsonObject->GetStringField(TEXT("description"));
@@ -234,6 +240,24 @@ void UMythicaEditorSubsystem::OnGetAssetsResponse(FHttpRequestPtr Request, FHttp
             continue;
         }
 
+        int32 DigitalAssetCount = 0;
+
+        const TArray<TSharedPtr<FJsonValue>>* FileArray = nullptr;
+        ContentsObject->TryGetArrayField(TEXT("files"), FileArray);
+        if (FileArray)
+        {
+            for (const TSharedPtr<FJsonValue>& FileValue : *FileArray)
+            {
+                TSharedPtr<FJsonObject> FileObject = FileValue->AsObject();
+
+                FString FileName = FileObject->GetStringField(TEXT("file_name"));
+                if (CanImportAsset(FileName))
+                {
+                    DigitalAssetCount++;
+                }
+            }
+        }
+
         FString ThumbnailURL;
         const TArray<TSharedPtr<FJsonValue>>* ThumbnailArray = nullptr;
         ContentsObject->TryGetArrayField(TEXT("thumbnails"), ThumbnailArray);
@@ -248,7 +272,7 @@ void UMythicaEditorSubsystem::OnGetAssetsResponse(FHttpRequestPtr Request, FHttp
             ThumbnailURL = FString::Printf(TEXT("http://%s/%s.%s"), *Settings->ImagesURL, *ContentHash, *FileExtension);
         }
 
-        AssetList.Push({ PackageId, Name, Description, AssetVersion, {}, ThumbnailURL });
+        AssetList.Push({ AssetId, PackageId, Name, Description, AssetVersion, {}, ThumbnailURL, DigitalAssetCount });
     }
 
     AssetList.Sort([](const FMythicaAsset& a, const FMythicaAsset& b)
@@ -256,6 +280,8 @@ void UMythicaEditorSubsystem::OnGetAssetsResponse(FHttpRequestPtr Request, FHttp
         int32 compare = a.Name.Compare(b.Name, ESearchCase::IgnoreCase);
         return compare < 0 || compare == 0 && b.Version < a.Version;
     });
+
+    UpdateStats();
 
     OnAssetListUpdated.Broadcast();
 
@@ -572,6 +598,38 @@ void UMythicaEditorSubsystem::AddInstalledAsset(const FString& PackageId, const 
 
     InstalledAssets.Add(PackageId, ImportDirectory);
 }
+
+void UMythicaEditorSubsystem::UpdateStats()
+{
+    // Get the latest version of each asset
+    TMap<FString, FMythicaAsset*> LatestVersions;
+
+    for (FMythicaAsset& Asset : AssetList)
+    {
+        FMythicaAsset** ExistingAsset = LatestVersions.Find(Asset.AssetId);
+        if (!ExistingAsset)
+        {
+            LatestVersions.Add(Asset.AssetId, &Asset);
+        }
+        else
+        {
+            FMythicaAsset* Existing = *ExistingAsset;
+            if (Existing->Version < Asset.Version)
+            {
+                LatestVersions[Asset.AssetId] = &Asset;
+            }
+        }
+    }
+
+    // Accumulate stats
+    Stats.TotalPackages = LatestVersions.Num();
+
+    Stats.TotalDigitalAssets = 0;
+    for (const TPair<FString, FMythicaAsset*>& Pair : LatestVersions)
+    {
+        Stats.TotalDigitalAssets += Pair.Value->DigitalAssetCount;
+    }
+ }
 
 void UMythicaEditorSubsystem::LoadThumbnails()
 {
