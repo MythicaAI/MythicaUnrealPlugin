@@ -24,6 +24,18 @@ DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnAssetInstalled, const FString&, P
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnAssetUninstalled, const FString&, PackageId);
 
 USTRUCT(BlueprintType)
+struct FMythicaStats
+{
+	GENERATED_BODY()
+
+	UPROPERTY(BlueprintReadOnly, Category = "Stat")
+	int32 TotalPackages = 0;
+
+	UPROPERTY(BlueprintReadOnly, Category = "Stat")
+	int32 TotalDigitalAssets = 0;
+};
+
+USTRUCT(BlueprintType)
 struct FMythicaAssetVersion
 {
 	GENERATED_BODY()
@@ -46,6 +58,9 @@ struct FMythicaAsset
     GENERATED_BODY()
 
 	UPROPERTY(BlueprintReadOnly, Category = "Data")
+	FString AssetId;
+
+	UPROPERTY(BlueprintReadOnly, Category = "Data")
 	FString PackageId;
 	
 	UPROPERTY(BlueprintReadOnly, Category = "Data")
@@ -62,6 +77,9 @@ struct FMythicaAsset
 
 	UPROPERTY()
 	FString ThumbnailURL;
+
+	UPROPERTY()
+	int32 DigitalAssetCount;
 };
 
 UCLASS()
@@ -88,6 +106,9 @@ public:
 
 	UFUNCTION(BlueprintPure, Category = "Mythica")
 	UTexture2D* GetThumbnail(const FString& PackageId);
+
+	UFUNCTION(BlueprintPure, Category = "Mythica")
+	FMythicaStats GetStats();
 
 	// Requests
 	UFUNCTION(BlueprintCallable, Category = "Mythica")
@@ -129,6 +150,7 @@ private:
 	void LoadInstalledAssetList();
 	FString GetUniqueImportDirectory(const FString& PackageName);
 	void AddInstalledAsset(const FString& PackageId, const FString& ImportDirectory);
+	void UpdateStats();
 
 	void LoadThumbnails();
 	void OnThumbnailDownloadResponse(FHttpRequestPtr Request, FHttpResponsePtr Response, bool bWasSuccessful, const FString& PackageId);
@@ -140,6 +162,7 @@ private:
 
 	TMap<FString, FString> InstalledAssets;
 	TArray<FMythicaAsset> AssetList;
+	FMythicaStats Stats;
 
 	UPROPERTY()
 	TMap<FString, UTexture2D*> ThumbnailCache;
