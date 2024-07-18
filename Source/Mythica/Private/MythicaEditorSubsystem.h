@@ -57,6 +57,9 @@ struct FMythicaAsset
 	UPROPERTY(BlueprintReadOnly, Category = "Data")
 	FMythicaAssetVersion Version;
 
+	UPROPERTY(BlueprintReadOnly, Category = "Data")
+	TArray<FString> Tags;
+
 	UPROPERTY()
 	FString ThumbnailURL;
 };
