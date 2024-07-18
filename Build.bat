@@ -5,6 +5,8 @@ if "%~1"=="" (
     exit /b 1
 )
 
-set "UNREAL_ENGINE_PATH=%~1"
+call "%~1\Engine\Build\BatchFiles\RunUAT.bat" BuildPlugin -Plugin="%CD%\Mythica.uplugin" -Package="%CD%\Build\Mythica" -nocompile -nocompileuat
 
-"%UNREAL_ENGINE_PATH%\Engine\Build\BatchFiles\RunUAT.bat" BuildPlugin -Plugin="%CD%\Mythica.uplugin" -Package="%CD%\Build\Mythica" -nocompile -nocompileuat
+del %CD%\Build\Mythica\Binaries\Win64\*.pdb
+
+powershell Compress-Archive -Path "%CD%\Build\Mythica" -DestinationPath "%CD%\Build\Mythica.zip"
