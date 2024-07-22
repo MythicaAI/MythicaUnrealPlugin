@@ -156,18 +156,12 @@ void UMythicaEditorSubsystem::OnCreateSessionResponse(FHttpRequestPtr Request, F
 
 void UMythicaEditorSubsystem::UpdateAssetList()
 {
-    if (SessionState != EMythicaSessionState::SessionCreated)
-    {
-        return;
-    }
-
     const UMythicaDeveloperSettings* Settings = GetDefault<UMythicaDeveloperSettings>();
 
     FString Url = FString::Printf(TEXT("http://%s/v1/assets/all"), *Settings->ServiceURL);
 
     TSharedRef<IHttpRequest, ESPMode::ThreadSafe> Request = FHttpModule::Get().CreateRequest();
     Request->SetURL(Url);
-    Request->SetHeader("Authorization", FString::Printf(TEXT("Bearer %s"), *AuthToken));
     Request->SetVerb("GET");
     Request->SetHeader("Content-Type", "application/json");
     Request->OnProcessRequestComplete().BindUObject(this, &UMythicaEditorSubsystem::OnGetAssetsResponse);
@@ -316,7 +310,6 @@ void UMythicaEditorSubsystem::InstallAsset(const FString& PackageId)
 
     TSharedRef<IHttpRequest, ESPMode::ThreadSafe> Request = FHttpModule::Get().CreateRequest();
     Request->SetURL(Url);
-    Request->SetHeader("Authorization", FString::Printf(TEXT("Bearer %s"), *AuthToken));
     Request->SetVerb("GET");
     Request->SetHeader("Content-Type", "application/octet-stream");
     Request->OnProcessRequestComplete().BindLambda(Callback);
