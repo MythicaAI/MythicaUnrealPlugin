@@ -210,6 +210,7 @@ void UMythicaEditorSubsystem::OnGetAssetsResponse(FHttpRequestPtr Request, FHttp
         FString PackageId = JsonObject->GetStringField(TEXT("package_id"));
         FString Name = JsonObject->GetStringField(TEXT("name"));
         FString Description = JsonObject->GetStringField(TEXT("description"));
+        FString OrgName = JsonObject->GetStringField(TEXT("org_name"));
         if (PackageId.IsEmpty())
         {
             UE_LOG(LogMythica, Error, TEXT("Missing PackageId for package: %s"), *Name);
@@ -266,7 +267,7 @@ void UMythicaEditorSubsystem::OnGetAssetsResponse(FHttpRequestPtr Request, FHttp
             ThumbnailURL = FString::Printf(TEXT("http://%s/%s.%s"), *Settings->ImagesURL, *ContentHash, *FileExtension);
         }
 
-        AssetList.Push({ AssetId, PackageId, Name, Description, AssetVersion, {}, ThumbnailURL, DigitalAssetCount });
+        AssetList.Push({ AssetId, PackageId, Name, Description, OrgName, AssetVersion, {}, ThumbnailURL, DigitalAssetCount });
     }
 
     AssetList.Sort([](const FMythicaAsset& a, const FMythicaAsset& b)
