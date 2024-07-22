@@ -158,7 +158,7 @@ void UMythicaEditorSubsystem::UpdateAssetList()
 {
     const UMythicaDeveloperSettings* Settings = GetDefault<UMythicaDeveloperSettings>();
 
-    FString Url = FString::Printf(TEXT("http://%s/v1/assets/all"), *Settings->ServiceURL);
+    FString Url = FString::Printf(TEXT("http://%s/v1/assets/top"), *Settings->ServiceURL);
 
     TSharedRef<IHttpRequest, ESPMode::ThreadSafe> Request = FHttpModule::Get().CreateRequest();
     Request->SetURL(Url);
@@ -269,12 +269,6 @@ void UMythicaEditorSubsystem::OnGetAssetsResponse(FHttpRequestPtr Request, FHttp
 
         AssetList.Push({ AssetId, PackageId, Name, Description, OrgName, AssetVersion, {}, ThumbnailURL, DigitalAssetCount });
     }
-
-    AssetList.Sort([](const FMythicaAsset& a, const FMythicaAsset& b)
-    {
-        int32 compare = a.Name.Compare(b.Name, ESearchCase::IgnoreCase);
-        return compare < 0 || compare == 0 && b.Version < a.Version;
-    });
 
     UpdateStats();
 
