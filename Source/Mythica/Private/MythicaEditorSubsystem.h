@@ -70,6 +70,9 @@ struct FMythicaAsset
 	FString Description;
 
 	UPROPERTY(BlueprintReadOnly, Category = "Data")
+	FString OrgName;
+
+	UPROPERTY(BlueprintReadOnly, Category = "Data")
 	FMythicaAssetVersion Version;
 
 	UPROPERTY(BlueprintReadOnly, Category = "Data")
