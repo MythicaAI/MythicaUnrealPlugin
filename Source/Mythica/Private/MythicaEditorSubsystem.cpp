@@ -5,6 +5,7 @@
 #include "FileUtilities/ZipArchiveReader.h"
 #include "HAL/FileManager.h"
 #include "HttpModule.h"
+#include "IImageWrapperModule.h"
 #include "ImageCoreUtils.h"
 #include "ImageUtils.h"
 #include "MythicaDeveloperSettings.h"
@@ -35,6 +36,13 @@ static bool CanImportAsset(const FString& FilePath)
         }
     }
     return false;
+}
+
+static bool CanDisplayImage(const FString& FileName)
+{
+    IImageWrapperModule& ImageWrapperModule = FModuleManager::LoadModuleChecked<IImageWrapperModule>(FName("ImageWrapper"));
+    EImageFormat ImageFormat = ImageWrapperModule.GetImageFormatFromExtension(*FileName);
+    return ImageFormat != EImageFormat::Invalid;
 }
 
 bool FMythicaAssetVersion::operator<(const FMythicaAssetVersion& Other) const
@@ -256,15 +264,21 @@ void UMythicaEditorSubsystem::OnGetAssetsResponse(FHttpRequestPtr Request, FHttp
         FString ThumbnailURL;
         const TArray<TSharedPtr<FJsonValue>>* ThumbnailArray = nullptr;
         ContentsObject->TryGetArrayField(TEXT("thumbnails"), ThumbnailArray);
-        if (ThumbnailArray && ThumbnailArray->Num() > 0)
+        if (ThumbnailArray)
         {
-            TSharedPtr<FJsonObject> ThumbnailObject = (*ThumbnailArray)[0]->AsObject();
+            for (const TSharedPtr<FJsonValue>& ThumbnailValue : *ThumbnailArray)
+            {
+                TSharedPtr<FJsonObject> ThumbnailObject = ThumbnailValue->AsObject();
 
-            FString ContentHash = ThumbnailObject->GetStringField(TEXT("content_hash"));
-            FString FileName = ThumbnailObject->GetStringField(TEXT("file_name"));
-            FString FileExtension = FPaths::GetExtension(FileName);
-
-            ThumbnailURL = FString::Printf(TEXT("http://%s/%s.%s"), *Settings->ImagesURL, *ContentHash, *FileExtension);
+                FString FileName = ThumbnailObject->GetStringField(TEXT("file_name"));
+                if (CanDisplayImage(FileName))
+                {
+                    FString FileExtension = FPaths::GetExtension(FileName);
+                    FString ContentHash = ThumbnailObject->GetStringField(TEXT("content_hash"));
+                    ThumbnailURL = FString::Printf(TEXT("http://%s/%s.%s"), *Settings->ImagesURL, *ContentHash, *FileExtension);
+                    break;
+                }
+            }
         }
 
         AssetList.Push({ AssetId, PackageId, Name, Description, OrgName, AssetVersion, {}, ThumbnailURL, DigitalAssetCount });
