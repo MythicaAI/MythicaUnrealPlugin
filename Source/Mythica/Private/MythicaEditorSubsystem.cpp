@@ -116,7 +116,7 @@ void UMythicaEditorSubsystem::CreateSession()
         return;
     }
 
-    FString Url = FString::Printf(TEXT("http://%s/v1/profiles/start_session/%s"), *Settings->ServiceURL, *Settings->ProfileId);
+    FString Url = FString::Printf(TEXT("%s/v1/profiles/start_session/%s"), *Settings->ServiceURL, *Settings->ProfileId);
 
     TSharedRef<IHttpRequest, ESPMode::ThreadSafe> Request = FHttpModule::Get().CreateRequest();
     Request->SetURL(Url);
@@ -166,7 +166,7 @@ void UMythicaEditorSubsystem::UpdateAssetList()
 {
     const UMythicaDeveloperSettings* Settings = GetDefault<UMythicaDeveloperSettings>();
 
-    FString Url = FString::Printf(TEXT("http://%s/v1/assets/top"), *Settings->ServiceURL);
+    FString Url = FString::Printf(TEXT("%s/v1/assets/top"), *Settings->ServiceURL);
 
     TSharedRef<IHttpRequest, ESPMode::ThreadSafe> Request = FHttpModule::Get().CreateRequest();
     Request->SetURL(Url);
@@ -275,7 +275,7 @@ void UMythicaEditorSubsystem::OnGetAssetsResponse(FHttpRequestPtr Request, FHttp
                 {
                     FString FileExtension = FPaths::GetExtension(FileName);
                     FString ContentHash = ThumbnailObject->GetStringField(TEXT("content_hash"));
-                    ThumbnailURL = FString::Printf(TEXT("http://%s/%s.%s"), *Settings->ImagesURL, *ContentHash, *FileExtension);
+                    ThumbnailURL = FString::Printf(TEXT("%s/%s.%s"), *Settings->ImagesURL, *ContentHash, *FileExtension);
                     break;
                 }
             }
@@ -310,7 +310,7 @@ void UMythicaEditorSubsystem::InstallAsset(const FString& PackageId)
 
     FString DownloadId = PackageId;
 
-    FString Url = FString::Printf(TEXT("http://%s/v1/download/info/%s"), *Settings->ServiceURL, *DownloadId);
+    FString Url = FString::Printf(TEXT("%s/v1/download/info/%s"), *Settings->ServiceURL, *DownloadId);
 
     auto Callback = [this, PackageId](FHttpRequestPtr Request, FHttpResponsePtr Response, bool bConnectedSuccessfully)
     {
