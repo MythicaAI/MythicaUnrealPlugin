@@ -45,6 +45,7 @@ public class Mythica : ModuleRules
 				"FileUtilities",
 				"HTTP",
 				"ImageCore",
+				"InputCore",
 				"Json",
 				"Slate",
 				"SlateCore",
