@@ -552,7 +552,7 @@ void UMythicaEditorSubsystem::GenerateMesh(const FString& FileId, const FMythica
         return;
     }
 
-    // Send request       
+    // Send request
     const UMythicaDeveloperSettings* Settings = GetDefault<UMythicaDeveloperSettings>();
 
     FString Url = FString::Printf(TEXT("%s/v1/jobs/generate-mesh"), *Settings->ServiceURL);
