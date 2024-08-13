@@ -2,7 +2,6 @@
 
 #include "MythicaTypes.h"
 #include "DetailWidgetRow.h"
-#include "DetailLayoutBuilder.h"
 #include "IDetailChildrenBuilder.h"
 #include "Widgets/Text/STextBlock.h"
 #include "Widgets/Input/SNumericEntryBox.h"
@@ -55,7 +54,7 @@ void FMythicaParametersDetails::CustomizeChildren(TSharedRef<IPropertyHandle> St
         auto GetValue = [HandleWeak, i]()
         {
             FMythicaParameters* Parameters = GetParametersFromHandleWeak(HandleWeak);
-            if (!Parameters)
+            if (!Parameters || !Parameters->Parameters.IsValidIndex(i))
             {
                 return 0.0f;
             }
@@ -66,10 +65,12 @@ void FMythicaParametersDetails::CustomizeChildren(TSharedRef<IPropertyHandle> St
         auto OnValueChanged = [HandleWeak, i](float NewValue)
         {
             FMythicaParameters* Parameters = GetParametersFromHandleWeak(HandleWeak);
-            if (Parameters)
+            if (!Parameters || !Parameters->Parameters.IsValidIndex(i))
             {
-                Parameters->Parameters[i].Value = NewValue;
+                return;
             }
+
+            Parameters->Parameters[i].Value = NewValue;
         };
 
         const FString& Name = Parameters->Parameters[i].Name;
