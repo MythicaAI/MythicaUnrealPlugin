@@ -79,6 +79,11 @@ TArray<FMythicaAsset> UMythicaEditorSubsystem::GetAssetList()
     return AssetList;
 }
 
+TArray<FMythicaTool> UMythicaEditorSubsystem::GetToolList()
+{
+    return ToolList;
+}
+
 bool UMythicaEditorSubsystem::IsAssetInstalled(const FString& PackageId)
 {
     return InstalledAssets.Contains(PackageId);
@@ -204,6 +209,7 @@ void UMythicaEditorSubsystem::OnGetAssetsResponse(FHttpRequestPtr Request, FHttp
     const UMythicaDeveloperSettings* Settings = GetDefault<UMythicaDeveloperSettings>();
     
     AssetList.Reset();
+    ToolList.Reset();
 
     TArray<TSharedPtr<FJsonValue>> Array = JsonValue->AsArray();
     for (TSharedPtr<FJsonValue> Value : Array)
@@ -257,6 +263,9 @@ void UMythicaEditorSubsystem::OnGetAssetsResponse(FHttpRequestPtr Request, FHttp
                 if (CanImportAsset(FileName))
                 {
                     DigitalAssetCount++;
+
+                    FString FileId = FileObject->GetStringField(TEXT("file_id"));
+                    ToolList.Add({ FileId, FileName });
                 }
             }
         }
