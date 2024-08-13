@@ -126,6 +126,9 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "Mythica")
 	void UninstallAsset(const FString& PackageId);
 
+	UFUNCTION(BlueprintCallable, Category = "Mythica")
+	void GenerateMesh(const FString& FileId, const FString& Params, const FString& ImportName);
+
 	// Delegates
 	UPROPERTY(BlueprintAssignable, Category = "Mythica")
 	FOnSessionStateChanged OnSessionStateChanged;
@@ -148,6 +151,13 @@ private:
 	void OnDownloadInfoResponse(FHttpRequestPtr Request, FHttpResponsePtr Response, bool bWasSuccessful, const FString& PackageId);
 	void OnDownloadAssetResponse(FHttpRequestPtr Request, FHttpResponsePtr Response, bool bWasSuccessful, const FString& PackageId);
 
+	void OnGenerateMeshResponse(FHttpRequestPtr Request, FHttpResponsePtr Response, bool bWasSuccessful, const FString& FileID, const FString& ImportName);
+	void OnGenerateMeshStatusResponse(FHttpRequestPtr Request, FHttpResponsePtr Response, bool bWasSuccessful, const FString& RequestId, const FString& ImportName);
+	void OnMeshDownloadInfoResponse(FHttpRequestPtr Request, FHttpResponsePtr Response, bool bWasSuccessful, const FString& FileId, const FString& ImportName);
+	void OnMeshDownloadResponse(FHttpRequestPtr Request, FHttpResponsePtr Response, bool bWasSuccessful, const FString& FileId, const FString& ImportName);
+
+	void PollGenerateMeshStatus();
+
 	void SetSessionState(EMythicaSessionState NewState);
 
 	void LoadInstalledAssetList();
@@ -162,6 +172,9 @@ private:
 
 	EMythicaSessionState SessionState = EMythicaSessionState::None;
 	FString AuthToken;
+
+	TMap<FString, FString> GenerateMeshRequests;
+	FTimerHandle GenerateMeshTimer;
 
 	TMap<FString, FString> InstalledAssets;
 	TArray<FMythicaAsset> AssetList;
