@@ -5,14 +5,22 @@
 #include "MythicaTypes.generated.h"
 
 USTRUCT(BlueprintType)
+struct FMythicaParameter
+{
+    GENERATED_BODY()
+
+    UPROPERTY(BlueprintReadWrite)
+    FString Name;
+
+    UPROPERTY(BlueprintReadWrite)
+    float Value;
+};
+
+USTRUCT(BlueprintType)
 struct FMythicaParameters
 {
     GENERATED_BODY()
 
-    struct Parameter
-    {
-        FString Name;
-        float Value;
-    };
-    TArray<Parameter> Parameters;
+    UPROPERTY(BlueprintReadWrite)
+    TArray<FMythicaParameter> Parameters;
 };
