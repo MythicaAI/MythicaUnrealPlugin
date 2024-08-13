@@ -5,6 +5,7 @@
 #include "EditorUtilitySubsystem.h"
 #include "EditorUtilityWidgetBlueprint.h"
 #include "LevelEditor.h"
+#include "MythicaParametersDetails.h"
 
 #define LOCTEXT_NAMESPACE "FMythicaModule"
 
@@ -21,10 +22,23 @@ void FMythicaModule::StartupModule()
 
 	FLevelEditorModule& LevelEditorModule = FModuleManager::LoadModuleChecked<FLevelEditorModule>("LevelEditor");
 	LevelEditorModule.GetMenuExtensibilityManager()->AddExtender(MenuExtender);
+
+	FPropertyEditorModule& PropertyModule = FModuleManager::LoadModuleChecked<FPropertyEditorModule>("PropertyEditor");
+	PropertyModule.RegisterCustomPropertyTypeLayout(
+		"MythicaParameters",
+		FOnGetPropertyTypeCustomizationInstance::CreateStatic(&FMythicaParametersDetails::MakeInstance)
+	);
+	PropertyModule.NotifyCustomizationModuleChanged();
 }
 
 void FMythicaModule::ShutdownModule()
 {
+	if (FModuleManager::Get().IsModuleLoaded("PropertyEditor"))
+	{
+		FPropertyEditorModule& PropertyModule = FModuleManager::GetModuleChecked<FPropertyEditorModule>("PropertyEditor");
+		PropertyModule.UnregisterCustomPropertyTypeLayout("FMythicaParameters");
+		PropertyModule.NotifyCustomizationModuleChanged();
+	}
 }
 
 void FMythicaModule::AddMenu(FMenuBuilder& MenuBuilder)

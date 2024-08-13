@@ -526,13 +526,33 @@ void UMythicaEditorSubsystem::UninstallAsset(const FString& PackageId)
     OnAssetUninstalled.Broadcast(PackageId);
 }
 
-void UMythicaEditorSubsystem::GenerateMesh(const FString& FileId, const FString& Params, const FString& ImportName)
+void UMythicaEditorSubsystem::GenerateMesh(const FString& FileId, const FMythicaParameters& Params, const FString& ImportName)
 {
     if (SessionState != EMythicaSessionState::SessionCreated)
     {
         return;
     }
 
+    // Create JSON payload
+    TSharedPtr<FJsonObject> ParamsObject = MakeShareable(new FJsonObject);
+    for (const FMythicaParameter& Param : Params.Parameters)
+    {
+        ParamsObject->SetStringField(Param.Name, FString::SanitizeFloat(Param.Value));
+    }
+
+    TSharedPtr<FJsonObject> JsonObject = MakeShareable(new FJsonObject);
+    JsonObject->SetStringField(TEXT("file_id"), FileId);
+    JsonObject->SetObjectField(TEXT("params"), ParamsObject);
+
+    FString ContentJson;
+    TSharedRef<TJsonWriter<>> Writer = TJsonWriterFactory<>::Create(&ContentJson);
+    if (!FJsonSerializer::Serialize(JsonObject.ToSharedRef(), Writer))
+    {
+        UE_LOG(LogMythica, Error, TEXT("Failed to create generate mesh JSON request object"));
+        return;
+    }
+
+    // Send request
     const UMythicaDeveloperSettings* Settings = GetDefault<UMythicaDeveloperSettings>();
 
     FString Url = FString::Printf(TEXT("%s/v1/jobs/generate-mesh"), *Settings->ServiceURL);
@@ -541,8 +561,6 @@ void UMythicaEditorSubsystem::GenerateMesh(const FString& FileId, const FString&
     {
         OnGenerateMeshResponse(Request, Response, bConnectedSuccessfully, FileId, ImportName);
     };
-
-    FString ContentJson = FString::Printf(TEXT("{\"file_id\": \"%s\", \"params\": %s}"), *FileId, *Params);
 
     TSharedRef<IHttpRequest, ESPMode::ThreadSafe> Request = FHttpModule::Get().CreateRequest();
     Request->SetURL(Url);

@@ -4,6 +4,7 @@
 #include "EditorSubsystem.h"
 #include "Interfaces/IHttpRequest.h"
 #include "Interfaces/IHttpResponse.h"
+#include "MythicaTypes.h"
 #include "MythicaEditorSubsystem.generated.h"
 
 DECLARE_LOG_CATEGORY_EXTERN(LogMythica, Log, All);
@@ -127,7 +128,7 @@ public:
 	void UninstallAsset(const FString& PackageId);
 
 	UFUNCTION(BlueprintCallable, Category = "Mythica")
-	void GenerateMesh(const FString& FileId, const FString& Params, const FString& ImportName);
+	void GenerateMesh(const FString& FileId, const FMythicaParameters& Params, const FString& ImportName);
 
 	// Delegates
 	UPROPERTY(BlueprintAssignable, Category = "Mythica")
