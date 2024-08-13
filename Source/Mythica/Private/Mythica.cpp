@@ -1,11 +1,11 @@
 // Copyright Epic Games, Inc. All Rights Reserved.
 
 #include "Mythica.h"
-#include "MythicaParametersDetails.h"
 
 #include "EditorUtilitySubsystem.h"
 #include "EditorUtilityWidgetBlueprint.h"
 #include "LevelEditor.h"
+#include "MythicaParametersDetails.h"
 
 #define LOCTEXT_NAMESPACE "FMythicaModule"
 
