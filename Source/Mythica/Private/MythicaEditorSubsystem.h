@@ -54,6 +54,18 @@ struct FMythicaAssetVersion
 };
 
 USTRUCT(BlueprintType)
+struct FMythicaTool
+{
+	GENERATED_BODY()
+
+	UPROPERTY(BlueprintReadOnly, Category = "Data")
+	FString FileId;
+
+	UPROPERTY(BlueprintReadOnly, Category = "Data")
+	FString Name;
+};
+
+USTRUCT(BlueprintType)
 struct FMythicaAsset
 {
     GENERATED_BODY()
@@ -104,6 +116,9 @@ public:
 
 	UFUNCTION(BlueprintCallable, Category = "Mythica")
 	TArray<FMythicaAsset> GetAssetList();
+
+	UFUNCTION(BlueprintCallable, Category = "Mythica")
+	TArray<FMythicaTool> GetToolList();
 
 	UFUNCTION(BlueprintPure, Category = "Mythica")
 	bool IsAssetInstalled(const FString& PackageId);
@@ -179,6 +194,7 @@ private:
 
 	TMap<FString, FString> InstalledAssets;
 	TArray<FMythicaAsset> AssetList;
+	TArray<FMythicaTool> ToolList;
 	FMythicaStats Stats;
 
 	UPROPERTY()
