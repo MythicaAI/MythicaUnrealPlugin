@@ -1,9 +1,35 @@
 #include "MythicaParametersDetails.h"
+
+#include "MythicaTypes.h"
 #include "DetailWidgetRow.h"
 #include "DetailLayoutBuilder.h"
 #include "IDetailChildrenBuilder.h"
 #include "Widgets/Text/STextBlock.h"
 #include "Widgets/Input/SNumericEntryBox.h"
+
+static FMythicaParameters* GetParametersFromHandle(IPropertyHandle& Handle)
+{
+    TArray<UObject*> Objects;
+    Handle.GetOuterObjects(Objects);
+    if (Objects.Num() != 1)
+    {
+        return nullptr;
+    }
+
+    return (FMythicaParameters*)Handle.GetValueBaseAddress((uint8*)Objects[0]);
+}
+
+static FMythicaParameters* GetParametersFromHandleWeak(TWeakPtr<IPropertyHandle> HandleWeak)
+{
+    if (!HandleWeak.IsValid())
+        return nullptr;
+
+    IPropertyHandle* Handle = HandleWeak.Pin().Get();
+    if (!Handle)
+        return nullptr;
+
+    return GetParametersFromHandle(*Handle);
+}
 
 TSharedRef<IPropertyTypeCustomization> FMythicaParametersDetails::MakeInstance()
 {
@@ -17,52 +43,47 @@ void FMythicaParametersDetails::CustomizeHeader(TSharedRef<IPropertyHandle> Stru
 
 void FMythicaParametersDetails::CustomizeChildren(TSharedRef<IPropertyHandle> StructPropertyHandle, IDetailChildrenBuilder& StructBuilder, IPropertyTypeCustomizationUtils& StructCustomizationUtils)
 {
-    // Example of adding a custom numeric entry box
-    StructBuilder.AddCustomRow(FText::FromString("CustomField"))
-        .NameContent()
-        [
-            SNew(STextBlock)
-                .Text(FText::FromString("Custom Field"))
-        ]
-        .ValueContent()
-        [
-            SNew(SNumericEntryBox<float>)
-                .Value(TOptional<float>(0.0f)) // Set the default value here
-                .OnValueChanged_Lambda([](float NewValue)
-                    {
-                        UE_LOG(LogTemp, Warning, TEXT("New value: %f"), NewValue);
-                    })
-        ];
+    FMythicaParameters* Parameters = GetParametersFromHandle(StructPropertyHandle.Get());
+    if (!Parameters)
+    {
+        return;
+    }
 
-    StructBuilder.AddCustomRow(FText::FromString("Custom Field2"))
-        .NameContent()
-        [
-            SNew(STextBlock)
-                .Text(FText::FromString("Custom Field2"))
-        ]
-        .ValueContent()
-        [
-            SNew(SNumericEntryBox<float>)
-                .Value(TOptional<float>(0.0f)) // Set the default value here
-                .OnValueChanged_Lambda([](float NewValue)
-                    {
-                        UE_LOG(LogTemp, Warning, TEXT("New value: %f"), NewValue);
-                    })
-        ];
+    TWeakPtr<IPropertyHandle> HandleWeak = StructPropertyHandle.ToWeakPtr();
+    for (int32 i = 0; i < Parameters->Parameters.Num(); ++i)
+    {
+        auto GetValue = [HandleWeak, i]()
+        {
+            FMythicaParameters* Parameters = GetParametersFromHandleWeak(HandleWeak);
+            if (!Parameters)
+            {
+                return 0.0f;
+            }
 
-    StructBuilder.AddCustomRow(FText::FromString("Custom Field3"))
-        .NameContent()
-        [
-            SNew(STextBlock)
-                .Text(FText::FromString("Custom Field3"))
-        ]
-        .ValueContent()
-        [
-            SNew(SNumericEntryBox<float>)
-                .Value(TOptional<float>(0.0f)) // Set the default value here
-                .OnValueChanged_Lambda([](float NewValue)
-                    {
-                        UE_LOG(LogTemp, Warning, TEXT("New value: %f"), NewValue);
-                    })
-        ];
+            return Parameters->Parameters[i].Value;
+        };
+
+        auto OnValueChanged = [HandleWeak, i](float NewValue)
+        {
+            FMythicaParameters* Parameters = GetParametersFromHandleWeak(HandleWeak);
+            if (Parameters)
+            {
+                Parameters->Parameters[i].Value = NewValue;
+            }
+        };
+
+        const FString& Name = Parameters->Parameters[i].Name;
+        StructBuilder.AddCustomRow(FText::FromString(Name))
+            .NameContent()
+            [
+                SNew(STextBlock)
+                    .Text(FText::FromString(Name))
+            ]
+            .ValueContent()
+            [
+                SNew(SNumericEntryBox<float>)
+                    .Value_Lambda(GetValue)
+                    .OnValueChanged_Lambda(OnValueChanged)
+            ];
+    }
 }
