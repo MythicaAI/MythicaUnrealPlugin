@@ -100,6 +100,17 @@ FMythicaStats UMythicaEditorSubsystem::GetStats()
     return Stats;
 }
 
+bool UMythicaEditorSubsystem::IsToolInterfaceLoaded(const FString& FileId)
+{
+    return ToolInterfaces.Contains(FileId);
+}
+
+FMythicaParameters UMythicaEditorSubsystem::GetToolInterface(const FString& FileId)
+{
+    FMythicaParameters* Interface = ToolInterfaces.Find(FileId);
+    return Interface ? *Interface : FMythicaParameters();
+}
+
 void UMythicaEditorSubsystem::CreateSession()
 {
     if (SessionState != EMythicaSessionState::None && SessionState != EMythicaSessionState::SessionFailed)
@@ -533,6 +544,145 @@ void UMythicaEditorSubsystem::UninstallAsset(const FString& PackageId)
     InstalledAssets.Remove(PackageId);
 
     OnAssetUninstalled.Broadcast(PackageId);
+}
+
+void UMythicaEditorSubsystem::LoadToolInterface(const FString& FileId)
+{
+    if (IsToolInterfaceLoaded(FileId))
+    {
+        return;
+    }
+
+    const UMythicaDeveloperSettings* Settings = GetDefault<UMythicaDeveloperSettings>();
+
+    FString Url = FString::Printf(TEXT("%s/v1/jobs/generate-mesh/interface/%s"), *Settings->ServiceURL, *FileId);
+
+    auto Callback = [this, FileId](FHttpRequestPtr Request, FHttpResponsePtr Response, bool bConnectedSuccessfully)
+    {
+        OnInterfaceResponse(Request, Response, bConnectedSuccessfully, FileId);
+    };
+
+    TSharedRef<IHttpRequest, ESPMode::ThreadSafe> Request = FHttpModule::Get().CreateRequest();
+    Request->SetURL(Url);
+    Request->SetVerb("Get");
+    Request->OnProcessRequestComplete().BindLambda(Callback);
+
+    Request->ProcessRequest();
+}
+
+void UMythicaEditorSubsystem::OnInterfaceResponse(FHttpRequestPtr Request, FHttpResponsePtr Response, bool bWasSuccessful, const FString& FileId)
+{
+    if (!bWasSuccessful || !Response.IsValid())
+    {
+        UE_LOG(LogMythica, Error, TEXT("Failed to get interface for file %s"), *FileId);
+        return;
+    }
+
+    FString ResponseContent = Response->GetContentAsString();
+    TSharedRef<TJsonReader<>> Reader = TJsonReaderFactory<>::Create(ResponseContent);
+
+    TSharedPtr<FJsonObject> JsonObject;
+    if (!FJsonSerializer::Deserialize(Reader, JsonObject) || !JsonObject.IsValid())
+    {
+        UE_LOG(LogMythica, Error, TEXT("Failed to parse interface JSON string"));
+        return;
+    }
+
+    FString InterfaceFileId = JsonObject->GetStringField(TEXT("file_id"));
+
+    const UMythicaDeveloperSettings* Settings = GetDefault<UMythicaDeveloperSettings>();
+
+    FString Url = FString::Printf(TEXT("%s/v1/download/info/%s"), *Settings->ServiceURL, *InterfaceFileId);
+
+    auto Callback = [this, FileId](FHttpRequestPtr Request, FHttpResponsePtr Response, bool bConnectedSuccessfully)
+    {
+        OnInterfaceDownloadInfoResponse(Request, Response, bConnectedSuccessfully, FileId);
+    };
+
+    TSharedRef<IHttpRequest, ESPMode::ThreadSafe> DownloadInfoRequest = FHttpModule::Get().CreateRequest();
+    DownloadInfoRequest->SetURL(Url);
+    DownloadInfoRequest->SetVerb("GET");
+    DownloadInfoRequest->OnProcessRequestComplete().BindLambda(Callback);
+
+    DownloadInfoRequest->ProcessRequest();
+}
+
+void UMythicaEditorSubsystem::OnInterfaceDownloadInfoResponse(FHttpRequestPtr Request, FHttpResponsePtr Response, bool bWasSuccessful, const FString& FileId)
+{
+    if (!bWasSuccessful || !Response.IsValid())
+    {
+        UE_LOG(LogMythica, Error, TEXT("Failed to get interface info for file %s"), *FileId);
+        return;
+    }
+
+    FString ResponseContent = Response->GetContentAsString();
+    TSharedRef<TJsonReader<>> Reader = TJsonReaderFactory<>::Create(ResponseContent);
+
+    TSharedPtr<FJsonObject> JsonObject;
+    if (!FJsonSerializer::Deserialize(Reader, JsonObject) || !JsonObject.IsValid())
+    {
+        UE_LOG(LogMythica, Error, TEXT("Failed to parse interface info JSON string"));
+        return;
+    }
+
+    FString DownloadURL = JsonObject->GetStringField(TEXT("url"));
+    FString ContentType = JsonObject->GetStringField(TEXT("content_type"));
+    if (DownloadURL.IsEmpty())
+    {
+        UE_LOG(LogMythica, Error, TEXT("Failed to get download URL for interface %s"), *FileId);
+        return;
+    }
+
+    auto Callback = [this, FileId](FHttpRequestPtr Request, FHttpResponsePtr Response, bool bConnectedSuccessfully)
+    {
+        OnInterfaceDownloadResponse(Request, Response, bConnectedSuccessfully, FileId);
+    };
+
+    TSharedRef<IHttpRequest, ESPMode::ThreadSafe> DownloadRequest = FHttpModule::Get().CreateRequest();
+    DownloadRequest->SetURL(DownloadURL);
+    DownloadRequest->SetVerb("GET");
+    DownloadRequest->OnProcessRequestComplete().BindLambda(Callback);
+
+    DownloadRequest->ProcessRequest();
+}
+
+void UMythicaEditorSubsystem::OnInterfaceDownloadResponse(FHttpRequestPtr Request, FHttpResponsePtr Response, bool bWasSuccessful, const FString& FileId)
+{
+    if (!bWasSuccessful || !Response.IsValid())
+    {
+        UE_LOG(LogMythica, Error, TEXT("Failed to download interface for file %s"), *FileId);
+        return;
+    }
+
+    FString ResponseContent = Response->GetContentAsString();
+    TSharedRef<TJsonReader<>> Reader = TJsonReaderFactory<>::Create(ResponseContent);
+
+    TSharedPtr<FJsonObject> JsonObject;
+    if (!FJsonSerializer::Deserialize(Reader, JsonObject) || !JsonObject.IsValid())
+    {
+        UE_LOG(LogMythica, Error, TEXT("Failed to parse create interface JSON string"));
+        return;
+    }
+
+    FMythicaParameters Interface;
+
+    const TArray<TSharedPtr<FJsonValue>>* ParametersArray = nullptr;
+    JsonObject->TryGetArrayField(TEXT("parameters"), ParametersArray);
+    if (ParametersArray)
+    {
+        for (const TSharedPtr<FJsonValue>& ParameterValue : *ParametersArray)
+        {
+            TSharedPtr<FJsonObject> ParameterObject = ParameterValue->AsObject();
+
+            FString Name = ParameterObject->GetStringField(TEXT("name"));
+            float Default = ParameterObject->GetNumberField(TEXT("default"));
+
+            Interface.Parameters.Add({ Name, Default });
+        }
+    }
+
+    ToolInterfaces.Add(FileId, Interface);
+    OnToolInterfaceLoaded.Broadcast(FileId);
 }
 
 void UMythicaEditorSubsystem::GenerateMesh(const FString& FileId, const FMythicaParameters& Params, const FString& ImportName)
