@@ -23,6 +23,7 @@ DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnAssetListUpdated);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnThumbnailLoaded, const FString&, PackageId);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnAssetInstalled, const FString&, PackageId);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnAssetUninstalled, const FString&, PackageId);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnToolInterfaceLoaded, const FString&, FileId);
 
 USTRUCT(BlueprintType)
 struct FMythicaStats
@@ -129,6 +130,12 @@ public:
 	UFUNCTION(BlueprintPure, Category = "Mythica")
 	FMythicaStats GetStats();
 
+	UFUNCTION(BlueprintCallable, Category = "Mythica")
+	bool IsToolInterfaceLoaded(const FString& FileId);
+
+	UFUNCTION(BlueprintCallable, Category = "Mythica")
+	FMythicaParameters GetToolInterface(const FString& FileId);
+
 	// Requests
 	UFUNCTION(BlueprintCallable, Category = "Mythica")
 	void CreateSession();
@@ -141,6 +148,9 @@ public:
 
 	UFUNCTION(BlueprintCallable, Category = "Mythica")
 	void UninstallAsset(const FString& PackageId);
+
+	UFUNCTION(BlueprintCallable, Category = "Mythica")
+	void LoadToolInterface(const FString& FileId);
 
 	UFUNCTION(BlueprintCallable, Category = "Mythica")
 	void GenerateMesh(const FString& FileId, const FMythicaParameters& Params, const FString& ImportName);
@@ -160,6 +170,9 @@ public:
 
 	UPROPERTY(BlueprintAssignable, Category = "Mythica")
 	FOnAssetInstalled OnAssetUninstalled;
+
+	UPROPERTY(BlueprintAssignable, Category = "Mythica")
+	FOnThumbnailLoaded OnToolInterfaceLoaded;
 
 private:
 	void OnCreateSessionResponse(FHttpRequestPtr Request, FHttpResponsePtr Response, bool bWasSuccessful);
@@ -196,6 +209,8 @@ private:
 	TArray<FMythicaAsset> AssetList;
 	TArray<FMythicaTool> ToolList;
 	FMythicaStats Stats;
+
+	TMap<FString, FMythicaParameters> ToolInterfaces;
 
 	UPROPERTY()
 	TMap<FString, UTexture2D*> ThumbnailCache;

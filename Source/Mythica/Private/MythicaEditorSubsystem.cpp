@@ -100,6 +100,16 @@ FMythicaStats UMythicaEditorSubsystem::GetStats()
     return Stats;
 }
 
+bool UMythicaEditorSubsystem::IsToolInterfaceLoaded(const FString& FileId)
+{
+    return true;
+}
+
+FMythicaParameters UMythicaEditorSubsystem::GetToolInterface(const FString& FileId)
+{
+    return FMythicaParameters();
+}
+
 void UMythicaEditorSubsystem::CreateSession()
 {
     if (SessionState != EMythicaSessionState::None && SessionState != EMythicaSessionState::SessionFailed)
@@ -533,6 +543,11 @@ void UMythicaEditorSubsystem::UninstallAsset(const FString& PackageId)
     InstalledAssets.Remove(PackageId);
 
     OnAssetUninstalled.Broadcast(PackageId);
+}
+
+void UMythicaEditorSubsystem::LoadToolInterface(const FString& FileId)
+{
+
 }
 
 void UMythicaEditorSubsystem::GenerateMesh(const FString& FileId, const FMythicaParameters& Params, const FString& ImportName)
