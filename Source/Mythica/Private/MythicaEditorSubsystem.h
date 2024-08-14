@@ -130,10 +130,10 @@ public:
 	UFUNCTION(BlueprintPure, Category = "Mythica")
 	FMythicaStats GetStats();
 
-	UFUNCTION(BlueprintCallable, Category = "Mythica")
+	UFUNCTION(BlueprintPure, Category = "Mythica")
 	bool IsToolInterfaceLoaded(const FString& FileId);
 
-	UFUNCTION(BlueprintCallable, Category = "Mythica")
+	UFUNCTION(BlueprintPure, Category = "Mythica")
 	FMythicaParameters GetToolInterface(const FString& FileId);
 
 	// Requests
@@ -172,7 +172,7 @@ public:
 	FOnAssetInstalled OnAssetUninstalled;
 
 	UPROPERTY(BlueprintAssignable, Category = "Mythica")
-	FOnThumbnailLoaded OnToolInterfaceLoaded;
+	FOnToolInterfaceLoaded OnToolInterfaceLoaded;
 
 private:
 	void OnCreateSessionResponse(FHttpRequestPtr Request, FHttpResponsePtr Response, bool bWasSuccessful);
@@ -184,6 +184,10 @@ private:
 	void OnGenerateMeshStatusResponse(FHttpRequestPtr Request, FHttpResponsePtr Response, bool bWasSuccessful, const FString& RequestId, const FString& ImportName);
 	void OnMeshDownloadInfoResponse(FHttpRequestPtr Request, FHttpResponsePtr Response, bool bWasSuccessful, const FString& FileId, const FString& ImportName);
 	void OnMeshDownloadResponse(FHttpRequestPtr Request, FHttpResponsePtr Response, bool bWasSuccessful, const FString& FileId, const FString& ImportName);
+
+	void OnInterfaceResponse(FHttpRequestPtr Request, FHttpResponsePtr Response, bool bWasSuccessful, const FString& FileId);
+	void OnInterfaceDownloadInfoResponse(FHttpRequestPtr Request, FHttpResponsePtr Response, bool bWasSuccessful, const FString& FileId);
+	void OnInterfaceDownloadResponse(FHttpRequestPtr Request, FHttpResponsePtr Response, bool bWasSuccessful, const FString& FileId);
 
 	void PollGenerateMeshStatus();
 
