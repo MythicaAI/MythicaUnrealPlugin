@@ -222,7 +222,7 @@ void UMythicaEditorSubsystem::OnGetAssetsResponse(FHttpRequestPtr Request, FHttp
     AssetList.Reset();
     ToolList.Reset();
 
-    TArray<TSharedPtr<FJsonValue>> Array = JsonValue->AsArray();
+    const TArray<TSharedPtr<FJsonValue>>& Array = JsonValue->AsArray();
     for (TSharedPtr<FJsonValue> Value : Array)
     {
         TSharedPtr<FJsonObject> JsonObject = Value->AsObject();
@@ -657,29 +657,43 @@ void UMythicaEditorSubsystem::OnInterfaceDownloadResponse(FHttpRequestPtr Reques
     FString ResponseContent = Response->GetContentAsString();
     TSharedRef<TJsonReader<>> Reader = TJsonReaderFactory<>::Create(ResponseContent);
 
-    TSharedPtr<FJsonObject> JsonObject;
-    if (!FJsonSerializer::Deserialize(Reader, JsonObject) || !JsonObject.IsValid())
+    TSharedPtr<FJsonValue> JsonValue;
+    if (!FJsonSerializer::Deserialize(Reader, JsonValue) || !JsonValue.IsValid())
     {
-        UE_LOG(LogMythica, Error, TEXT("Failed to parse create interface JSON string"));
+        UE_LOG(LogMythica, Error, TEXT("Failed to parse interface JSON string"));
         return;
     }
 
-    FMythicaParameters Interface;
-
-    const TArray<TSharedPtr<FJsonValue>>* ParametersArray = nullptr;
-    JsonObject->TryGetArrayField(TEXT("parameters"), ParametersArray);
-    if (ParametersArray)
+    if (JsonValue->Type != EJson::Array)
     {
-        for (const TSharedPtr<FJsonValue>& ParameterValue : *ParametersArray)
-        {
-            TSharedPtr<FJsonObject> ParameterObject = ParameterValue->AsObject();
+        UE_LOG(LogMythica, Error, TEXT("Interface JSON value is not an array"));
+        return;
+    }
 
-            FString Name = ParameterObject->GetStringField(TEXT("name"));
-            FString Label = ParameterObject->GetStringField(TEXT("label"));
-            float Default = ParameterObject->GetNumberField(TEXT("default"));
+    const TArray<TSharedPtr<FJsonValue>>& Values = JsonValue->AsArray();
+    if (Values.Num() == 0)
+    {
+        UE_LOG(LogMythica, Error, TEXT("Interface JSON value is empty"));
+        return;
+    }
 
-            Interface.Parameters.Add({ Name, Label, Default, Default });
-        }
+    TSharedPtr<FJsonObject> JsonObject = Values[0]->AsObject();
+    TSharedPtr<FJsonObject> Defaults = JsonObject->GetObjectField(TEXT("defaults"));
+
+    FMythicaParameters Interface;
+    for (auto It = Defaults->Values.CreateConstIterator(); It; ++It)
+    {
+        const FString& Name = It.Key();
+        TSharedPtr<FJsonObject> ParameterObject = It.Value()->AsObject();
+
+        FString Type = ParameterObject->GetStringField(TEXT("type"));
+        if (Type != "Float")
+            continue;
+
+        FString Label = ParameterObject->GetStringField(TEXT("label"));
+        float DefaultValue = ParameterObject->GetNumberField(TEXT("default"));
+
+        Interface.Parameters.Add({ Name, Label, DefaultValue, DefaultValue });
     }
 
     ToolInterfaces.Add(FileId, Interface);
