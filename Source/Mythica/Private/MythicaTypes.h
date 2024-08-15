@@ -9,10 +9,16 @@ struct FMythicaParameter
 {
     GENERATED_BODY()
 
-    UPROPERTY(BlueprintReadWrite)
+    UPROPERTY(BlueprintReadOnly)
     FString Name;
 
-    UPROPERTY(BlueprintReadWrite)
+    UPROPERTY(BlueprintReadOnly)
+    FString Label;
+
+    UPROPERTY(BlueprintReadOnly)
+    float DefaultValue;
+
+    UPROPERTY(BlueprintReadOnly)
     float Value;
 };
 
@@ -21,6 +27,6 @@ struct FMythicaParameters
 {
     GENERATED_BODY()
 
-    UPROPERTY(BlueprintReadWrite)
+    UPROPERTY(BlueprintReadOnly)
     TArray<FMythicaParameter> Parameters;
 };

@@ -675,9 +675,10 @@ void UMythicaEditorSubsystem::OnInterfaceDownloadResponse(FHttpRequestPtr Reques
             TSharedPtr<FJsonObject> ParameterObject = ParameterValue->AsObject();
 
             FString Name = ParameterObject->GetStringField(TEXT("name"));
+            FString Label = ParameterObject->GetStringField(TEXT("label"));
             float Default = ParameterObject->GetNumberField(TEXT("default"));
 
-            Interface.Parameters.Add({ Name, Default });
+            Interface.Parameters.Add({ Name, Label, Default, Default });
         }
     }
 
