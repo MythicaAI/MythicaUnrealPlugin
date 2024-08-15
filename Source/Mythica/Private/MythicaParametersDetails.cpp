@@ -73,12 +73,12 @@ void FMythicaParametersDetails::CustomizeChildren(TSharedRef<IPropertyHandle> St
             Parameters->Parameters[i].Value = NewValue;
         };
 
-        const FString& Name = Parameters->Parameters[i].Name;
-        StructBuilder.AddCustomRow(FText::FromString(Name))
+        const FString& Label = Parameters->Parameters[i].Label;
+        StructBuilder.AddCustomRow(FText::FromString(Label))
             .NameContent()
             [
                 SNew(STextBlock)
-                    .Text(FText::FromString(Name))
+                    .Text(FText::FromString(Label))
             ]
             .ValueContent()
             [
