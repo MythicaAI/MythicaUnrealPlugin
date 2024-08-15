@@ -222,7 +222,7 @@ void UMythicaEditorSubsystem::OnGetAssetsResponse(FHttpRequestPtr Request, FHttp
     AssetList.Reset();
     ToolList.Reset();
 
-    TArray<TSharedPtr<FJsonValue>> Array = JsonValue->AsArray();
+    const TArray<TSharedPtr<FJsonValue>>& Array = JsonValue->AsArray();
     for (TSharedPtr<FJsonValue> Value : Array)
     {
         TSharedPtr<FJsonObject> JsonObject = Value->AsObject();
@@ -670,7 +670,7 @@ void UMythicaEditorSubsystem::OnInterfaceDownloadResponse(FHttpRequestPtr Reques
         return;
     }
 
-    const TArray<TSharedPtr<FJsonValue>> Values = JsonValue->AsArray();
+    const TArray<TSharedPtr<FJsonValue>>& Values = JsonValue->AsArray();
     if (Values.Num() == 0)
     {
         UE_LOG(LogMythica, Error, TEXT("Interface JSON value is empty"));
@@ -683,7 +683,7 @@ void UMythicaEditorSubsystem::OnInterfaceDownloadResponse(FHttpRequestPtr Reques
     FMythicaParameters Interface;
     for (auto It = Defaults->Values.CreateConstIterator(); It; ++It)
     {
-        FString Name = It.Key();
+        const FString& Name = It.Key();
         TSharedPtr<FJsonObject> ParameterObject = It.Value()->AsObject();
 
         FString Type = ParameterObject->GetStringField(TEXT("type"));
