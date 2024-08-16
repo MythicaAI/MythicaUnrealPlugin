@@ -74,21 +74,35 @@ void Mythica::WriteParameters(const FMythicaParameters& Parameters, const TShare
         }
         else if (const FMythicaParameterInt* IntParam = Param.Value.TryGet<FMythicaParameterInt>())
         {
-            TArray<TSharedPtr<FJsonValue>> Array;
-            for (int Value : IntParam->Values)
+            if (IntParam->Values.Num() == 1)
             {
-                Array.Add(MakeShareable(new FJsonValueNumber(Value)));
+                ParameterSet->SetNumberField(Param.Name, IntParam->Values[0]);
             }
-            ParameterSet->SetArrayField(Param.Name, Array);
+            else
+            {
+                TArray<TSharedPtr<FJsonValue>> Array;
+                for (int Value : IntParam->Values)
+                {
+                    Array.Add(MakeShareable(new FJsonValueNumber(Value)));
+                }
+                ParameterSet->SetArrayField(Param.Name, Array);
+            }
         }
         else if (const FMythicaParameterFloat* FloatParam = Param.Value.TryGet<FMythicaParameterFloat>())
         {
-            TArray<TSharedPtr<FJsonValue>> Array;
-            for (float Value : FloatParam->Values)
+            if (FloatParam->Values.Num() == 1)
             {
-                Array.Add(MakeShareable(new FJsonValueNumber(Value)));
+                ParameterSet->SetNumberField(Param.Name, FloatParam->Values[0]);
             }
-            ParameterSet->SetArrayField(Param.Name, Array);
+            else
+            {
+                TArray<TSharedPtr<FJsonValue>> Array;
+                for (float Value : FloatParam->Values)
+                {
+                    Array.Add(MakeShareable(new FJsonValueNumber(Value)));
+                }
+                ParameterSet->SetArrayField(Param.Name, Array);
+            }
         }
     }
 }
