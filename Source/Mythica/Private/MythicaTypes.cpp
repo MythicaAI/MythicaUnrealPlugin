@@ -14,7 +14,12 @@ void Mythica::ReadParameters(const TSharedPtr<FJsonObject>& ParameterDef, FMythi
         bool IsArray = ParameterObject->HasTypedField<EJson::Array>(TEXT("default"));
 
         FMythicaParameterValue Value;
-        if (Type == "Toggle")
+        if (Type == "String")
+        {
+            FString DefaultValue = ParameterObject->GetStringField(TEXT("default"));
+            Value.Emplace<FMythicaParameterString>(DefaultValue, DefaultValue);
+        }
+        else if (Type == "Toggle")
         {
             bool DefaultValue = ParameterObject->GetBoolField(TEXT("default"));
             Value.Emplace<FMythicaParameterBool>(DefaultValue, DefaultValue);
@@ -68,7 +73,11 @@ void Mythica::WriteParameters(const FMythicaParameters& Parameters, const TShare
 {
     for (const FMythicaParameter& Param : Parameters.Parameters)
     {
-        if (const FMythicaParameterBool* BoolParam = Param.Value.TryGet<FMythicaParameterBool>())
+        if (const FMythicaParameterString* StringParam = Param.Value.TryGet<FMythicaParameterString>())
+        {
+            ParameterSet->SetStringField(Param.Name, StringParam->Value);
+        }            
+        else if (const FMythicaParameterBool* BoolParam = Param.Value.TryGet<FMythicaParameterBool>())
         {
             ParameterSet->SetBoolField(Param.Name, BoolParam->Value);
         }

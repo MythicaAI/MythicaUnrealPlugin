@@ -5,6 +5,12 @@
 
 #include "MythicaTypes.generated.h"
 
+struct FMythicaParameterString
+{
+    FString Value;
+    FString DefaultValue;
+};
+
 struct FMythicaParameterBool
 {
     bool Value = false;
@@ -27,7 +33,7 @@ struct FMythicaParameterFloat
     TOptional<float> MaxValue;
 };
 
-using FMythicaParameterValue = TVariant<FMythicaParameterBool, FMythicaParameterInt, FMythicaParameterFloat>;
+using FMythicaParameterValue = TVariant<FMythicaParameterString, FMythicaParameterBool, FMythicaParameterInt, FMythicaParameterFloat>;
 
 USTRUCT(BlueprintType)
 struct FMythicaParameter
