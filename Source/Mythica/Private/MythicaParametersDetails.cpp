@@ -54,7 +54,7 @@ void FMythicaParametersDetails::CustomizeChildren(TSharedRef<IPropertyHandle> St
         const FMythicaParameter& Parameter = Parameters->Parameters[ParamIndex];
 
         TSharedRef<SWidget> ValueWidget = SNullWidget::NullWidget;
-        int MinDesiredWidth = 128;
+        int ComponentCount = 1;
 
         if (const FMythicaParameterFloat* FloatParameter = Parameter.Value.TryGet<FMythicaParameterFloat>())
         {
@@ -85,7 +85,7 @@ void FMythicaParametersDetails::CustomizeChildren(TSharedRef<IPropertyHandle> St
             }
 
             ValueWidget = HorizontalBox;
-            MinDesiredWidth = FloatParameter->Values.Num() * 128;
+            ComponentCount = FloatParameter->Values.Num();
         }
         else if (const FMythicaParameterInt* IntParameter = Parameter.Value.TryGet<FMythicaParameterInt>())
         {
@@ -116,7 +116,7 @@ void FMythicaParametersDetails::CustomizeChildren(TSharedRef<IPropertyHandle> St
             }
 
             ValueWidget = HorizontalBox;
-            MinDesiredWidth = IntParameter->Values.Num() * 128;
+            ComponentCount = IntParameter->Values.Num();
         }
         else if (const FMythicaParameterBool* BoolParameter = Parameter.Value.TryGet<FMythicaParameterBool>())
         {
@@ -172,7 +172,7 @@ void FMythicaParametersDetails::CustomizeChildren(TSharedRef<IPropertyHandle> St
                     .Text(FText::FromString(Parameter.Label))
             ]
             .ValueContent()
-            .MinDesiredWidth(MinDesiredWidth)
+            .MinDesiredWidth(ComponentCount * 128)
             [
                 ValueWidget
             ];
