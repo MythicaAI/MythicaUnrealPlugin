@@ -53,9 +53,12 @@ void FMythicaParametersDetails::CustomizeChildren(TSharedRef<IPropertyHandle> St
     {
         const FMythicaParameter& Parameter = Parameters->Parameters[ParamIndex];
 
+        TSharedRef<SWidget> ValueWidget = SNullWidget::NullWidget;
+        int ComponentCount = 1;
+
         if (const FMythicaParameterFloat* FloatParameter = Parameter.Value.TryGet<FMythicaParameterFloat>())
         {
-            TSharedRef<SHorizontalBox> ValueContainer = SNew(SHorizontalBox);
+            TSharedRef<SHorizontalBox> HorizontalBox = SNew(SHorizontalBox);
 
             for (int ComponentIndex = 0; ComponentIndex < FloatParameter->Values.Num(); ++ComponentIndex)
             {
@@ -72,7 +75,7 @@ void FMythicaParametersDetails::CustomizeChildren(TSharedRef<IPropertyHandle> St
                         Parameters->Parameters[ParamIndex].Value.Get<FMythicaParameterFloat>().Values[ComponentIndex] = NewValue;
                 };
 
-                ValueContainer->AddSlot()
+                HorizontalBox->AddSlot()
                     .Padding(0.0f, 0.0f, 2.0f, 0.0f)
                     [
                         SNew(SNumericEntryBox<float>)
@@ -81,21 +84,12 @@ void FMythicaParametersDetails::CustomizeChildren(TSharedRef<IPropertyHandle> St
                     ];
             }
 
-            StructBuilder.AddCustomRow(FText::FromString(Parameter.Label))
-                .NameContent()
-                [
-                    SNew(STextBlock)
-                        .Text(FText::FromString(Parameter.Label))
-                ]
-                .ValueContent()
-                .MinDesiredWidth(FloatParameter->Values.Num() * 128)
-                [
-                    ValueContainer
-                ];
+            ValueWidget = HorizontalBox;
+            ComponentCount = FloatParameter->Values.Num();
         }
         else if (const FMythicaParameterInt* IntParameter = Parameter.Value.TryGet<FMythicaParameterInt>())
         {
-            TSharedRef<SHorizontalBox> ValueContainer = SNew(SHorizontalBox);
+            TSharedRef<SHorizontalBox> HorizontalBox = SNew(SHorizontalBox);
 
             for (int ComponentIndex = 0; ComponentIndex < IntParameter->Values.Num(); ++ComponentIndex)
             {
@@ -112,7 +106,7 @@ void FMythicaParametersDetails::CustomizeChildren(TSharedRef<IPropertyHandle> St
                         Parameters->Parameters[ParamIndex].Value.Get<FMythicaParameterInt>().Values[ComponentIndex] = NewValue;
                 };
 
-                ValueContainer->AddSlot()
+                HorizontalBox->AddSlot()
                     .Padding(0.0f, 0.0f, 2.0f, 0.0f)
                     [
                         SNew(SNumericEntryBox<int>)
@@ -121,17 +115,8 @@ void FMythicaParametersDetails::CustomizeChildren(TSharedRef<IPropertyHandle> St
                     ];
             }
 
-            StructBuilder.AddCustomRow(FText::FromString(Parameter.Label))
-                .NameContent()
-                [
-                    SNew(STextBlock)
-                        .Text(FText::FromString(Parameter.Label))
-                ]
-                .ValueContent()
-                .MinDesiredWidth(IntParameter->Values.Num() * 128)
-                [
-                    ValueContainer
-                ];
+            ValueWidget = HorizontalBox;
+            ComponentCount = IntParameter->Values.Num();
         }
         else if (const FMythicaParameterBool* BoolParameter = Parameter.Value.TryGet<FMythicaParameterBool>())
         {
@@ -152,18 +137,9 @@ void FMythicaParametersDetails::CustomizeChildren(TSharedRef<IPropertyHandle> St
                     Parameters->Parameters[ParamIndex].Value.Get<FMythicaParameterBool>().Value = (NewState == ECheckBoxState::Checked);
             };
 
-            StructBuilder.AddCustomRow(FText::FromString(Parameter.Label))
-                .NameContent()
-                [
-                    SNew(STextBlock)
-                        .Text(FText::FromString(Parameter.Label))
-                ]
-                .ValueContent()
-                [
-                    SNew(SCheckBox)
-                        .IsChecked_Lambda(IsChecked)
-                        .OnCheckStateChanged_Lambda(OnCheckStateChanged)
-                ];
+            ValueWidget = SNew(SCheckBox)
+                .IsChecked_Lambda(IsChecked)
+                .OnCheckStateChanged_Lambda(OnCheckStateChanged);
         }
         else if (const FMythicaParameterString* StringParameter = Parameter.Value.TryGet<FMythicaParameterString>())
         {
@@ -180,18 +156,25 @@ void FMythicaParametersDetails::CustomizeChildren(TSharedRef<IPropertyHandle> St
                     Parameters->Parameters[ParamIndex].Value.Get<FMythicaParameterString>().Value = InText.ToString();
             };
 
-            StructBuilder.AddCustomRow(FText::FromString(Parameter.Label))
-                .NameContent()
-                [
-                    SNew(STextBlock)
-                        .Text(FText::FromString(Parameter.Label))
-                ]
-                .ValueContent()
-                [
-                    SNew(SEditableTextBox)
-                        .Text_Lambda(Text)
-                        .OnTextCommitted_Lambda(OnTextCommitted)
-                ];
+            ValueWidget = SNew(SEditableTextBox)
+                .Text_Lambda(Text)
+                .OnTextCommitted_Lambda(OnTextCommitted);
         }
+        else
+        {
+            continue;
+        }
+
+        StructBuilder.AddCustomRow(FText::FromString(Parameter.Label))
+            .NameContent()
+            [
+                SNew(STextBlock)
+                    .Text(FText::FromString(Parameter.Label))
+            ]
+            .ValueContent()
+            .MinDesiredWidth(ComponentCount * 128)
+            [
+                ValueWidget
+            ];
     }
 }
