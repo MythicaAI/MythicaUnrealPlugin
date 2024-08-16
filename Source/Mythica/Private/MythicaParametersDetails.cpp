@@ -60,13 +60,13 @@ void FMythicaParametersDetails::CustomizeChildren(TSharedRef<IPropertyHandle> St
                 continue;
             }
 
-            auto GetValue = [=]()
+            auto Value = [=]()
             {
                 FMythicaParameters* Parameters = GetParametersFromHandleWeak(HandleWeak);
                 return Parameters ? Parameters->Parameters[ParamIndex].Value.Get<FMythicaParameterFloat>().Values[0] : 0.0f;
             };
 
-            auto OnValueChanged = [=](float NewValue)
+            auto OnValueCommitted = [=](float NewValue, ETextCommit::Type InCommitType)
             {
                 FMythicaParameters* Parameters = GetParametersFromHandleWeak(HandleWeak);
                 if (Parameters)
@@ -82,8 +82,8 @@ void FMythicaParametersDetails::CustomizeChildren(TSharedRef<IPropertyHandle> St
                 .ValueContent()
                 [
                     SNew(SNumericEntryBox<float>)
-                        .Value_Lambda(GetValue)
-                        .OnValueChanged_Lambda(OnValueChanged)
+                        .Value_Lambda(Value)
+                        .OnValueCommitted_Lambda(OnValueCommitted)
                 ];
         }
         else if (const FMythicaParameterInt* IntParameter = Parameter.Value.TryGet<FMythicaParameterInt>())
@@ -93,13 +93,13 @@ void FMythicaParametersDetails::CustomizeChildren(TSharedRef<IPropertyHandle> St
                 continue;
             }
 
-            auto GetValue = [=]()
+            auto Value = [=]()
             {
                 FMythicaParameters* Parameters = GetParametersFromHandleWeak(HandleWeak);
-                return Parameters ? Parameters->Parameters[ParamIndex].Value.Get<FMythicaParameterInt>().Values[0] : 0.0f;
+                return Parameters ? Parameters->Parameters[ParamIndex].Value.Get<FMythicaParameterInt>().Values[0] : 0;
             };
 
-            auto OnValueChanged = [=](int NewValue)
+            auto OnValueCommitted = [=](int NewValue, ETextCommit::Type InCommitType)
             {
                 FMythicaParameters* Parameters = GetParametersFromHandleWeak(HandleWeak);
                 if (Parameters)
@@ -115,20 +115,20 @@ void FMythicaParametersDetails::CustomizeChildren(TSharedRef<IPropertyHandle> St
                 .ValueContent()
                 [
                     SNew(SNumericEntryBox<int>)
-                        .Value_Lambda(GetValue)
-                        .OnValueChanged_Lambda(OnValueChanged)
+                        .Value_Lambda(Value)
+                        .OnValueCommitted_Lambda(OnValueCommitted)
                 ];
         }
         else if (const FMythicaParameterBool* BoolParameter = Parameter.Value.TryGet<FMythicaParameterBool>())
         {
-            auto GetValue = [=]()
+            auto IsChecked = [=]()
             {
                 FMythicaParameters* Parameters = GetParametersFromHandleWeak(HandleWeak);
                 bool Value = Parameters ? Parameters->Parameters[ParamIndex].Value.Get<FMythicaParameterBool>().Value : false;
                 return Value ? ECheckBoxState::Checked : ECheckBoxState::Unchecked;
             };
 
-            auto OnValueChanged = [=](ECheckBoxState NewState)
+            auto OnCheckStateChanged = [=](ECheckBoxState NewState)
             {
                 if (NewState == ECheckBoxState::Undetermined)
                     return;
@@ -147,19 +147,19 @@ void FMythicaParametersDetails::CustomizeChildren(TSharedRef<IPropertyHandle> St
                 .ValueContent()
                 [
                     SNew(SCheckBox)
-                        .IsChecked_Lambda(GetValue)
-                        .OnCheckStateChanged_Lambda(OnValueChanged)
+                        .IsChecked_Lambda(IsChecked)
+                        .OnCheckStateChanged_Lambda(OnCheckStateChanged)
                 ];
         }
         else if (const FMythicaParameterString* StringParameter = Parameter.Value.TryGet<FMythicaParameterString>())
         {
-            auto GetValue = [=]()
+            auto Text = [=]()
             {
                 FMythicaParameters* Parameters = GetParametersFromHandleWeak(HandleWeak);
                 return Parameters ? FText::FromString(Parameters->Parameters[ParamIndex].Value.Get<FMythicaParameterString>().Value) : FText();
             };
 
-            auto OnValueChanged = [=](const FText& InText)
+            auto OnTextCommitted = [=](const FText& InText, ETextCommit::Type InCommitType)
             {
                 FMythicaParameters* Parameters = GetParametersFromHandleWeak(HandleWeak);
                 if (Parameters)
@@ -175,8 +175,8 @@ void FMythicaParametersDetails::CustomizeChildren(TSharedRef<IPropertyHandle> St
                 .ValueContent()
                 [
                     SNew(SEditableTextBox)
-                        .Text_Lambda(GetValue)
-                        .OnTextChanged_Lambda(OnValueChanged)
+                        .Text_Lambda(Text)
+                        .OnTextCommitted_Lambda(OnTextCommitted)
                 ];
         }
     }
