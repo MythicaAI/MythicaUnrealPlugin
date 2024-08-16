@@ -680,23 +680,10 @@ void UMythicaEditorSubsystem::OnInterfaceDownloadResponse(FHttpRequestPtr Reques
     TSharedPtr<FJsonObject> JsonObject = Values[0]->AsObject();
     TSharedPtr<FJsonObject> Defaults = JsonObject->GetObjectField(TEXT("defaults"));
 
-    FMythicaParameters Interface;
-    for (auto It = Defaults->Values.CreateConstIterator(); It; ++It)
-    {
-        const FString& Name = It.Key();
-        TSharedPtr<FJsonObject> ParameterObject = It.Value()->AsObject();
+    FMythicaParameters Parameters;
+    Mythica::ReadParameters(Defaults, Parameters);
 
-        FString Type = ParameterObject->GetStringField(TEXT("type"));
-        if (Type != "Float")
-            continue;
-
-        FString Label = ParameterObject->GetStringField(TEXT("label"));
-        float DefaultValue = ParameterObject->GetNumberField(TEXT("default"));
-
-        Interface.Parameters.Add({ Name, Label, DefaultValue, DefaultValue });
-    }
-
-    ToolInterfaces.Add(FileId, Interface);
+    ToolInterfaces.Add(FileId, Parameters);
     OnToolInterfaceLoaded.Broadcast(FileId);
 }
 
@@ -708,15 +695,12 @@ void UMythicaEditorSubsystem::GenerateMesh(const FString& FileId, const FMythica
     }
 
     // Create JSON payload
-    TSharedPtr<FJsonObject> ParamsObject = MakeShareable(new FJsonObject);
-    for (const FMythicaParameter& Param : Params.Parameters)
-    {
-        ParamsObject->SetStringField(Param.Name, FString::SanitizeFloat(Param.Value));
-    }
+    TSharedPtr<FJsonObject> ParamsSetObject = MakeShareable(new FJsonObject);
+    Mythica::WriteParameters(Params, ParamsSetObject);
 
     TSharedPtr<FJsonObject> JsonObject = MakeShareable(new FJsonObject);
     JsonObject->SetStringField(TEXT("file_id"), FileId);
-    JsonObject->SetObjectField(TEXT("params"), ParamsObject);
+    JsonObject->SetObjectField(TEXT("params"), ParamsSetObject);
 
     FString ContentJson;
     TSharedRef<TJsonWriter<>> Writer = TJsonWriterFactory<>::Create(&ContentJson);
