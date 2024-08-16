@@ -5,18 +5,6 @@
 
 #include "MythicaTypes.generated.h"
 
-struct FMythicaParameterString
-{
-    FString Value;
-    FString DefaultValue;
-};
-
-struct FMythicaParameterBool
-{
-    bool Value = false;
-    bool DefaultValue = false;
-};
-
 struct FMythicaParameterInt
 {
     TArray<int> Values;
@@ -33,7 +21,19 @@ struct FMythicaParameterFloat
     TOptional<float> MaxValue;
 };
 
-using FMythicaParameterValue = TVariant<FMythicaParameterString, FMythicaParameterBool, FMythicaParameterInt, FMythicaParameterFloat>;
+struct FMythicaParameterBool
+{
+    bool Value = false;
+    bool DefaultValue = false;
+};
+
+struct FMythicaParameterString
+{
+    FString Value;
+    FString DefaultValue;
+};
+
+using FMythicaParameterValue = TVariant<FMythicaParameterInt, FMythicaParameterFloat, FMythicaParameterBool, FMythicaParameterString>;
 
 USTRUCT(BlueprintType)
 struct FMythicaParameter

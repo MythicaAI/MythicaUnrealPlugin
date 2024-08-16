@@ -695,12 +695,12 @@ void UMythicaEditorSubsystem::GenerateMesh(const FString& FileId, const FMythica
     }
 
     // Create JSON payload
-    TSharedPtr<FJsonObject> ParamsObject = MakeShareable(new FJsonObject);
-    Mythica::WriteParameters(Params, ParamsObject);
+    TSharedPtr<FJsonObject> ParamsSetObject = MakeShareable(new FJsonObject);
+    Mythica::WriteParameters(Params, ParamsSetObject);
 
     TSharedPtr<FJsonObject> JsonObject = MakeShareable(new FJsonObject);
     JsonObject->SetStringField(TEXT("file_id"), FileId);
-    JsonObject->SetObjectField(TEXT("params"), ParamsObject);
+    JsonObject->SetObjectField(TEXT("params"), ParamsSetObject);
 
     FString ContentJson;
     TSharedRef<TJsonWriter<>> Writer = TJsonWriterFactory<>::Create(&ContentJson);

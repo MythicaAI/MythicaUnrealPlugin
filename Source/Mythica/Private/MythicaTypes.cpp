@@ -14,17 +14,7 @@ void Mythica::ReadParameters(const TSharedPtr<FJsonObject>& ParameterDef, FMythi
         bool IsArray = ParameterObject->HasTypedField<EJson::Array>(TEXT("default"));
 
         FMythicaParameterValue Value;
-        if (Type == "String")
-        {
-            FString DefaultValue = ParameterObject->GetStringField(TEXT("default"));
-            Value.Emplace<FMythicaParameterString>(DefaultValue, DefaultValue);
-        }
-        else if (Type == "Toggle")
-        {
-            bool DefaultValue = ParameterObject->GetBoolField(TEXT("default"));
-            Value.Emplace<FMythicaParameterBool>(DefaultValue, DefaultValue);
-        }
-        else if (Type == "Int")
+        if (Type == "Int")
         {
             TArray<int> DefaultValues;
             if (IsArray)
@@ -60,6 +50,16 @@ void Mythica::ReadParameters(const TSharedPtr<FJsonObject>& ParameterDef, FMythi
 
             Value.Emplace<FMythicaParameterFloat>(DefaultValues, DefaultValues);
         }
+        else if (Type == "Toggle")
+        {
+            bool DefaultValue = ParameterObject->GetBoolField(TEXT("default"));
+            Value.Emplace<FMythicaParameterBool>(DefaultValue, DefaultValue);
+        }
+        else if (Type == "String")
+        {
+            FString DefaultValue = ParameterObject->GetStringField(TEXT("default"));
+            Value.Emplace<FMythicaParameterString>(DefaultValue, DefaultValue);
+        }
         else
         {
             continue;
@@ -69,23 +69,15 @@ void Mythica::ReadParameters(const TSharedPtr<FJsonObject>& ParameterDef, FMythi
     }
 }
 
-void Mythica::WriteParameters(const FMythicaParameters& Parameters, const TSharedPtr<FJsonObject>& ParameterSet)
+void Mythica::WriteParameters(const FMythicaParameters& Parameters, const TSharedPtr<FJsonObject>& OutParamsSet)
 {
     for (const FMythicaParameter& Param : Parameters.Parameters)
     {
-        if (const FMythicaParameterString* StringParam = Param.Value.TryGet<FMythicaParameterString>())
-        {
-            ParameterSet->SetStringField(Param.Name, StringParam->Value);
-        }            
-        else if (const FMythicaParameterBool* BoolParam = Param.Value.TryGet<FMythicaParameterBool>())
-        {
-            ParameterSet->SetBoolField(Param.Name, BoolParam->Value);
-        }
-        else if (const FMythicaParameterInt* IntParam = Param.Value.TryGet<FMythicaParameterInt>())
+        if (const FMythicaParameterInt* IntParam = Param.Value.TryGet<FMythicaParameterInt>())
         {
             if (IntParam->Values.Num() == 1)
             {
-                ParameterSet->SetNumberField(Param.Name, IntParam->Values[0]);
+                OutParamsSet->SetNumberField(Param.Name, IntParam->Values[0]);
             }
             else
             {
@@ -94,14 +86,14 @@ void Mythica::WriteParameters(const FMythicaParameters& Parameters, const TShare
                 {
                     Array.Add(MakeShareable(new FJsonValueNumber(Value)));
                 }
-                ParameterSet->SetArrayField(Param.Name, Array);
+                OutParamsSet->SetArrayField(Param.Name, Array);
             }
         }
         else if (const FMythicaParameterFloat* FloatParam = Param.Value.TryGet<FMythicaParameterFloat>())
         {
             if (FloatParam->Values.Num() == 1)
             {
-                ParameterSet->SetNumberField(Param.Name, FloatParam->Values[0]);
+                OutParamsSet->SetNumberField(Param.Name, FloatParam->Values[0]);
             }
             else
             {
@@ -110,8 +102,16 @@ void Mythica::WriteParameters(const FMythicaParameters& Parameters, const TShare
                 {
                     Array.Add(MakeShareable(new FJsonValueNumber(Value)));
                 }
-                ParameterSet->SetArrayField(Param.Name, Array);
+                OutParamsSet->SetArrayField(Param.Name, Array);
             }
+        }
+        else if (const FMythicaParameterBool* BoolParam = Param.Value.TryGet<FMythicaParameterBool>())
+        {
+            OutParamsSet->SetBoolField(Param.Name, BoolParam->Value);
+        }
+        else if (const FMythicaParameterString* StringParam = Param.Value.TryGet<FMythicaParameterString>())
+        {
+            OutParamsSet->SetStringField(Param.Name, StringParam->Value);
         }
     }
 }
