@@ -1,25 +1,42 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "Misc/TVariant.h"
 
 #include "MythicaTypes.generated.h"
+
+struct FMythicaParameterBool
+{
+    bool Value = false;
+    bool DefaultValue = false;
+};
+
+struct FMythicaParameterInt
+{
+    TArray<int> Values;
+    TArray<int> DefaultValues;
+    TOptional<int> MinValue;
+    TOptional<int> MaxValue;
+};
+
+struct FMythicaParameterFloat
+{
+    TArray<float> Values;
+    TArray<float> DefaultValues;
+    TOptional<float> MinValue;
+    TOptional<float> MaxValue;
+};
+
+using FMythicaParameterValue = TVariant<FMythicaParameterBool, FMythicaParameterInt, FMythicaParameterFloat>;
 
 USTRUCT(BlueprintType)
 struct FMythicaParameter
 {
     GENERATED_BODY()
 
-    UPROPERTY(BlueprintReadOnly)
     FString Name;
-
-    UPROPERTY(BlueprintReadOnly)
     FString Label;
-
-    UPROPERTY(BlueprintReadOnly)
-    float DefaultValue;
-
-    UPROPERTY(BlueprintReadOnly)
-    float Value;
+    FMythicaParameterValue Value;
 };
 
 USTRUCT(BlueprintType)

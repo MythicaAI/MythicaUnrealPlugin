@@ -646,6 +646,68 @@ void UMythicaEditorSubsystem::OnInterfaceDownloadInfoResponse(FHttpRequestPtr Re
     DownloadRequest->ProcessRequest();
 }
 
+static void ParseMythicaParameters(TSharedPtr<FJsonObject> Defaults, FMythicaParameters& Parameters)
+{
+    for (auto It = Defaults->Values.CreateConstIterator(); It; ++It)
+    {
+        const FString& Name = It.Key();
+        TSharedPtr<FJsonObject> ParameterObject = It.Value()->AsObject();
+
+        FString Label = ParameterObject->GetStringField(TEXT("label"));
+        FString Type = ParameterObject->GetStringField(TEXT("type"));
+        bool IsArray = ParameterObject->HasTypedField<EJson::Array>(TEXT("default"));
+
+        FMythicaParameterValue Value;
+        if (Type == "Toggle")
+        {
+            bool DefaultValue = ParameterObject->GetBoolField(TEXT("default"));
+            Value.Emplace<FMythicaParameterBool>(DefaultValue, DefaultValue);
+        }
+        else if (Type == "Int")
+        {
+            TArray<int> DefaultValues;
+            if (IsArray)
+            {
+                TArray<TSharedPtr<FJsonValue>> DefaultArray = ParameterObject->GetArrayField(TEXT("default"));
+                for (TSharedPtr<FJsonValue> DefaultValue : DefaultArray)
+                {
+                    DefaultValues.Add(DefaultValue->AsNumber());
+                }
+            }
+            else
+            {
+                DefaultValues.Add(ParameterObject->GetNumberField(TEXT("default")));
+            }
+
+            Value.Emplace<FMythicaParameterInt>(DefaultValues, DefaultValues);
+        }
+        else if (Type == "Float")
+        {
+            TArray<float> DefaultValues;
+            if (IsArray)
+            {
+                TArray<TSharedPtr<FJsonValue>> DefaultArray = ParameterObject->GetArrayField(TEXT("default"));
+                for (TSharedPtr<FJsonValue> DefaultValue : DefaultArray)
+                {
+                    DefaultValues.Add(DefaultValue->AsNumber());
+                }
+            }
+            else
+            {
+                DefaultValues.Add(ParameterObject->GetNumberField(TEXT("default")));
+            }
+
+            Value.Emplace<FMythicaParameterFloat>(DefaultValues, DefaultValues);
+        }
+        else
+        {
+            continue;
+        }
+
+        Parameters.Parameters.Add({ Name, Label, Value });
+    }
+}
+
 void UMythicaEditorSubsystem::OnInterfaceDownloadResponse(FHttpRequestPtr Request, FHttpResponsePtr Response, bool bWasSuccessful, const FString& FileId)
 {
     if (!bWasSuccessful || !Response.IsValid())
@@ -680,24 +742,40 @@ void UMythicaEditorSubsystem::OnInterfaceDownloadResponse(FHttpRequestPtr Reques
     TSharedPtr<FJsonObject> JsonObject = Values[0]->AsObject();
     TSharedPtr<FJsonObject> Defaults = JsonObject->GetObjectField(TEXT("defaults"));
 
-    FMythicaParameters Interface;
-    for (auto It = Defaults->Values.CreateConstIterator(); It; ++It)
-    {
-        const FString& Name = It.Key();
-        TSharedPtr<FJsonObject> ParameterObject = It.Value()->AsObject();
+    FMythicaParameters Parameters;
+    ParseMythicaParameters(Defaults, Parameters);
 
-        FString Type = ParameterObject->GetStringField(TEXT("type"));
-        if (Type != "Float")
-            continue;
-
-        FString Label = ParameterObject->GetStringField(TEXT("label"));
-        float DefaultValue = ParameterObject->GetNumberField(TEXT("default"));
-
-        Interface.Parameters.Add({ Name, Label, DefaultValue, DefaultValue });
-    }
-
-    ToolInterfaces.Add(FileId, Interface);
+    ToolInterfaces.Add(FileId, Parameters);
     OnToolInterfaceLoaded.Broadcast(FileId);
+}
+
+static void SerializeMythicaParameters(const FMythicaParameters& Params, TSharedPtr<FJsonObject> ParamsObject)
+{
+    for (const FMythicaParameter& Param : Params.Parameters)
+    {
+        if (const FMythicaParameterBool* BoolParam = Param.Value.TryGet<FMythicaParameterBool>())
+        {
+            ParamsObject->SetBoolField(Param.Name, BoolParam->Value);
+        }
+        else if (const FMythicaParameterInt* IntParam = Param.Value.TryGet<FMythicaParameterInt>())
+        {
+            TArray<TSharedPtr<FJsonValue>> Array;
+            for (int Value : IntParam->Values)
+            {
+                Array.Add(MakeShareable(new FJsonValueNumber(Value)));
+            }
+            ParamsObject->SetArrayField(Param.Name, Array);
+        }
+        else if (const FMythicaParameterFloat* FloatParam = Param.Value.TryGet<FMythicaParameterFloat>())
+        {
+            TArray<TSharedPtr<FJsonValue>> Array;
+            for (float Value : FloatParam->Values)
+            {
+                Array.Add(MakeShareable(new FJsonValueNumber(Value)));
+            }
+            ParamsObject->SetArrayField(Param.Name, Array);
+        }
+    }
 }
 
 void UMythicaEditorSubsystem::GenerateMesh(const FString& FileId, const FMythicaParameters& Params, const FString& ImportName)
@@ -709,10 +787,7 @@ void UMythicaEditorSubsystem::GenerateMesh(const FString& FileId, const FMythica
 
     // Create JSON payload
     TSharedPtr<FJsonObject> ParamsObject = MakeShareable(new FJsonObject);
-    for (const FMythicaParameter& Param : Params.Parameters)
-    {
-        ParamsObject->SetStringField(Param.Name, FString::SanitizeFloat(Param.Value));
-    }
+    SerializeMythicaParameters(Params, ParamsObject);
 
     TSharedPtr<FJsonObject> JsonObject = MakeShareable(new FJsonObject);
     JsonObject->SetStringField(TEXT("file_id"), FileId);

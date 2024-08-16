@@ -51,6 +51,13 @@ void FMythicaParametersDetails::CustomizeChildren(TSharedRef<IPropertyHandle> St
     TWeakPtr<IPropertyHandle> HandleWeak = StructPropertyHandle.ToWeakPtr();
     for (int32 i = 0; i < Parameters->Parameters.Num(); ++i)
     {
+        const FMythicaParameter& Parameter = Parameters->Parameters[i];
+        const FMythicaParameterFloat* FloatParameter = Parameter.Value.TryGet<FMythicaParameterFloat>();
+        if (!FloatParameter || FloatParameter->Values.Num() != 1)
+        {
+            continue;
+        }
+
         auto GetValue = [HandleWeak, i]()
         {
             FMythicaParameters* Parameters = GetParametersFromHandleWeak(HandleWeak);
@@ -59,7 +66,7 @@ void FMythicaParametersDetails::CustomizeChildren(TSharedRef<IPropertyHandle> St
                 return 0.0f;
             }
 
-            return Parameters->Parameters[i].Value;
+            return Parameters->Parameters[i].Value.Get<FMythicaParameterFloat>().Values[0];
         };
 
         auto OnValueChanged = [HandleWeak, i](float NewValue)
@@ -70,7 +77,7 @@ void FMythicaParametersDetails::CustomizeChildren(TSharedRef<IPropertyHandle> St
                 return;
             }
 
-            Parameters->Parameters[i].Value = NewValue;
+            Parameters->Parameters[i].Value.Get<FMythicaParameterFloat>().Values[0] = NewValue;
         };
 
         const FString& Label = Parameters->Parameters[i].Label;
