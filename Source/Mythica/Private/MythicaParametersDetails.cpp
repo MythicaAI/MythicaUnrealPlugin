@@ -55,23 +55,31 @@ void FMythicaParametersDetails::CustomizeChildren(TSharedRef<IPropertyHandle> St
 
         if (const FMythicaParameterFloat* FloatParameter = Parameter.Value.TryGet<FMythicaParameterFloat>())
         {
-            if (FloatParameter->Values.Num() != 1)
+            TSharedRef<SHorizontalBox> ValueContainer = SNew(SHorizontalBox);
+
+            for (int ComponentIndex = 0; ComponentIndex < FloatParameter->Values.Num(); ++ComponentIndex)
             {
-                continue;
+                auto Value = [=]()
+                {
+                    FMythicaParameters* Parameters = GetParametersFromHandleWeak(HandleWeak);
+                    return Parameters ? Parameters->Parameters[ParamIndex].Value.Get<FMythicaParameterFloat>().Values[ComponentIndex] : 0.0f;
+                };
+
+                auto OnValueCommitted = [=](float NewValue, ETextCommit::Type InCommitType)
+                {
+                    FMythicaParameters* Parameters = GetParametersFromHandleWeak(HandleWeak);
+                    if (Parameters)
+                        Parameters->Parameters[ParamIndex].Value.Get<FMythicaParameterFloat>().Values[ComponentIndex] = NewValue;
+                };
+
+                ValueContainer->AddSlot()
+                    .Padding(0.0f, 0.0f, 2.0f, 0.0f)
+                    [
+                        SNew(SNumericEntryBox<float>)
+                            .Value_Lambda(Value)
+                            .OnValueCommitted_Lambda(OnValueCommitted)
+                    ];
             }
-
-            auto Value = [=]()
-            {
-                FMythicaParameters* Parameters = GetParametersFromHandleWeak(HandleWeak);
-                return Parameters ? Parameters->Parameters[ParamIndex].Value.Get<FMythicaParameterFloat>().Values[0] : 0.0f;
-            };
-
-            auto OnValueCommitted = [=](float NewValue, ETextCommit::Type InCommitType)
-            {
-                FMythicaParameters* Parameters = GetParametersFromHandleWeak(HandleWeak);
-                if (Parameters)
-                    Parameters->Parameters[ParamIndex].Value.Get<FMythicaParameterFloat>().Values[0] = NewValue;
-            };
 
             StructBuilder.AddCustomRow(FText::FromString(Parameter.Label))
                 .NameContent()
@@ -80,31 +88,38 @@ void FMythicaParametersDetails::CustomizeChildren(TSharedRef<IPropertyHandle> St
                         .Text(FText::FromString(Parameter.Label))
                 ]
                 .ValueContent()
+                .MinDesiredWidth(FloatParameter->Values.Num() * 128)
                 [
-                    SNew(SNumericEntryBox<float>)
-                        .Value_Lambda(Value)
-                        .OnValueCommitted_Lambda(OnValueCommitted)
+                    ValueContainer
                 ];
         }
         else if (const FMythicaParameterInt* IntParameter = Parameter.Value.TryGet<FMythicaParameterInt>())
         {
-            if (IntParameter->Values.Num() != 1)
+            TSharedRef<SHorizontalBox> ValueContainer = SNew(SHorizontalBox);
+
+            for (int ComponentIndex = 0; ComponentIndex < IntParameter->Values.Num(); ++ComponentIndex)
             {
-                continue;
+                auto Value = [=]()
+                {
+                    FMythicaParameters* Parameters = GetParametersFromHandleWeak(HandleWeak);
+                    return Parameters ? Parameters->Parameters[ParamIndex].Value.Get<FMythicaParameterInt>().Values[ComponentIndex] : 0;
+                };
+
+                auto OnValueCommitted = [=](int NewValue, ETextCommit::Type InCommitType)
+                {
+                    FMythicaParameters* Parameters = GetParametersFromHandleWeak(HandleWeak);
+                    if (Parameters)
+                        Parameters->Parameters[ParamIndex].Value.Get<FMythicaParameterInt>().Values[ComponentIndex] = NewValue;
+                };
+
+                ValueContainer->AddSlot()
+                    .Padding(0.0f, 0.0f, 2.0f, 0.0f)
+                    [
+                        SNew(SNumericEntryBox<int>)
+                            .Value_Lambda(Value)
+                            .OnValueCommitted_Lambda(OnValueCommitted)
+                    ];
             }
-
-            auto Value = [=]()
-            {
-                FMythicaParameters* Parameters = GetParametersFromHandleWeak(HandleWeak);
-                return Parameters ? Parameters->Parameters[ParamIndex].Value.Get<FMythicaParameterInt>().Values[0] : 0;
-            };
-
-            auto OnValueCommitted = [=](int NewValue, ETextCommit::Type InCommitType)
-            {
-                FMythicaParameters* Parameters = GetParametersFromHandleWeak(HandleWeak);
-                if (Parameters)
-                    Parameters->Parameters[ParamIndex].Value.Get<FMythicaParameterInt>().Values[0] = NewValue;
-            };
 
             StructBuilder.AddCustomRow(FText::FromString(Parameter.Label))
                 .NameContent()
@@ -113,10 +128,9 @@ void FMythicaParametersDetails::CustomizeChildren(TSharedRef<IPropertyHandle> St
                         .Text(FText::FromString(Parameter.Label))
                 ]
                 .ValueContent()
+                .MinDesiredWidth(IntParameter->Values.Num() * 128)
                 [
-                    SNew(SNumericEntryBox<int>)
-                        .Value_Lambda(Value)
-                        .OnValueCommitted_Lambda(OnValueCommitted)
+                    ValueContainer
                 ];
         }
         else if (const FMythicaParameterBool* BoolParameter = Parameter.Value.TryGet<FMythicaParameterBool>())
