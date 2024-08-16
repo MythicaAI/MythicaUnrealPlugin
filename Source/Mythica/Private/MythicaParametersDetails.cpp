@@ -119,6 +119,37 @@ void FMythicaParametersDetails::CustomizeChildren(TSharedRef<IPropertyHandle> St
                         .OnValueChanged_Lambda(OnValueChanged)
                 ];
         }
+        else if (const FMythicaParameterBool* BoolParameter = Parameter.Value.TryGet<FMythicaParameterBool>())
+        {
+            auto GetValue = [=]()
+            {
+                FMythicaParameters* Parameters = GetParametersFromHandleWeak(HandleWeak);
+                bool Value = Parameters ? Parameters->Parameters[ParamIndex].Value.Get<FMythicaParameterBool>().Value : false;
+                return Value ? ECheckBoxState::Checked : ECheckBoxState::Unchecked;
+            };
 
+            auto OnValueChanged = [=](ECheckBoxState NewState)
+            {
+                if (NewState == ECheckBoxState::Undetermined)
+                    return;
+
+                FMythicaParameters* Parameters = GetParametersFromHandleWeak(HandleWeak);
+                if (Parameters)
+                    Parameters->Parameters[ParamIndex].Value.Get<FMythicaParameterBool>().Value = (NewState == ECheckBoxState::Checked);
+            };
+
+            StructBuilder.AddCustomRow(FText::FromString(Parameter.Label))
+                .NameContent()
+                [
+                    SNew(STextBlock)
+                        .Text(FText::FromString(Parameter.Label))
+                ]
+                .ValueContent()
+                [
+                    SNew(SCheckBox)
+                        .IsChecked_Lambda(GetValue)
+                        .OnCheckStateChanged_Lambda(OnValueChanged)
+                ];
+        }
     }
 }
