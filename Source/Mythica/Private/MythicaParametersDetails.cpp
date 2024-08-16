@@ -151,5 +151,33 @@ void FMythicaParametersDetails::CustomizeChildren(TSharedRef<IPropertyHandle> St
                         .OnCheckStateChanged_Lambda(OnValueChanged)
                 ];
         }
+        else if (const FMythicaParameterString* StringParameter = Parameter.Value.TryGet<FMythicaParameterString>())
+        {
+            auto GetValue = [=]()
+            {
+                FMythicaParameters* Parameters = GetParametersFromHandleWeak(HandleWeak);
+                return Parameters ? FText::FromString(Parameters->Parameters[ParamIndex].Value.Get<FMythicaParameterString>().Value) : FText();
+            };
+
+            auto OnValueChanged = [=](const FText& InText)
+            {
+                FMythicaParameters* Parameters = GetParametersFromHandleWeak(HandleWeak);
+                if (Parameters)
+                    Parameters->Parameters[ParamIndex].Value.Get<FMythicaParameterString>().Value = InText.ToString();
+            };
+
+            StructBuilder.AddCustomRow(FText::FromString(Parameter.Label))
+                .NameContent()
+                [
+                    SNew(STextBlock)
+                        .Text(FText::FromString(Parameter.Label))
+                ]
+                .ValueContent()
+                [
+                    SNew(SEditableTextBox)
+                        .Text_Lambda(GetValue)
+                        .OnTextChanged_Lambda(OnValueChanged)
+                ];
+        }
     }
 }
