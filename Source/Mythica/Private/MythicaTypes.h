@@ -47,3 +47,9 @@ struct FMythicaParameters
     UPROPERTY(BlueprintReadOnly)
     TArray<FMythicaParameter> Parameters;
 };
+
+namespace Mythica
+{
+    void ReadParameters(const TSharedPtr<FJsonObject>& ParameterDef, FMythicaParameters& OutParameters);
+    void WriteParameters(const FMythicaParameters& Parameters, const TSharedPtr<FJsonObject>& ParameterSet);
+}
