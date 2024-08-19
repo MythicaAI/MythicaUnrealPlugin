@@ -30,7 +30,18 @@ void Mythica::ReadParameters(const TSharedPtr<FJsonObject>& ParameterDef, FMythi
                 DefaultValues.Add(ParameterObject->GetNumberField(TEXT("default")));
             }
 
-            Value.Emplace<FMythicaParameterInt>(DefaultValues, DefaultValues);
+            TOptional<int> MinValue;
+            TOptional<int> MaxValue;
+            if (ParameterObject->HasField(TEXT("min")))
+            {
+                MinValue = ParameterObject->GetNumberField(TEXT("min"));
+            }
+            if (ParameterObject->HasField(TEXT("max")))
+            {
+                MaxValue = ParameterObject->GetNumberField(TEXT("max"));
+            }
+
+            Value.Emplace<FMythicaParameterInt>(DefaultValues, DefaultValues, MinValue, MaxValue);
         }
         else if (Type == "Float")
         {
@@ -48,7 +59,18 @@ void Mythica::ReadParameters(const TSharedPtr<FJsonObject>& ParameterDef, FMythi
                 DefaultValues.Add(ParameterObject->GetNumberField(TEXT("default")));
             }
 
-            Value.Emplace<FMythicaParameterFloat>(DefaultValues, DefaultValues);
+            TOptional<float> MinValue;
+            TOptional<float> MaxValue;
+            if (ParameterObject->HasField(TEXT("min")))
+            {
+                MinValue = ParameterObject->GetNumberField(TEXT("min"));
+            }
+            if (ParameterObject->HasField(TEXT("max")))
+            {
+                MaxValue = ParameterObject->GetNumberField(TEXT("max"));
+            }
+
+            Value.Emplace<FMythicaParameterFloat>(DefaultValues, DefaultValues, MinValue, MaxValue);
         }
         else if (Type == "Toggle")
         {
