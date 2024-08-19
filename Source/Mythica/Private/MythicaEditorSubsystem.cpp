@@ -913,7 +913,7 @@ void UMythicaEditorSubsystem::OnMeshDownloadResponse(FHttpRequestPtr Request, FH
     // Import the mesh
     const UMythicaDeveloperSettings* Settings = GetDefault<UMythicaDeveloperSettings>();
 
-    FString DirectoryRelative = FPackageName::LongPackageNameToFilename(Settings->ImportDirectory);
+    FString DirectoryRelative = FPackageName::LongPackageNameToFilename(FPaths::Combine(Settings->ImportDirectory, TEXT("GeneratedMeshes")));
     FString DirectoryAbsolute = FPaths::ConvertRelativePathToFull(DirectoryRelative);
 
     UAutomatedAssetImportData* ImportData = NewObject<UAutomatedAssetImportData>();
