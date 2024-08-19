@@ -68,7 +68,7 @@ void FMythicaParametersDetails::CustomizeChildren(TSharedRef<IPropertyHandle> St
                     return Parameters ? Parameters->Parameters[ParamIndex].Value.Get<FMythicaParameterFloat>().Values[ComponentIndex] : 0.0f;
                 };
 
-                auto OnValueCommitted = [=](float NewValue, ETextCommit::Type InCommitType)
+                auto OnValueChanged = [=](float NewValue)
                 {
                     FMythicaParameters* Parameters = GetParametersFromHandleWeak(HandleWeak);
                     if (Parameters)
@@ -80,7 +80,12 @@ void FMythicaParametersDetails::CustomizeChildren(TSharedRef<IPropertyHandle> St
                     [
                         SNew(SNumericEntryBox<float>)
                             .Value_Lambda(Value)
-                            .OnValueCommitted_Lambda(OnValueCommitted)
+                            .OnValueChanged_Lambda(OnValueChanged)
+                            .AllowSpin(true)
+                            .MinValue(FloatParameter->MinValue)
+                            .MaxValue(FloatParameter->MaxValue)
+                            .MinSliderValue(FloatParameter->MinValue)
+                            .MaxSliderValue(FloatParameter->MaxValue)
                     ];
             }
 
@@ -99,7 +104,7 @@ void FMythicaParametersDetails::CustomizeChildren(TSharedRef<IPropertyHandle> St
                     return Parameters ? Parameters->Parameters[ParamIndex].Value.Get<FMythicaParameterInt>().Values[ComponentIndex] : 0;
                 };
 
-                auto OnValueCommitted = [=](int NewValue, ETextCommit::Type InCommitType)
+                auto OnValueChanged = [=](int NewValue)
                 {
                     FMythicaParameters* Parameters = GetParametersFromHandleWeak(HandleWeak);
                     if (Parameters)
@@ -111,7 +116,12 @@ void FMythicaParametersDetails::CustomizeChildren(TSharedRef<IPropertyHandle> St
                     [
                         SNew(SNumericEntryBox<int>)
                             .Value_Lambda(Value)
-                            .OnValueCommitted_Lambda(OnValueCommitted)
+                            .OnValueChanged_Lambda(OnValueChanged)
+                            .AllowSpin(true)
+                            .MinValue(IntParameter->MinValue)
+                            .MaxValue(IntParameter->MaxValue)
+                            .MinSliderValue(IntParameter->MinValue)
+                            .MaxSliderValue(IntParameter->MaxValue)
                     ];
             }
 
