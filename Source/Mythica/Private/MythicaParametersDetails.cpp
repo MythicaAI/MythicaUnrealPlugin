@@ -3,7 +3,7 @@
 #include "MythicaTypes.h"
 #include "DetailWidgetRow.h"
 #include "IDetailChildrenBuilder.h"
-#include "Widgets/Text/STextBlock.h"
+#include "Widgets/Text/SMultiLineEditableText.h"
 #include "Widgets/Input/SNumericEntryBox.h"
 
 static FMythicaParameters* GetParametersFromHandle(IPropertyHandle& Handle)
@@ -54,7 +54,7 @@ void FMythicaParametersDetails::CustomizeChildren(TSharedRef<IPropertyHandle> St
         const FMythicaParameter& Parameter = Parameters->Parameters[ParamIndex];
 
         TSharedRef<SWidget> ValueWidget = SNullWidget::NullWidget;
-        int ComponentCount = 1;
+        int DesiredWidthScalar = 1;
 
         if (const FMythicaParameterFloat* FloatParameter = Parameter.Value.TryGet<FMythicaParameterFloat>())
         {
@@ -90,7 +90,7 @@ void FMythicaParametersDetails::CustomizeChildren(TSharedRef<IPropertyHandle> St
             }
 
             ValueWidget = HorizontalBox;
-            ComponentCount = FloatParameter->Values.Num();
+            DesiredWidthScalar = FloatParameter->Values.Num();
         }
         else if (const FMythicaParameterInt* IntParameter = Parameter.Value.TryGet<FMythicaParameterInt>())
         {
@@ -126,7 +126,7 @@ void FMythicaParametersDetails::CustomizeChildren(TSharedRef<IPropertyHandle> St
             }
 
             ValueWidget = HorizontalBox;
-            ComponentCount = IntParameter->Values.Num();
+            DesiredWidthScalar = IntParameter->Values.Num();
         }
         else if (const FMythicaParameterBool* BoolParameter = Parameter.Value.TryGet<FMythicaParameterBool>())
         {
@@ -166,9 +166,11 @@ void FMythicaParametersDetails::CustomizeChildren(TSharedRef<IPropertyHandle> St
                     Parameters->Parameters[ParamIndex].Value.Get<FMythicaParameterString>().Value = InText.ToString();
             };
 
-            ValueWidget = SNew(SEditableTextBox)
+            ValueWidget = SNew(SMultiLineEditableText)
                 .Text_Lambda(Text)
-                .OnTextCommitted_Lambda(OnTextCommitted);
+                .OnTextCommitted_Lambda(OnTextCommitted)
+                .AutoWrapText(true);
+            DesiredWidthScalar = 3;
         }
         else
         {
@@ -182,7 +184,7 @@ void FMythicaParametersDetails::CustomizeChildren(TSharedRef<IPropertyHandle> St
                     .Text(FText::FromString(Parameter.Label))
             ]
             .ValueContent()
-            .MinDesiredWidth(ComponentCount * 128)
+            .MinDesiredWidth(DesiredWidthScalar * 128)
             [
                 ValueWidget
             ];
