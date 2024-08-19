@@ -8,6 +8,7 @@
 #include "IImageWrapperModule.h"
 #include "ImageCoreUtils.h"
 #include "ImageUtils.h"
+#include "Interfaces/IPluginManager.h"
 #include "MythicaDeveloperSettings.h"
 #include "ObjectTools.h"
 #include "UObject/SavePackage.h"
@@ -72,6 +73,11 @@ EMythicaSessionState UMythicaEditorSubsystem::GetSessionState()
 bool UMythicaEditorSubsystem::CanInstallAssets()
 {
     return FModuleManager::Get().ModuleExists(TEXT("HoudiniEngine"));
+}
+
+bool UMythicaEditorSubsystem::CanGenerateMeshes()
+{
+    return IPluginManager::Get().FindEnabledPlugin(TEXT("USDImporter")).IsValid();
 }
 
 TArray<FMythicaAsset> UMythicaEditorSubsystem::GetAssetList()

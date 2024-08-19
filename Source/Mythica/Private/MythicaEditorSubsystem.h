@@ -115,6 +115,9 @@ public:
 	UFUNCTION(BlueprintPure, Category = "Mythica")
 	bool CanInstallAssets();
 
+	UFUNCTION(BlueprintPure, Category = "Mythica")
+	bool CanGenerateMeshes();
+
 	UFUNCTION(BlueprintCallable, Category = "Mythica")
 	TArray<FMythicaAsset> GetAssetList();
 
