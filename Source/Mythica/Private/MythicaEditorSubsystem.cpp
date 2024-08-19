@@ -8,6 +8,7 @@
 #include "IImageWrapperModule.h"
 #include "ImageCoreUtils.h"
 #include "ImageUtils.h"
+#include "Interfaces/IPluginManager.h"
 #include "MythicaDeveloperSettings.h"
 #include "ObjectTools.h"
 #include "UObject/SavePackage.h"
@@ -72,6 +73,11 @@ EMythicaSessionState UMythicaEditorSubsystem::GetSessionState()
 bool UMythicaEditorSubsystem::CanInstallAssets()
 {
     return FModuleManager::Get().ModuleExists(TEXT("HoudiniEngine"));
+}
+
+bool UMythicaEditorSubsystem::CanGenerateMeshes()
+{
+    return IPluginManager::Get().FindEnabledPlugin(TEXT("USDImporter")).IsValid();
 }
 
 TArray<FMythicaAsset> UMythicaEditorSubsystem::GetAssetList()
@@ -900,7 +906,7 @@ void UMythicaEditorSubsystem::OnMeshDownloadResponse(FHttpRequestPtr Request, FH
     }
 
     // Save package to disk
-    FString FilePath = FPaths::Combine(FPaths::ProjectIntermediateDir(), TEXT("MythicaCache"), TEXT("GenerateMeshCache"), ImportName + ".fbx");
+    FString FilePath = FPaths::Combine(FPaths::ProjectIntermediateDir(), TEXT("MythicaCache"), TEXT("GenerateMeshCache"), ImportName + ".usdz");
 
     TArray<uint8> PackageData = Response->GetContent();
     bool PackageWritten = FFileHelper::SaveArrayToFile(PackageData, *FilePath);
@@ -913,7 +919,7 @@ void UMythicaEditorSubsystem::OnMeshDownloadResponse(FHttpRequestPtr Request, FH
     // Import the mesh
     const UMythicaDeveloperSettings* Settings = GetDefault<UMythicaDeveloperSettings>();
 
-    FString DirectoryRelative = FPackageName::LongPackageNameToFilename(Settings->ImportDirectory);
+    FString DirectoryRelative = FPackageName::LongPackageNameToFilename(FPaths::Combine(Settings->ImportDirectory, TEXT("GeneratedMeshes")));
     FString DirectoryAbsolute = FPaths::ConvertRelativePathToFull(DirectoryRelative);
 
     UAutomatedAssetImportData* ImportData = NewObject<UAutomatedAssetImportData>();

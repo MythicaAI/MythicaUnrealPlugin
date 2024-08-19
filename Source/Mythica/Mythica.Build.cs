@@ -47,6 +47,7 @@ public class Mythica : ModuleRules
 				"ImageCore",
 				"InputCore",
 				"Json",
+				"Projects",
 				"Slate",
 				"SlateCore",
 				"UMGEditor",
