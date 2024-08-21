@@ -18,6 +18,16 @@ enum EMythicaSessionState
 	SessionCreated
 };
 
+UENUM(BlueprintType)
+enum EMythicaGenerateMeshState
+{
+	Invalid,
+	Queued,
+	Processing,
+	Failed,
+	Completed
+};
+
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnSessionStateChanged, EMythicaSessionState, State);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnAssetListUpdated);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnThumbnailLoaded, const FString&, PackageId);
@@ -192,6 +202,8 @@ private:
 	void OnInterfaceDownloadInfoResponse(FHttpRequestPtr Request, FHttpResponsePtr Response, bool bWasSuccessful, const FString& FileId);
 	void OnInterfaceDownloadResponse(FHttpRequestPtr Request, FHttpResponsePtr Response, bool bWasSuccessful, const FString& FileId);
 
+	void AddGenerateMeshRequest(const FString& RequestId, const FString& ImportName);
+	void RemoveGenerateMeshRequest(const FString& RequestId);
 	void PollGenerateMeshStatus();
 
 	void SetSessionState(EMythicaSessionState NewState);
