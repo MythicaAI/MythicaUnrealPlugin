@@ -24,8 +24,8 @@ enum EMythicaGenerateMeshState
 	Invalid,
 	Queued,
 	Processing,
-    Failed,
-    Completed
+	Failed,
+	Completed
 };
 
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnSessionStateChanged, EMythicaSessionState, State);
