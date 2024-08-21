@@ -762,12 +762,27 @@ void UMythicaEditorSubsystem::OnGenerateMeshResponse(FHttpRequestPtr Request, FH
         return;
     }
 
+    AddGenerateMeshRequest(RequestId, ImportName);
+}
+
+void UMythicaEditorSubsystem::AddGenerateMeshRequest(const FString& RequestId, const FString& ImportName)
+{
     GenerateMeshRequests.Add(RequestId, ImportName);
 
     if (!GenerateMeshTimer.IsValid())
     {
         FTimerDelegate TimerDelegate = FTimerDelegate::CreateUObject(this, &UMythicaEditorSubsystem::PollGenerateMeshStatus);
         GEditor->GetTimerManager()->SetTimer(GenerateMeshTimer, TimerDelegate, 1.0f, true);
+    }
+}
+
+void UMythicaEditorSubsystem::RemoveGenerateMeshRequest(const FString& RequestId)
+{
+    GenerateMeshRequests.Remove(RequestId);
+
+    if (GenerateMeshRequests.Num() == 0)
+    {
+        GEditor->GetTimerManager()->ClearTimer(GenerateMeshTimer);
     }
 }
 
@@ -797,6 +812,28 @@ void UMythicaEditorSubsystem::PollGenerateMeshStatus()
     }
 }
 
+static EMythicaGenerateMeshState ParseGenerateMeshState(const FString& StateString)
+{
+    if (StateString == TEXT("queued"))
+    {
+        return EMythicaGenerateMeshState::Queued;
+    }
+    if (StateString == TEXT("processing"))
+    {
+        return EMythicaGenerateMeshState::Processing;
+    }
+    if (StateString == TEXT("failed"))
+    {
+        return EMythicaGenerateMeshState::Failed;
+    }
+    if (StateString == TEXT("completed"))
+    {
+        return EMythicaGenerateMeshState::Completed;
+    }
+
+    return EMythicaGenerateMeshState::Invalid;
+}
+
 void UMythicaEditorSubsystem::OnGenerateMeshStatusResponse(FHttpRequestPtr Request, FHttpResponsePtr Response, bool bWasSuccessful, const FString& RequestId, const FString& ImportName)
 {
     if (!bWasSuccessful || !Response.IsValid())
@@ -820,16 +857,36 @@ void UMythicaEditorSubsystem::OnGenerateMeshStatusResponse(FHttpRequestPtr Reque
         return;
     }
 
+    FString StateString;
+    if (!JsonObject->TryGetStringField(TEXT("state"), StateString))
+    {
+        UE_LOG(LogMythica, Error, TEXT("Failed to get State from JSON string"));
+        return;
+    }
+
+    EMythicaGenerateMeshState State = ParseGenerateMeshState(StateString);
+    if (State == EMythicaGenerateMeshState::Invalid)
+    {
+        UE_LOG(LogMythica, Error, TEXT("Invalid generate mesh state %s"), *StateString);
+        return;
+    }
+
+    if (State == EMythicaGenerateMeshState::Queued || State == EMythicaGenerateMeshState::Processing)
+    {
+        return;
+    }
+    
+    if (State == EMythicaGenerateMeshState::Failed)
+    {
+        UE_LOG(LogMythica, Error, TEXT("Generate mesh request failed %s"), *RequestId);
+        RemoveGenerateMeshRequest(RequestId);
+        return;
+    }
+
     FString FileId;
     if (!JsonObject->TryGetStringField(TEXT("file_id"), FileId))
     {
         UE_LOG(LogMythica, Error, TEXT("Failed to get FileId from JSON string"));
-        return;
-    }
-
-    // Job has not been completed yet
-    if (FileId.IsEmpty())
-    {
         return;
     }
 
@@ -850,11 +907,7 @@ void UMythicaEditorSubsystem::OnGenerateMeshStatusResponse(FHttpRequestPtr Reque
 
     DownloadInfoRequest->ProcessRequest();
 
-    GenerateMeshRequests.Remove(RequestId);
-    if (GenerateMeshRequests.Num() == 0)
-    {
-        GEditor->GetTimerManager()->ClearTimer(GenerateMeshTimer);
-    }
+    RemoveGenerateMeshRequest(RequestId);
 }
 
 void UMythicaEditorSubsystem::OnMeshDownloadInfoResponse(FHttpRequestPtr Request, FHttpResponsePtr Response, bool bWasSuccessful, const FString& FileId, const FString& ImportName)
