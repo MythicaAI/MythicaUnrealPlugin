@@ -22,10 +22,12 @@ UENUM(BlueprintType)
 enum EMythicaGenerateMeshState
 {
 	Invalid,
-	Queued,
-	Processing,
-	Failed,
-	Completed
+	Requesting,		// Request has been sent to the server
+	Queued,			// Request acknowledged by the server and queued for processing
+	Processing,		// Request is being processed by the server
+	Importing,		// Request has finished processing and the result is being downloaded
+	Completed,		// Request has been completed
+	Failed			// Request has failed
 };
 
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnSessionStateChanged, EMythicaSessionState, State);
@@ -34,6 +36,7 @@ DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnThumbnailLoaded, const FString&, 
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnAssetInstalled, const FString&, PackageId);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnAssetUninstalled, const FString&, PackageId);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnToolInterfaceLoaded, const FString&, FileId);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FOnGenerateMeshStateChanged, int, RequestId, EMythicaGenerateMeshState, State);
 
 USTRUCT(BlueprintType)
 struct FMythicaStats
@@ -109,6 +112,15 @@ struct FMythicaAsset
 	int32 DigitalAssetCount;
 };
 
+struct FMythicaGenerateMeshRequest
+{
+	FString FileId;
+	FString ImportName;
+
+	EMythicaGenerateMeshState State = EMythicaGenerateMeshState::Requesting;
+	FString EventId;
+};
+
 UCLASS()
 class UMythicaEditorSubsystem : public UEditorSubsystem
 {
@@ -166,7 +178,7 @@ public:
 	void LoadToolInterface(const FString& FileId);
 
 	UFUNCTION(BlueprintCallable, Category = "Mythica")
-	void GenerateMesh(const FString& FileId, const FMythicaParameters& Params, const FString& ImportName);
+	int GenerateMesh(const FString& FileId, const FMythicaParameters& Params, const FString& ImportName);
 
 	// Delegates
 	UPROPERTY(BlueprintAssignable, Category = "Mythica")
@@ -187,23 +199,26 @@ public:
 	UPROPERTY(BlueprintAssignable, Category = "Mythica")
 	FOnToolInterfaceLoaded OnToolInterfaceLoaded;
 
+	UPROPERTY(BlueprintAssignable, Category = "Mythica")
+	FOnGenerateMeshStateChanged OnGenerateMeshStateChange;
+
 private:
 	void OnCreateSessionResponse(FHttpRequestPtr Request, FHttpResponsePtr Response, bool bWasSuccessful);
 	void OnGetAssetsResponse(FHttpRequestPtr Request, FHttpResponsePtr Response, bool bWasSuccessful);
 	void OnDownloadInfoResponse(FHttpRequestPtr Request, FHttpResponsePtr Response, bool bWasSuccessful, const FString& PackageId);
 	void OnDownloadAssetResponse(FHttpRequestPtr Request, FHttpResponsePtr Response, bool bWasSuccessful, const FString& PackageId);
 
-	void OnGenerateMeshResponse(FHttpRequestPtr Request, FHttpResponsePtr Response, bool bWasSuccessful, const FString& FileID, const FString& ImportName);
-	void OnGenerateMeshStatusResponse(FHttpRequestPtr Request, FHttpResponsePtr Response, bool bWasSuccessful, const FString& RequestId, const FString& ImportName);
-	void OnMeshDownloadInfoResponse(FHttpRequestPtr Request, FHttpResponsePtr Response, bool bWasSuccessful, const FString& FileId, const FString& ImportName);
-	void OnMeshDownloadResponse(FHttpRequestPtr Request, FHttpResponsePtr Response, bool bWasSuccessful, const FString& FileId, const FString& ImportName);
+	void OnGenerateMeshResponse(FHttpRequestPtr Request, FHttpResponsePtr Response, bool bWasSuccessful, int RequestId);
+	void OnGenerateMeshStatusResponse(FHttpRequestPtr Request, FHttpResponsePtr Response, bool bWasSuccessful, int RequestId);
+	void OnMeshDownloadInfoResponse(FHttpRequestPtr Request, FHttpResponsePtr Response, bool bWasSuccessful, int RequestId);
+	void OnMeshDownloadResponse(FHttpRequestPtr Request, FHttpResponsePtr Response, bool bWasSuccessful, int RequestId);
 
 	void OnInterfaceResponse(FHttpRequestPtr Request, FHttpResponsePtr Response, bool bWasSuccessful, const FString& FileId);
 	void OnInterfaceDownloadInfoResponse(FHttpRequestPtr Request, FHttpResponsePtr Response, bool bWasSuccessful, const FString& FileId);
 	void OnInterfaceDownloadResponse(FHttpRequestPtr Request, FHttpResponsePtr Response, bool bWasSuccessful, const FString& FileId);
 
-	void AddGenerateMeshRequest(const FString& RequestId, const FString& ImportName);
-	void RemoveGenerateMeshRequest(const FString& RequestId);
+	int CreateGenerateMeshRequest(const FString& FileId, const FString& ImportName);
+	void SetGenerateMeshRequestState(int RequestId, EMythicaGenerateMeshState State);
 	void PollGenerateMeshStatus();
 
 	void SetSessionState(EMythicaSessionState NewState);
@@ -221,7 +236,8 @@ private:
 	EMythicaSessionState SessionState = EMythicaSessionState::None;
 	FString AuthToken;
 
-	TMap<FString, FString> GenerateMeshRequests;
+	int NextRequestId = 1;
+	TMap<int, FMythicaGenerateMeshRequest> GenerateMeshRequests;
 	FTimerHandle GenerateMeshTimer;
 
 	TMap<FString, FString> InstalledAssets;
