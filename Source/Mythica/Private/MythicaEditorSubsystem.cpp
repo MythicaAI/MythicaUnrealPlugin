@@ -817,10 +817,10 @@ void UMythicaEditorSubsystem::SetGenerateMeshRequestState(int RequestId, EMythic
 
 void UMythicaEditorSubsystem::PollGenerateMeshStatus()
 {
-    for (TTuple<int, FMythicaGenerateMeshRequest>& RequestEntry : GenerateMeshRequests)
+    for (const TTuple<int, FMythicaGenerateMeshRequest>& RequestEntry : GenerateMeshRequests)
     {
         int RequestId = RequestEntry.Key;
-        FMythicaGenerateMeshRequest& RequestData = RequestEntry.Value;
+        const FMythicaGenerateMeshRequest& RequestData = RequestEntry.Value;
 
         if (RequestData.State != EMythicaGenerateMeshState::Queued && RequestData.State != EMythicaGenerateMeshState::Processing)
         {

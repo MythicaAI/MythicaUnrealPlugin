@@ -114,8 +114,8 @@ struct FMythicaAsset
 
 struct FMythicaGenerateMeshRequest
 {
-    FString FileId;
-    FString ImportName;
+	FString FileId;
+	FString ImportName;
 
 	EMythicaGenerateMeshState State = EMythicaGenerateMeshState::Requesting;
 	FString EventId;
