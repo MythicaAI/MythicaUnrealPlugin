@@ -15,5 +15,6 @@ public:
 
 private:
 	void AddMenu(FMenuBuilder& MenuBuilder);
-	void OnMenuItemClick();
+	void OpenPackageManager();
+	void OpenAssetGenerator();
 };
