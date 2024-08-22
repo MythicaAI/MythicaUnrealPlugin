@@ -398,6 +398,20 @@ void UMythicaEditorSubsystem::OnDownloadInfoResponse(FHttpRequestPtr Request, FH
     DownloadRequest->ProcessRequest();
 }
 
+static FString MakeUniquePath(const FString& AbsolutePath)
+{
+    FString UniquePath = AbsolutePath;
+
+    uint32 Counter = 1;
+    while (IFileManager::Get().DirectoryExists(*UniquePath))
+    {
+        UniquePath = FString::Printf(TEXT("%s_%d"), *AbsolutePath, Counter);
+        Counter++;
+    }
+
+    return UniquePath;
+}
+
 struct FFileImportData
 {
     FString FilePath;
@@ -479,11 +493,18 @@ void UMythicaEditorSubsystem::OnDownloadAssetResponse(FHttpRequestPtr Request, F
         }
     }
 
+    // Get unique import directory
+    const UMythicaDeveloperSettings* Settings = GetDefault<UMythicaDeveloperSettings>();
+
+    FString ImportPackagePath = FPaths::Combine(Settings->ImportDirectory, ObjectTools::SanitizeObjectName(Asset->Name));
+    FString DirectoryRelative = FPackageName::LongPackageNameToFilename(ImportPackagePath);
+    FString DirectoryAbsolute = FPaths::ConvertRelativePathToFull(DirectoryRelative);
+    FString BaseImportDirectory = MakeUniquePath(DirectoryAbsolute);
+
     // Import HDA files into Unreal
     FAssetToolsModule& AssetToolsModule = FModuleManager::GetModuleChecked<FAssetToolsModule>("AssetTools");
 
     TArray<UObject*> ImportedObjects;
-    FString BaseImportDirectory = GetUniqueImportDirectory(ObjectTools::SanitizeObjectName(Asset->Name));
     for (const FFileImportData& Data : ImportFiles)
     {
         FString FullImportDirectory = FPaths::GetPath(FPaths::Combine(BaseImportDirectory, Data.RelativeImportPath));
@@ -1015,8 +1036,20 @@ void UMythicaEditorSubsystem::OnMeshDownloadResponse(FHttpRequestPtr Request, FH
         return;
     }
 
+    // Generate a unique import directory
+    const UMythicaDeveloperSettings* Settings = GetDefault<UMythicaDeveloperSettings>();
+
+    FString ToolName = FPaths::GetBaseFilename(ObjectTools::SanitizeObjectName(RequestData->ImportName));
+    FString ImportDirectory = FPaths::Combine(Settings->ImportDirectory, TEXT("GeneratedMeshes"), ToolName);
+
+    FString DirectoryPackageName = FPaths::Combine(ImportDirectory, TEXT("Run"));
+    FString DirectoryRelative = FPackageName::LongPackageNameToFilename(DirectoryPackageName);
+    FString DirectoryAbsolute = FPaths::ConvertRelativePathToFull(DirectoryRelative);
+    FString UniqueDirectoryAbsolute = MakeUniquePath(DirectoryAbsolute);
+    FString UniqueDirectoryName = FPaths::GetBaseFilename(UniqueDirectoryAbsolute);
+
     // Save package to disk
-    FString FilePath = FPaths::Combine(FPaths::ProjectIntermediateDir(), TEXT("MythicaCache"), TEXT("GenerateMeshCache"), RequestData->ImportName + ".usdz");
+    FString FilePath = FPaths::Combine(FPaths::ProjectIntermediateDir(), TEXT("MythicaCache"), TEXT("GenerateMeshCache"), UniqueDirectoryName + ".usdz");
 
     TArray<uint8> PackageData = Response->GetContent();
     bool PackageWritten = FFileHelper::SaveArrayToFile(PackageData, *FilePath);
@@ -1028,15 +1061,9 @@ void UMythicaEditorSubsystem::OnMeshDownloadResponse(FHttpRequestPtr Request, FH
     }
 
     // Import the mesh
-    const UMythicaDeveloperSettings* Settings = GetDefault<UMythicaDeveloperSettings>();
-
-    FString DirectoryPackageName = FPaths::Combine(Settings->ImportDirectory, TEXT("GeneratedMeshes"));
-    FString DirectoryRelative = FPackageName::LongPackageNameToFilename(DirectoryPackageName);
-    FString DirectoryAbsolute = FPaths::ConvertRelativePathToFull(DirectoryRelative);
-
     UAutomatedAssetImportData* ImportData = NewObject<UAutomatedAssetImportData>();
     ImportData->bReplaceExisting = true;
-    ImportData->DestinationPath = DirectoryAbsolute;
+    ImportData->DestinationPath = ImportDirectory;
     ImportData->Filenames = { FilePath };
 
     FAssetToolsModule& AssetToolsModule = FModuleManager::GetModuleChecked<FAssetToolsModule>("AssetTools");
@@ -1056,8 +1083,7 @@ void UMythicaEditorSubsystem::OnMeshDownloadResponse(FHttpRequestPtr Request, FH
     SaveArgs.TopLevelFlags = EObjectFlags::RF_Public | EObjectFlags::RF_Standalone;
     UPackage::SavePackage(Package, nullptr, *Filename, SaveArgs);
 
-    // USD importer creates a directory based on the import file name
-    RequestData->ImportDirectory = FPaths::Combine(DirectoryPackageName, RequestData->ImportName);
+    RequestData->ImportDirectory = FPaths::Combine(ImportDirectory, UniqueDirectoryName);
     SetGenerateMeshRequestState(RequestId, EMythicaGenerateMeshState::Completed);
 }
 
@@ -1103,25 +1129,6 @@ void UMythicaEditorSubsystem::LoadInstalledAssetList()
 
         InstalledAssets.Add(PackageId, DirectoryAbsolute);
     }
-}
-
-FString UMythicaEditorSubsystem::GetUniqueImportDirectory(const FString& PackageName)
-{
-    const UMythicaDeveloperSettings* Settings = GetDefault<UMythicaDeveloperSettings>();
-
-    FString PackagePath = FPaths::Combine(Settings->ImportDirectory, PackageName);
-    FString DirectoryRelative = FPackageName::LongPackageNameToFilename(PackagePath);
-    FString DirectoryAbsolute = FPaths::ConvertRelativePathToFull(DirectoryRelative);
-
-    FString UniqueDirectory = DirectoryAbsolute;
-    uint32 Counter = 1;
-    while (IFileManager::Get().DirectoryExists(*UniqueDirectory))
-    {
-        UniqueDirectory = FString::Printf(TEXT("%s_%d"), *DirectoryAbsolute, Counter);
-        Counter++;
-    }
-
-    return UniqueDirectory;
 }
 
 void UMythicaEditorSubsystem::AddInstalledAsset(const FString& PackageId, const FString& ImportDirectory)
