@@ -119,6 +119,7 @@ struct FMythicaGenerateMeshRequest
 
 	EMythicaGenerateMeshState State = EMythicaGenerateMeshState::Requesting;
 	FString EventId;
+	FString ImportDirectory;
 };
 
 UCLASS()
@@ -160,6 +161,9 @@ public:
 
 	UFUNCTION(BlueprintPure, Category = "Mythica")
 	FMythicaParameters GetToolInterface(const FString& FileId);
+
+	UFUNCTION(BlueprintPure, Category = "Mythica")
+	FString GetImportDirectory(int RequestId);
 
 	// Requests
 	UFUNCTION(BlueprintCallable, Category = "Mythica")

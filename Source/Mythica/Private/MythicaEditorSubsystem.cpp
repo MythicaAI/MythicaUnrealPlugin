@@ -117,6 +117,12 @@ FMythicaParameters UMythicaEditorSubsystem::GetToolInterface(const FString& File
     return Interface ? *Interface : FMythicaParameters();
 }
 
+FString UMythicaEditorSubsystem::GetImportDirectory(int RequestId)
+{
+    FMythicaGenerateMeshRequest* RequestData = GenerateMeshRequests.Find(RequestId);
+    return RequestData ? RequestData->ImportDirectory : FString();
+}
+
 void UMythicaEditorSubsystem::CreateSession()
 {
     if (SessionState != EMythicaSessionState::None && SessionState != EMythicaSessionState::SessionFailed)
@@ -804,10 +810,7 @@ void UMythicaEditorSubsystem::SetGenerateMeshRequestState(int RequestId, EMythic
     RequestData->State = State;
     OnGenerateMeshStateChange.Broadcast(RequestId, State);
 
-    if (State == EMythicaGenerateMeshState::Failed || State == EMythicaGenerateMeshState::Completed)
-    {
-        GenerateMeshRequests.Remove(RequestId);
-    }
+    // TODO: Expire old request data
 
     if (GenerateMeshRequests.Num() == 0)
     {
@@ -1027,7 +1030,8 @@ void UMythicaEditorSubsystem::OnMeshDownloadResponse(FHttpRequestPtr Request, FH
     // Import the mesh
     const UMythicaDeveloperSettings* Settings = GetDefault<UMythicaDeveloperSettings>();
 
-    FString DirectoryRelative = FPackageName::LongPackageNameToFilename(FPaths::Combine(Settings->ImportDirectory, TEXT("GeneratedMeshes")));
+    FString DirectoryPackageName = FPaths::Combine(Settings->ImportDirectory, TEXT("GeneratedMeshes"));
+    FString DirectoryRelative = FPackageName::LongPackageNameToFilename(DirectoryPackageName);
     FString DirectoryAbsolute = FPaths::ConvertRelativePathToFull(DirectoryRelative);
 
     UAutomatedAssetImportData* ImportData = NewObject<UAutomatedAssetImportData>();
@@ -1052,6 +1056,8 @@ void UMythicaEditorSubsystem::OnMeshDownloadResponse(FHttpRequestPtr Request, FH
     SaveArgs.TopLevelFlags = EObjectFlags::RF_Public | EObjectFlags::RF_Standalone;
     UPackage::SavePackage(Package, nullptr, *Filename, SaveArgs);
 
+    // USD importer creates a directory based on the import file name
+    RequestData->ImportDirectory = FPaths::Combine(DirectoryPackageName, RequestData->ImportName);
     SetGenerateMeshRequestState(RequestId, EMythicaGenerateMeshState::Completed);
 }
 
