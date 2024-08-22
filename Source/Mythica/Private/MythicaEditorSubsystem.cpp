@@ -693,11 +693,11 @@ void UMythicaEditorSubsystem::OnInterfaceDownloadResponse(FHttpRequestPtr Reques
     OnToolInterfaceLoaded.Broadcast(FileId);
 }
 
-void UMythicaEditorSubsystem::GenerateMesh(const FString& FileId, const FMythicaParameters& Params, const FString& ImportName)
+int UMythicaEditorSubsystem::GenerateMesh(const FString& FileId, const FMythicaParameters& Params, const FString& ImportName)
 {
     if (SessionState != EMythicaSessionState::SessionCreated)
     {
-        return;
+        return -1;
     }
 
     // Create JSON payload
@@ -713,17 +713,19 @@ void UMythicaEditorSubsystem::GenerateMesh(const FString& FileId, const FMythica
     if (!FJsonSerializer::Serialize(JsonObject.ToSharedRef(), Writer))
     {
         UE_LOG(LogMythica, Error, TEXT("Failed to create generate mesh JSON request object"));
-        return;
+        return -1;
     }
 
     // Send request
+    int RequestId = CreateGenerateMeshRequest(FileId, ImportName);
+
     const UMythicaDeveloperSettings* Settings = GetDefault<UMythicaDeveloperSettings>();
 
     FString Url = FString::Printf(TEXT("%s/v1/jobs/generate-mesh"), *Settings->ServiceURL);
 
-    auto Callback = [this, FileId, ImportName](FHttpRequestPtr Request, FHttpResponsePtr Response, bool bConnectedSuccessfully)
+    auto Callback = [this, RequestId](FHttpRequestPtr Request, FHttpResponsePtr Response, bool bConnectedSuccessfully)
     {
-        OnGenerateMeshResponse(Request, Response, bConnectedSuccessfully, FileId, ImportName);
+        OnGenerateMeshResponse(Request, Response, bConnectedSuccessfully, RequestId);
     };
 
     TSharedRef<IHttpRequest, ESPMode::ThreadSafe> Request = FHttpModule::Get().CreateRequest();
@@ -735,13 +737,22 @@ void UMythicaEditorSubsystem::GenerateMesh(const FString& FileId, const FMythica
     Request->OnProcessRequestComplete().BindLambda(Callback);
 
     Request->ProcessRequest();
+
+    return RequestId;
 }
 
-void UMythicaEditorSubsystem::OnGenerateMeshResponse(FHttpRequestPtr Request, FHttpResponsePtr Response, bool bWasSuccessful, const FString& FileId, const FString& ImportName)
+void UMythicaEditorSubsystem::OnGenerateMeshResponse(FHttpRequestPtr Request, FHttpResponsePtr Response, bool bWasSuccessful, int RequestId)
 {
+    FMythicaGenerateMeshRequest* RequestData = GenerateMeshRequests.Find(RequestId);
+    if (!RequestData)
+    {
+        return;
+    }
+
     if (!bWasSuccessful || !Response.IsValid())
     {
-        UE_LOG(LogMythica, Error, TEXT("Failed to request asset generation for file %s"), *FileId);
+        UE_LOG(LogMythica, Error, TEXT("Failed to request asset generation"));
+        SetGenerateMeshRequestState(RequestId, EMythicaGenerateMeshState::Failed);
         return;
     }
 
@@ -752,33 +763,51 @@ void UMythicaEditorSubsystem::OnGenerateMeshResponse(FHttpRequestPtr Request, FH
     if (!FJsonSerializer::Deserialize(Reader, JsonObject) || !JsonObject.IsValid())
     {
         UE_LOG(LogMythica, Error, TEXT("Failed to parse create generate mesh JSON string"));
+        SetGenerateMeshRequestState(RequestId, EMythicaGenerateMeshState::Failed);
         return;
     }
 
-    FString RequestId;
-    if (!JsonObject->TryGetStringField(TEXT("event_id"), RequestId))
+    FString EventId;
+    if (!JsonObject->TryGetStringField(TEXT("event_id"), EventId))
     {
-        UE_LOG(LogMythica, Error, TEXT("Failed to get RequestId from JSON string"));
+        UE_LOG(LogMythica, Error, TEXT("Failed to get EventId from JSON string"));
+        SetGenerateMeshRequestState(RequestId, EMythicaGenerateMeshState::Failed);
         return;
     }
 
-    AddGenerateMeshRequest(RequestId, ImportName);
+    RequestData->EventId = EventId;
+    SetGenerateMeshRequestState(RequestId, EMythicaGenerateMeshState::Queued);
 }
 
-void UMythicaEditorSubsystem::AddGenerateMeshRequest(const FString& RequestId, const FString& ImportName)
+int UMythicaEditorSubsystem::CreateGenerateMeshRequest(const FString& FileId, const FString& ImportName)
 {
-    GenerateMeshRequests.Add(RequestId, ImportName);
+    int RequestId = NextRequestId++;
+    GenerateMeshRequests.Add(RequestId, { FileId, ImportName });
 
     if (!GenerateMeshTimer.IsValid())
     {
         FTimerDelegate TimerDelegate = FTimerDelegate::CreateUObject(this, &UMythicaEditorSubsystem::PollGenerateMeshStatus);
         GEditor->GetTimerManager()->SetTimer(GenerateMeshTimer, TimerDelegate, 1.0f, true);
     }
+
+    return RequestId;
 }
 
-void UMythicaEditorSubsystem::RemoveGenerateMeshRequest(const FString& RequestId)
+void UMythicaEditorSubsystem::SetGenerateMeshRequestState(int RequestId, EMythicaGenerateMeshState State)
 {
-    GenerateMeshRequests.Remove(RequestId);
+    FMythicaGenerateMeshRequest* RequestData = GenerateMeshRequests.Find(RequestId);
+    if (!RequestData || RequestData->State == State)
+    {
+        return;
+    }
+
+    RequestData->State = State;
+    OnGenerateMeshStateChange.Broadcast(RequestId, State);
+
+    if (State == EMythicaGenerateMeshState::Failed || State == EMythicaGenerateMeshState::Completed)
+    {
+        GenerateMeshRequests.Remove(RequestId);
+    }
 
     if (GenerateMeshRequests.Num() == 0)
     {
@@ -788,18 +817,23 @@ void UMythicaEditorSubsystem::RemoveGenerateMeshRequest(const FString& RequestId
 
 void UMythicaEditorSubsystem::PollGenerateMeshStatus()
 {
-    for (const TTuple<FString, FString>& RequestEntry : GenerateMeshRequests)
+    for (TTuple<int, FMythicaGenerateMeshRequest>& RequestEntry : GenerateMeshRequests)
     {
-        const FString& RequestId = RequestEntry.Key;
-        const FString& ImportName = RequestEntry.Value;
+        int RequestId = RequestEntry.Key;
+        FMythicaGenerateMeshRequest& RequestData = RequestEntry.Value;
+
+        if (RequestData.State != EMythicaGenerateMeshState::Queued && RequestData.State != EMythicaGenerateMeshState::Processing)
+        {
+            continue;
+        }
 
         const UMythicaDeveloperSettings* Settings = GetDefault<UMythicaDeveloperSettings>();
 
-        FString Url = FString::Printf(TEXT("%s/v1/jobs/generate-mesh/status/%s"), *Settings->ServiceURL, *RequestId);
+        FString Url = FString::Printf(TEXT("%s/v1/jobs/generate-mesh/status/%s"), *Settings->ServiceURL, *RequestData.EventId);
 
-        auto Callback = [this, RequestId, ImportName](FHttpRequestPtr Request, FHttpResponsePtr Response, bool bConnectedSuccessfully)
+        auto Callback = [this, RequestId](FHttpRequestPtr Request, FHttpResponsePtr Response, bool bConnectedSuccessfully)
         {
-            OnGenerateMeshStatusResponse(Request, Response, bConnectedSuccessfully, RequestId, ImportName);
+            OnGenerateMeshStatusResponse(Request, Response, bConnectedSuccessfully, RequestId);
         };
 
         TSharedRef<IHttpRequest, ESPMode::ThreadSafe> Request = FHttpModule::Get().CreateRequest();
@@ -834,16 +868,17 @@ static EMythicaGenerateMeshState ParseGenerateMeshState(const FString& StateStri
     return EMythicaGenerateMeshState::Invalid;
 }
 
-void UMythicaEditorSubsystem::OnGenerateMeshStatusResponse(FHttpRequestPtr Request, FHttpResponsePtr Response, bool bWasSuccessful, const FString& RequestId, const FString& ImportName)
+void UMythicaEditorSubsystem::OnGenerateMeshStatusResponse(FHttpRequestPtr Request, FHttpResponsePtr Response, bool bWasSuccessful, int RequestId)
 {
-    if (!bWasSuccessful || !Response.IsValid())
+    FMythicaGenerateMeshRequest* RequestData = GenerateMeshRequests.Find(RequestId);
+    if (!RequestData)
     {
-        UE_LOG(LogMythica, Error, TEXT("Failed to get generate mesh status for request %s"), *RequestId);
         return;
     }
 
-    if (!GenerateMeshRequests.Contains(RequestId))
+    if (!bWasSuccessful || !Response.IsValid())
     {
+        UE_LOG(LogMythica, Error, TEXT("Failed to get generate mesh status for request %d"), RequestId);
         return;
     }
 
@@ -867,19 +902,28 @@ void UMythicaEditorSubsystem::OnGenerateMeshStatusResponse(FHttpRequestPtr Reque
     EMythicaGenerateMeshState State = ParseGenerateMeshState(StateString);
     if (State == EMythicaGenerateMeshState::Invalid)
     {
-        UE_LOG(LogMythica, Error, TEXT("Invalid generate mesh state %s"), *StateString);
+        UE_LOG(LogMythica, Error, TEXT("Unexpected generate mesh state %s"), *StateString);
         return;
     }
 
-    if (State == EMythicaGenerateMeshState::Queued || State == EMythicaGenerateMeshState::Processing)
+    if (State == EMythicaGenerateMeshState::Queued)
     {
+        return;
+    }
+
+    if (State == EMythicaGenerateMeshState::Processing)
+    {
+        if (RequestData->State == EMythicaGenerateMeshState::Queued)
+        {
+            SetGenerateMeshRequestState(RequestId, EMythicaGenerateMeshState::Processing);
+        }
         return;
     }
     
     if (State == EMythicaGenerateMeshState::Failed)
     {
-        UE_LOG(LogMythica, Error, TEXT("Generate mesh request failed %s"), *RequestId);
-        RemoveGenerateMeshRequest(RequestId);
+        UE_LOG(LogMythica, Error, TEXT("Generate mesh request failed %d"), RequestId);
+        SetGenerateMeshRequestState(RequestId, EMythicaGenerateMeshState::Failed);
         return;
     }
 
@@ -894,9 +938,9 @@ void UMythicaEditorSubsystem::OnGenerateMeshStatusResponse(FHttpRequestPtr Reque
 
     FString Url = FString::Printf(TEXT("%s/v1/download/info/%s"), *Settings->ServiceURL, *FileId);
 
-    auto Callback = [this, FileId, ImportName](FHttpRequestPtr Request, FHttpResponsePtr Response, bool bConnectedSuccessfully)
+    auto Callback = [this, FileId, RequestId](FHttpRequestPtr Request, FHttpResponsePtr Response, bool bConnectedSuccessfully)
     {
-        OnMeshDownloadInfoResponse(Request, Response, bConnectedSuccessfully, FileId, ImportName);
+        OnMeshDownloadInfoResponse(Request, Response, bConnectedSuccessfully, RequestId);
     };
 
     TSharedRef<IHttpRequest, ESPMode::ThreadSafe> DownloadInfoRequest = FHttpModule::Get().CreateRequest();
@@ -907,14 +951,15 @@ void UMythicaEditorSubsystem::OnGenerateMeshStatusResponse(FHttpRequestPtr Reque
 
     DownloadInfoRequest->ProcessRequest();
 
-    RemoveGenerateMeshRequest(RequestId);
+    SetGenerateMeshRequestState(RequestId, EMythicaGenerateMeshState::Importing);
 }
 
-void UMythicaEditorSubsystem::OnMeshDownloadInfoResponse(FHttpRequestPtr Request, FHttpResponsePtr Response, bool bWasSuccessful, const FString& FileId, const FString& ImportName)
+void UMythicaEditorSubsystem::OnMeshDownloadInfoResponse(FHttpRequestPtr Request, FHttpResponsePtr Response, bool bWasSuccessful, int RequestId)
 {
     if (!bWasSuccessful || !Response.IsValid())
     {
-        UE_LOG(LogMythica, Error, TEXT("Failed to get mesh download info for file %s"), *FileId);
+        UE_LOG(LogMythica, Error, TEXT("Failed to get mesh download info"));
+        SetGenerateMeshRequestState(RequestId, EMythicaGenerateMeshState::Failed);
         return;
     }
 
@@ -925,6 +970,7 @@ void UMythicaEditorSubsystem::OnMeshDownloadInfoResponse(FHttpRequestPtr Request
     if (!FJsonSerializer::Deserialize(Reader, JsonObject) || !JsonObject.IsValid())
     {
         UE_LOG(LogMythica, Error, TEXT("Failed to parse mesh download info JSON string"));
+        SetGenerateMeshRequestState(RequestId, EMythicaGenerateMeshState::Failed);
         return;
     }
 
@@ -932,13 +978,14 @@ void UMythicaEditorSubsystem::OnMeshDownloadInfoResponse(FHttpRequestPtr Request
     FString ContentType = JsonObject->GetStringField(TEXT("content_type"));
     if (DownloadURL.IsEmpty())
     {
-        UE_LOG(LogMythica, Error, TEXT("Failed to get download URL for mesh %s"), *FileId);
+        UE_LOG(LogMythica, Error, TEXT("Failed to get download URL for mesh"));
+        SetGenerateMeshRequestState(RequestId, EMythicaGenerateMeshState::Failed);
         return;
     }
 
-    auto Callback = [this, FileId, ImportName](FHttpRequestPtr Request, FHttpResponsePtr Response, bool bConnectedSuccessfully)
+    auto Callback = [this, RequestId](FHttpRequestPtr Request, FHttpResponsePtr Response, bool bConnectedSuccessfully)
     {
-        OnMeshDownloadResponse(Request, Response, bConnectedSuccessfully, FileId, ImportName);
+        OnMeshDownloadResponse(Request, Response, bConnectedSuccessfully, RequestId);
     };
 
     TSharedRef<IHttpRequest, ESPMode::ThreadSafe> DownloadRequest = FHttpModule::Get().CreateRequest();
@@ -950,22 +997,30 @@ void UMythicaEditorSubsystem::OnMeshDownloadInfoResponse(FHttpRequestPtr Request
     DownloadRequest->ProcessRequest();
 }
 
-void UMythicaEditorSubsystem::OnMeshDownloadResponse(FHttpRequestPtr Request, FHttpResponsePtr Response, bool bWasSuccessful, const FString& FileId, const FString& ImportName)
+void UMythicaEditorSubsystem::OnMeshDownloadResponse(FHttpRequestPtr Request, FHttpResponsePtr Response, bool bWasSuccessful, int RequestId)
 {
+    FMythicaGenerateMeshRequest* RequestData = GenerateMeshRequests.Find(RequestId);
+    if (!RequestData)
+    {
+        return;
+    }
+
     if (!bWasSuccessful || !Response.IsValid())
     {
         UE_LOG(LogMythica, Error, TEXT("Failed to download asset"));
+        SetGenerateMeshRequestState(RequestId, EMythicaGenerateMeshState::Failed);
         return;
     }
 
     // Save package to disk
-    FString FilePath = FPaths::Combine(FPaths::ProjectIntermediateDir(), TEXT("MythicaCache"), TEXT("GenerateMeshCache"), ImportName + ".usdz");
+    FString FilePath = FPaths::Combine(FPaths::ProjectIntermediateDir(), TEXT("MythicaCache"), TEXT("GenerateMeshCache"), RequestData->ImportName + ".usdz");
 
     TArray<uint8> PackageData = Response->GetContent();
     bool PackageWritten = FFileHelper::SaveArrayToFile(PackageData, *FilePath);
     if (!PackageWritten)
     {
         UE_LOG(LogMythica, Error, TEXT("Failed to write mesh file %s"), *FilePath);
+        SetGenerateMeshRequestState(RequestId, EMythicaGenerateMeshState::Failed);
         return;
     }
 
@@ -984,7 +1039,8 @@ void UMythicaEditorSubsystem::OnMeshDownloadResponse(FHttpRequestPtr Request, FH
     TArray<UObject*> Objects = AssetToolsModule.Get().ImportAssetsAutomated(ImportData);
     if (Objects.Num() != 1)
     {
-        UE_LOG(LogMythica, Error, TEXT("Failed to import generated mesh for file %s"), *FileId);
+        UE_LOG(LogMythica, Error, TEXT("Failed to import generated mesh"));
+        SetGenerateMeshRequestState(RequestId, EMythicaGenerateMeshState::Failed);
         return;
     }
 
@@ -995,6 +1051,8 @@ void UMythicaEditorSubsystem::OnMeshDownloadResponse(FHttpRequestPtr Request, FH
     FSavePackageArgs SaveArgs;
     SaveArgs.TopLevelFlags = EObjectFlags::RF_Public | EObjectFlags::RF_Standalone;
     UPackage::SavePackage(Package, nullptr, *Filename, SaveArgs);
+
+    SetGenerateMeshRequestState(RequestId, EMythicaGenerateMeshState::Completed);
 }
 
 void UMythicaEditorSubsystem::SetSessionState(EMythicaSessionState NewState)
