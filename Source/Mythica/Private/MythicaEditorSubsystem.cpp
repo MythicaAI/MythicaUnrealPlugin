@@ -1030,7 +1030,8 @@ void UMythicaEditorSubsystem::OnMeshDownloadResponse(FHttpRequestPtr Request, FH
     // Import the mesh
     const UMythicaDeveloperSettings* Settings = GetDefault<UMythicaDeveloperSettings>();
 
-    FString DirectoryRelative = FPackageName::LongPackageNameToFilename(FPaths::Combine(Settings->ImportDirectory, TEXT("GeneratedMeshes")));
+    FString DirectoryPackageName = FPaths::Combine(Settings->ImportDirectory, TEXT("GeneratedMeshes"));
+    FString DirectoryRelative = FPackageName::LongPackageNameToFilename(DirectoryPackageName);
     FString DirectoryAbsolute = FPaths::ConvertRelativePathToFull(DirectoryRelative);
 
     UAutomatedAssetImportData* ImportData = NewObject<UAutomatedAssetImportData>();
@@ -1055,7 +1056,8 @@ void UMythicaEditorSubsystem::OnMeshDownloadResponse(FHttpRequestPtr Request, FH
     SaveArgs.TopLevelFlags = EObjectFlags::RF_Public | EObjectFlags::RF_Standalone;
     UPackage::SavePackage(Package, nullptr, *Filename, SaveArgs);
 
-    RequestData->ImportDirectory = FPaths::Combine(Settings->ImportDirectory, TEXT("GeneratedMeshes"), RequestData->ImportName);
+    // USD importer creates a directory based on the import file name
+    RequestData->ImportDirectory = FPaths::Combine(DirectoryPackageName, RequestData->ImportName);
     SetGenerateMeshRequestState(RequestId, EMythicaGenerateMeshState::Completed);
 }
 
