@@ -731,9 +731,13 @@ int UMythicaEditorSubsystem::GenerateMesh(const FString& FileId, const FMythicaP
     TSharedPtr<FJsonObject> ParamsSetObject = MakeShareable(new FJsonObject);
     Mythica::WriteParameters(Params, ParamsSetObject);
 
+    TSharedPtr<FJsonObject> MaterialParamsSetObject = MakeShareable(new FJsonObject);
+    MaterialParamsSetObject->SetStringField("prompt", "stone,wall,solid,grey,rocky");
+
     TSharedPtr<FJsonObject> JsonObject = MakeShareable(new FJsonObject);
     JsonObject->SetStringField(TEXT("file_id"), FileId);
     JsonObject->SetObjectField(TEXT("params"), ParamsSetObject);
+    JsonObject->SetObjectField(TEXT("material_params"), MaterialParamsSetObject);
 
     FString ContentJson;
     TSharedRef<TJsonWriter<>> Writer = TJsonWriterFactory<>::Create(&ContentJson);
