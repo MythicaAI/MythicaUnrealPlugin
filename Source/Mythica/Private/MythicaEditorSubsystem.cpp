@@ -117,6 +117,31 @@ FMythicaParameters UMythicaEditorSubsystem::GetToolInterface(const FString& File
     return Interface ? *Interface : FMythicaParameters();
 }
 
+FMythicaParameters UMythicaEditorSubsystem::GetMaterialInterface()
+{
+    FMythicaParameters Params;
+
+    FMythicaParameter Param1;
+    Param1.Name = "prompt";
+    Param1.Label = "Prompt";
+    Param1.Value.Emplace<FMythicaParameterString>(FString(), FString());
+    Params.Parameters.Add(Param1);
+
+    FMythicaParameter Param2;
+    Param2.Name = "neg_prompt";
+    Param2.Label = "Negative Prompt";
+    Param2.Value.Emplace<FMythicaParameterString>(FString(), FString());
+    Params.Parameters.Add(Param2);
+
+    FMythicaParameter Param3;
+    Param3.Name = "seed";
+    Param3.Label = "Seed";
+    Param3.Value.Emplace<FMythicaParameterFloat>(TArray<float>{ 0.0f }, TArray<float>{ 0.0f }, 0.0f, 10.0f);
+    Params.Parameters.Add(Param3);
+
+    return Params;
+}
+
 FString UMythicaEditorSubsystem::GetImportDirectory(int RequestId)
 {
     FMythicaGenerateMeshRequest* RequestData = GenerateMeshRequests.Find(RequestId);
@@ -720,7 +745,7 @@ void UMythicaEditorSubsystem::OnInterfaceDownloadResponse(FHttpRequestPtr Reques
     OnToolInterfaceLoaded.Broadcast(FileId);
 }
 
-int UMythicaEditorSubsystem::GenerateMesh(const FString& FileId, const FMythicaParameters& Params, const FString& ImportName)
+int UMythicaEditorSubsystem::GenerateMesh(const FString& FileId, const FMythicaParameters& Params, const FMythicaParameters& MaterialParams, const FString& ImportName)
 {
     if (SessionState != EMythicaSessionState::SessionCreated)
     {
@@ -732,7 +757,7 @@ int UMythicaEditorSubsystem::GenerateMesh(const FString& FileId, const FMythicaP
     Mythica::WriteParameters(Params, ParamsSetObject);
 
     TSharedPtr<FJsonObject> MaterialParamsSetObject = MakeShareable(new FJsonObject);
-    MaterialParamsSetObject->SetStringField("prompt", "stone,wall,solid,grey,rocky");
+    Mythica::WriteParameters(MaterialParams, MaterialParamsSetObject);
 
     TSharedPtr<FJsonObject> JsonObject = MakeShareable(new FJsonObject);
     JsonObject->SetStringField(TEXT("file_id"), FileId);

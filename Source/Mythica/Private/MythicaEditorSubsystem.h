@@ -163,6 +163,9 @@ public:
 	FMythicaParameters GetToolInterface(const FString& FileId);
 
 	UFUNCTION(BlueprintPure, Category = "Mythica")
+	FMythicaParameters GetMaterialInterface();
+
+	UFUNCTION(BlueprintPure, Category = "Mythica")
 	FString GetImportDirectory(int RequestId);
 
 	// Requests
@@ -182,7 +185,7 @@ public:
 	void LoadToolInterface(const FString& FileId);
 
 	UFUNCTION(BlueprintCallable, Category = "Mythica")
-	int GenerateMesh(const FString& FileId, const FMythicaParameters& Params, const FString& ImportName);
+	int GenerateMesh(const FString& FileId, const FMythicaParameters& Params, const FMythicaParameters& MaterialParams, const FString& ImportName);
 
 	// Delegates
 	UPROPERTY(BlueprintAssignable, Category = "Mythica")
