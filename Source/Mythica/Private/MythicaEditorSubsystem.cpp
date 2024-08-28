@@ -2,6 +2,7 @@
 
 #include "AssetRegistry/AssetRegistryModule.h"
 #include "AssetToolsModule.h"
+#include "FileHelpers.h"
 #include "FileUtilities/ZipArchiveReader.h"
 #include "HAL/FileManager.h"
 #include "HttpModule.h"
@@ -1104,15 +1105,22 @@ void UMythicaEditorSubsystem::OnMeshDownloadResponse(FHttpRequestPtr Request, FH
         return;
     }
 
-    // Save the imported asset
-    UPackage* Package = Cast<UPackage>(Objects[0]->GetOuter());
-    FString Filename = FPackageName::LongPackageNameToFilename(Package->GetName(), FPackageName::GetAssetPackageExtension());
+    // Save the imported assets
+    FAssetRegistryModule& AssetRegistryModule = FModuleManager::LoadModuleChecked<FAssetRegistryModule>("AssetRegistry");
 
-    FSavePackageArgs SaveArgs;
-    SaveArgs.TopLevelFlags = EObjectFlags::RF_Public | EObjectFlags::RF_Standalone;
-    UPackage::SavePackage(Package, nullptr, *Filename, SaveArgs);
+    FString CreatedImportDirectory = FPaths::Combine(ImportDirectory, UniqueDirectoryName);
 
-    RequestData->ImportDirectory = FPaths::Combine(ImportDirectory, UniqueDirectoryName);
+    TArray<FAssetData> Assets;
+    AssetRegistryModule.Get().GetAssetsByPath(*CreatedImportDirectory, Assets, true, false);
+
+    TArray<UPackage*> Packages;
+    for (const FAssetData& Asset : Assets)
+    {
+        Packages.Add(Asset.GetPackage());
+    }
+    UEditorLoadingAndSavingUtils::SavePackages(Packages, true);
+
+    RequestData->ImportDirectory = CreatedImportDirectory;
     SetGenerateMeshRequestState(RequestId, EMythicaGenerateMeshState::Completed);
 }
 
