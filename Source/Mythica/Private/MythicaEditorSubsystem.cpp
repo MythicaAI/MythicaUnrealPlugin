@@ -858,7 +858,7 @@ int UMythicaEditorSubsystem::ExecuteJob(const FString& JobDefId, const FMythicaP
 
     const UMythicaDeveloperSettings* Settings = GetDefault<UMythicaDeveloperSettings>();
 
-    FString Url = FString::Printf(TEXT("%s/v1/jobs"), *Settings->ServiceURL);
+    FString Url = FString::Printf(TEXT("%s/v1/jobs/"), *Settings->ServiceURL);
 
     auto Callback = [this, RequestId](FHttpRequestPtr Request, FHttpResponsePtr Response, bool bConnectedSuccessfully)
     {
