@@ -830,7 +830,7 @@ void UMythicaEditorSubsystem::OnInterfaceDownloadResponse(FHttpRequestPtr Reques
     OnToolInterfaceLoaded.Broadcast(FileId);
 }
 
-int UMythicaEditorSubsystem::GenerateMesh(const FString& FileId, const FMythicaParameters& Params, const FMythicaParameters& MaterialParams, const FString& ImportName)
+int UMythicaEditorSubsystem::ExecuteJob(const FString& JobDefId, const FMythicaParameters& Params, const FString& ImportName)
 {
     if (SessionState != EMythicaSessionState::SessionCreated)
     {
@@ -841,32 +841,28 @@ int UMythicaEditorSubsystem::GenerateMesh(const FString& FileId, const FMythicaP
     TSharedPtr<FJsonObject> ParamsSetObject = MakeShareable(new FJsonObject);
     Mythica::WriteParameters(Params, ParamsSetObject);
 
-    TSharedPtr<FJsonObject> MaterialParamsSetObject = MakeShareable(new FJsonObject);
-    Mythica::WriteParameters(MaterialParams, MaterialParamsSetObject);
-
     TSharedPtr<FJsonObject> JsonObject = MakeShareable(new FJsonObject);
-    JsonObject->SetStringField(TEXT("file_id"), FileId);
+    JsonObject->SetStringField(TEXT("job_def_id"), JobDefId);
     JsonObject->SetObjectField(TEXT("params"), ParamsSetObject);
-    JsonObject->SetObjectField(TEXT("material_params"), MaterialParamsSetObject);
 
     FString ContentJson;
     TSharedRef<TJsonWriter<>> Writer = TJsonWriterFactory<>::Create(&ContentJson);
     if (!FJsonSerializer::Serialize(JsonObject.ToSharedRef(), Writer))
     {
-        UE_LOG(LogMythica, Error, TEXT("Failed to create generate mesh JSON request object"));
+        UE_LOG(LogMythica, Error, TEXT("Failed to create execute job JSON request object"));
         return -1;
     }
 
     // Send request
-    int RequestId = CreateGenerateMeshRequest(FileId, ImportName);
+    int RequestId = CreateGenerateMeshRequest(FString(), ImportName);
 
     const UMythicaDeveloperSettings* Settings = GetDefault<UMythicaDeveloperSettings>();
 
-    FString Url = FString::Printf(TEXT("%s/v1/jobs/generate-mesh"), *Settings->ServiceURL);
+    FString Url = FString::Printf(TEXT("%s/v1/jobs"), *Settings->ServiceURL);
 
     auto Callback = [this, RequestId](FHttpRequestPtr Request, FHttpResponsePtr Response, bool bConnectedSuccessfully)
     {
-        OnGenerateMeshResponse(Request, Response, bConnectedSuccessfully, RequestId);
+        OnExecuteJobResponse(Request, Response, bConnectedSuccessfully, RequestId);
     };
 
     TSharedRef<IHttpRequest, ESPMode::ThreadSafe> Request = FHttpModule::Get().CreateRequest();
@@ -882,7 +878,7 @@ int UMythicaEditorSubsystem::GenerateMesh(const FString& FileId, const FMythicaP
     return RequestId;
 }
 
-void UMythicaEditorSubsystem::OnGenerateMeshResponse(FHttpRequestPtr Request, FHttpResponsePtr Response, bool bWasSuccessful, int RequestId)
+void UMythicaEditorSubsystem::OnExecuteJobResponse(FHttpRequestPtr Request, FHttpResponsePtr Response, bool bWasSuccessful, int RequestId)
 {
     FMythicaGenerateMeshRequest* RequestData = GenerateMeshRequests.Find(RequestId);
     if (!RequestData)

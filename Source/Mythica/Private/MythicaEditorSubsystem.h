@@ -213,7 +213,7 @@ public:
 	void LoadToolInterface(const FString& FileId);
 
 	UFUNCTION(BlueprintCallable, Category = "Mythica")
-	int GenerateMesh(const FString& FileId, const FMythicaParameters& Params, const FMythicaParameters& MaterialParams, const FString& ImportName);
+	int ExecuteJob(const FString& JobDefId, const FMythicaParameters& Params, const FString& ImportName);
 
 	// Delegates
 	UPROPERTY(BlueprintAssignable, Category = "Mythica")
@@ -248,7 +248,7 @@ private:
 
 	void OnJobDefinitionsResponse(FHttpRequestPtr Request, FHttpResponsePtr Response, bool bWasSuccessful);
 
-	void OnGenerateMeshResponse(FHttpRequestPtr Request, FHttpResponsePtr Response, bool bWasSuccessful, int RequestId);
+	void OnExecuteJobResponse(FHttpRequestPtr Request, FHttpResponsePtr Response, bool bWasSuccessful, int RequestId);
 	void OnGenerateMeshStatusResponse(FHttpRequestPtr Request, FHttpResponsePtr Response, bool bWasSuccessful, int RequestId);
 	void OnMeshDownloadInfoResponse(FHttpRequestPtr Request, FHttpResponsePtr Response, bool bWasSuccessful, int RequestId);
 	void OnMeshDownloadResponse(FHttpRequestPtr Request, FHttpResponsePtr Response, bool bWasSuccessful, int RequestId);
