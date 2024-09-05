@@ -794,28 +794,6 @@ void UMythicaEditorSubsystem::PollJobStatus()
     }
 }
 
-static EMythicaJobState ParseJobState(const FString& StateString)
-{
-    if (StateString == TEXT("queued"))
-    {
-        return EMythicaJobState::Queued;
-    }
-    if (StateString == TEXT("processing"))
-    {
-        return EMythicaJobState::Processing;
-    }
-    if (StateString == TEXT("failed"))
-    {
-        return EMythicaJobState::Failed;
-    }
-    if (StateString == TEXT("completed"))
-    {
-        return EMythicaJobState::Completed;
-    }
-
-    return EMythicaJobState::Invalid;
-}
-
 void UMythicaEditorSubsystem::OnJobResultsResponse(FHttpRequestPtr Request, FHttpResponsePtr Response, bool bWasSuccessful, int RequestId)
 {
     FMythicaJob* RequestData = Jobs.Find(RequestId);
@@ -840,46 +818,51 @@ void UMythicaEditorSubsystem::OnJobResultsResponse(FHttpRequestPtr Request, FHtt
         return;
     }
 
-    FString StateString;
-    if (!JsonObject->TryGetStringField(TEXT("state"), StateString))
+    bool Completed = JsonObject->GetBoolField(TEXT("completed"));
+    if (!Completed)
     {
-        UE_LOG(LogMythica, Error, TEXT("Failed to get job state from JSON string"));
-        return;
-    }
-
-    EMythicaJobState State = ParseJobState(StateString);
-    if (State == EMythicaJobState::Invalid)
-    {
-        UE_LOG(LogMythica, Error, TEXT("Unexpected job state %s"), *StateString);
-        return;
-    }
-
-    if (State == EMythicaJobState::Queued)
-    {
-        return;
-    }
-
-    if (State == EMythicaJobState::Processing)
-    {
+        // TODO: Expose processing event in API
         if (RequestData->State == EMythicaJobState::Queued)
         {
             SetJobState(RequestId, EMythicaJobState::Processing);
         }
-        return;
-    }
-    
-    if (State == EMythicaJobState::Failed)
-    {
-        UE_LOG(LogMythica, Error, TEXT("Job failed %d"), RequestId);
-        SetJobState(RequestId, EMythicaJobState::Failed);
+
         return;
     }
 
     FString FileId;
-    if (!JsonObject->TryGetStringField(TEXT("file_id"), FileId))
+
+    TArray<TSharedPtr<FJsonValue>> Results = JsonObject->GetArrayField(TEXT("results"));
+    for (TSharedPtr<FJsonValue> Value : Results)
     {
-        UE_LOG(LogMythica, Error, TEXT("Failed to get job result FileId from JSON string"));
+        TSharedPtr<FJsonObject> ResultObject = Value->AsObject();
+        if (!ResultObject.IsValid())
+        {
+            continue;
+        }
+
+        FString ResultData = ResultObject->GetStringField(TEXT("result_data"));
+        TSharedRef<TJsonReader<>> ResultDataReader = TJsonReaderFactory<>::Create(ResultData);
+
+        TSharedPtr<FJsonObject> ResultDataObject;
+        if (!FJsonSerializer::Deserialize(ResultDataReader, ResultDataObject) || !ResultDataObject.IsValid())
+        {
+            UE_LOG(LogMythica, Error, TEXT("Failed to parse result JSON string"));
+            continue;
+        }
+        
+        if (ResultDataObject->TryGetStringField(TEXT("file_id"), FileId))
+        {
+            break;
+        }
+    }
+
+    if (FileId.IsEmpty())
+    {
+        UE_LOG(LogMythica, Error, TEXT("Job failed %d"), RequestId);
+        SetJobState(RequestId, EMythicaJobState::Failed);
         return;
+
     }
 
     const UMythicaDeveloperSettings* Settings = GetDefault<UMythicaDeveloperSettings>();
