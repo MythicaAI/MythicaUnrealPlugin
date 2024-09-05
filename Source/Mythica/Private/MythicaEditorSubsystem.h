@@ -36,7 +36,6 @@ DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnThumbnailLoaded, const FString&, 
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnAssetInstalled, const FString&, PackageId);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnAssetUninstalled, const FString&, PackageId);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnJobDefinitionListUpdated);
-DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnToolInterfaceLoaded, const FString&, FileId);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FOnJobStateChanged, int, RequestId, EMythicaJobState, State);
 
 USTRUCT(BlueprintType)
@@ -87,18 +86,6 @@ struct FMythicaJobDefinition
 
 	UPROPERTY(BlueprintReadOnly, Category = "Data")
 	FMythicaParameters Parameters;
-};
-
-USTRUCT(BlueprintType)
-struct FMythicaTool
-{
-	GENERATED_BODY()
-
-	UPROPERTY(BlueprintReadOnly, Category = "Data")
-	FString FileId;
-
-	UPROPERTY(BlueprintReadOnly, Category = "Data")
-	FString Name;
 };
 
 USTRUCT(BlueprintType)
@@ -167,9 +154,6 @@ public:
 	TArray<FMythicaAsset> GetAssetList();
 
 	UFUNCTION(BlueprintCallable, Category = "Mythica")
-	TArray<FMythicaTool> GetToolList();
-
-	UFUNCTION(BlueprintCallable, Category = "Mythica")
 	TArray<FMythicaJobDefinition> GetJobDefinitionList(const FString& JobType);
 
 	UFUNCTION(BlueprintPure, Category = "Mythica")
@@ -180,15 +164,6 @@ public:
 
 	UFUNCTION(BlueprintPure, Category = "Mythica")
 	FMythicaStats GetStats();
-
-	UFUNCTION(BlueprintPure, Category = "Mythica")
-	bool IsToolInterfaceLoaded(const FString& FileId);
-
-	UFUNCTION(BlueprintPure, Category = "Mythica")
-	FMythicaParameters GetToolInterface(const FString& FileId);
-
-	UFUNCTION(BlueprintPure, Category = "Mythica")
-	FMythicaParameters GetMaterialInterface();
 
 	UFUNCTION(BlueprintPure, Category = "Mythica")
 	FString GetImportDirectory(int RequestId);
@@ -208,9 +183,6 @@ public:
 
 	UFUNCTION(BlueprintCallable, Category = "Mythica")
 	void UpdateJobDefinitionList();
-
-	UFUNCTION(BlueprintCallable, Category = "Mythica")
-	void LoadToolInterface(const FString& FileId);
 
 	UFUNCTION(BlueprintCallable, Category = "Mythica")
 	int ExecuteJob(const FString& JobDefId, const FMythicaParameters& Params, const FString& ImportName);
@@ -235,9 +207,6 @@ public:
 	FOnJobDefinitionListUpdated OnJobDefinitionListUpdated;
 
 	UPROPERTY(BlueprintAssignable, Category = "Mythica")
-	FOnToolInterfaceLoaded OnToolInterfaceLoaded;
-
-	UPROPERTY(BlueprintAssignable, Category = "Mythica")
 	FOnJobStateChanged OnJobStateChange;
 
 private:
@@ -252,10 +221,6 @@ private:
 	void OnJobResultsResponse(FHttpRequestPtr Request, FHttpResponsePtr Response, bool bWasSuccessful, int RequestId);
 	void OnMeshDownloadInfoResponse(FHttpRequestPtr Request, FHttpResponsePtr Response, bool bWasSuccessful, int RequestId);
 	void OnMeshDownloadResponse(FHttpRequestPtr Request, FHttpResponsePtr Response, bool bWasSuccessful, int RequestId);
-
-	void OnInterfaceResponse(FHttpRequestPtr Request, FHttpResponsePtr Response, bool bWasSuccessful, const FString& FileId);
-	void OnInterfaceDownloadInfoResponse(FHttpRequestPtr Request, FHttpResponsePtr Response, bool bWasSuccessful, const FString& FileId);
-	void OnInterfaceDownloadResponse(FHttpRequestPtr Request, FHttpResponsePtr Response, bool bWasSuccessful, const FString& FileId);
 
 	int CreateJob(const FString& JobDefId, const FString& ImportName);
 	void SetJobState(int RequestId, EMythicaJobState State);
@@ -282,10 +247,7 @@ private:
 
 	TMap<FString, FString> InstalledAssets;
 	TArray<FMythicaAsset> AssetList;
-	TArray<FMythicaTool> ToolList;
 	FMythicaStats Stats;
-
-	TMap<FString, FMythicaParameters> ToolInterfaces;
 
 	TArray<FMythicaJobDefinition> JobDefinitionList;
 
