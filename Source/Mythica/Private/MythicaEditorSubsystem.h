@@ -19,7 +19,7 @@ enum EMythicaSessionState
 };
 
 UENUM(BlueprintType)
-enum EMythicaGenerateMeshState
+enum EMythicaJobState
 {
 	Invalid,
 	Requesting,		// Request has been sent to the server
@@ -37,7 +37,7 @@ DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnAssetInstalled, const FString&, P
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnAssetUninstalled, const FString&, PackageId);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnJobDefinitionListUpdated);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnToolInterfaceLoaded, const FString&, FileId);
-DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FOnGenerateMeshStateChanged, int, RequestId, EMythicaGenerateMeshState, State);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FOnJobStateChanged, int, RequestId, EMythicaJobState, State);
 
 USTRUCT(BlueprintType)
 struct FMythicaStats
@@ -134,13 +134,13 @@ struct FMythicaAsset
 	int32 DigitalAssetCount;
 };
 
-struct FMythicaGenerateMeshRequest
+struct FMythicaJob
 {
-	FString FileId;
+	FString JobDefId;
 	FString ImportName;
 
-	EMythicaGenerateMeshState State = EMythicaGenerateMeshState::Requesting;
-	FString EventId;
+	EMythicaJobState State = EMythicaJobState::Requesting;
+	FString JobId;
 	FString ImportDirectory;
 };
 
@@ -238,7 +238,7 @@ public:
 	FOnToolInterfaceLoaded OnToolInterfaceLoaded;
 
 	UPROPERTY(BlueprintAssignable, Category = "Mythica")
-	FOnGenerateMeshStateChanged OnGenerateMeshStateChange;
+	FOnJobStateChanged OnJobStateChange;
 
 private:
 	void OnCreateSessionResponse(FHttpRequestPtr Request, FHttpResponsePtr Response, bool bWasSuccessful);
@@ -249,7 +249,7 @@ private:
 	void OnJobDefinitionsResponse(FHttpRequestPtr Request, FHttpResponsePtr Response, bool bWasSuccessful);
 
 	void OnExecuteJobResponse(FHttpRequestPtr Request, FHttpResponsePtr Response, bool bWasSuccessful, int RequestId);
-	void OnGenerateMeshStatusResponse(FHttpRequestPtr Request, FHttpResponsePtr Response, bool bWasSuccessful, int RequestId);
+	void OnJobResultsResponse(FHttpRequestPtr Request, FHttpResponsePtr Response, bool bWasSuccessful, int RequestId);
 	void OnMeshDownloadInfoResponse(FHttpRequestPtr Request, FHttpResponsePtr Response, bool bWasSuccessful, int RequestId);
 	void OnMeshDownloadResponse(FHttpRequestPtr Request, FHttpResponsePtr Response, bool bWasSuccessful, int RequestId);
 
@@ -257,9 +257,9 @@ private:
 	void OnInterfaceDownloadInfoResponse(FHttpRequestPtr Request, FHttpResponsePtr Response, bool bWasSuccessful, const FString& FileId);
 	void OnInterfaceDownloadResponse(FHttpRequestPtr Request, FHttpResponsePtr Response, bool bWasSuccessful, const FString& FileId);
 
-	int CreateGenerateMeshRequest(const FString& FileId, const FString& ImportName);
-	void SetGenerateMeshRequestState(int RequestId, EMythicaGenerateMeshState State);
-	void PollGenerateMeshStatus();
+	int CreateJob(const FString& JobDefId, const FString& ImportName);
+	void SetJobState(int RequestId, EMythicaJobState State);
+	void PollJobStatus();
 
 	void SetSessionState(EMythicaSessionState NewState);
 
@@ -277,8 +277,8 @@ private:
 	FString AuthToken;
 
 	int NextRequestId = 1;
-	TMap<int, FMythicaGenerateMeshRequest> GenerateMeshRequests;
-	FTimerHandle GenerateMeshTimer;
+	TMap<int, FMythicaJob> Jobs;
+	FTimerHandle JobPollTimer;
 
 	TMap<FString, FString> InstalledAssets;
 	TArray<FMythicaAsset> AssetList;

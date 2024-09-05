@@ -158,7 +158,7 @@ FMythicaParameters UMythicaEditorSubsystem::GetMaterialInterface()
 
 FString UMythicaEditorSubsystem::GetImportDirectory(int RequestId)
 {
-    FMythicaGenerateMeshRequest* RequestData = GenerateMeshRequests.Find(RequestId);
+    FMythicaJob* RequestData = Jobs.Find(RequestId);
     return RequestData ? RequestData->ImportDirectory : FString();
 }
 
@@ -854,7 +854,7 @@ int UMythicaEditorSubsystem::ExecuteJob(const FString& JobDefId, const FMythicaP
     }
 
     // Send request
-    int RequestId = CreateGenerateMeshRequest(FString(), ImportName);
+    int RequestId = CreateJob(JobDefId, ImportName);
 
     const UMythicaDeveloperSettings* Settings = GetDefault<UMythicaDeveloperSettings>();
 
@@ -880,7 +880,7 @@ int UMythicaEditorSubsystem::ExecuteJob(const FString& JobDefId, const FMythicaP
 
 void UMythicaEditorSubsystem::OnExecuteJobResponse(FHttpRequestPtr Request, FHttpResponsePtr Response, bool bWasSuccessful, int RequestId)
 {
-    FMythicaGenerateMeshRequest* RequestData = GenerateMeshRequests.Find(RequestId);
+    FMythicaJob* RequestData = Jobs.Find(RequestId);
     if (!RequestData)
     {
         return;
@@ -888,8 +888,8 @@ void UMythicaEditorSubsystem::OnExecuteJobResponse(FHttpRequestPtr Request, FHtt
 
     if (!bWasSuccessful || !Response.IsValid())
     {
-        UE_LOG(LogMythica, Error, TEXT("Failed to request asset generation"));
-        SetGenerateMeshRequestState(RequestId, EMythicaGenerateMeshState::Failed);
+        UE_LOG(LogMythica, Error, TEXT("Failed to request job"));
+        SetJobState(RequestId, EMythicaJobState::Failed);
         return;
     }
 
@@ -899,75 +899,75 @@ void UMythicaEditorSubsystem::OnExecuteJobResponse(FHttpRequestPtr Request, FHtt
     TSharedPtr<FJsonObject> JsonObject;
     if (!FJsonSerializer::Deserialize(Reader, JsonObject) || !JsonObject.IsValid())
     {
-        UE_LOG(LogMythica, Error, TEXT("Failed to parse create generate mesh JSON string"));
-        SetGenerateMeshRequestState(RequestId, EMythicaGenerateMeshState::Failed);
+        UE_LOG(LogMythica, Error, TEXT("Failed to parse create job JSON string"));
+        SetJobState(RequestId, EMythicaJobState::Failed);
         return;
     }
 
-    FString EventId;
-    if (!JsonObject->TryGetStringField(TEXT("event_id"), EventId))
+    FString JobId;
+    if (!JsonObject->TryGetStringField(TEXT("job_id"), JobId))
     {
-        UE_LOG(LogMythica, Error, TEXT("Failed to get EventId from JSON string"));
-        SetGenerateMeshRequestState(RequestId, EMythicaGenerateMeshState::Failed);
+        UE_LOG(LogMythica, Error, TEXT("Failed to get JobId from JSON string"));
+        SetJobState(RequestId, EMythicaJobState::Failed);
         return;
     }
 
-    RequestData->EventId = EventId;
-    SetGenerateMeshRequestState(RequestId, EMythicaGenerateMeshState::Queued);
+    RequestData->JobId = JobId;
+    SetJobState(RequestId, EMythicaJobState::Queued);
 }
 
-int UMythicaEditorSubsystem::CreateGenerateMeshRequest(const FString& FileId, const FString& ImportName)
+int UMythicaEditorSubsystem::CreateJob(const FString& JobDefId, const FString& ImportName)
 {
     int RequestId = NextRequestId++;
-    GenerateMeshRequests.Add(RequestId, { FileId, ImportName });
+    Jobs.Add(RequestId, { JobDefId, ImportName });
 
-    if (!GenerateMeshTimer.IsValid())
+    if (!JobPollTimer.IsValid())
     {
-        FTimerDelegate TimerDelegate = FTimerDelegate::CreateUObject(this, &UMythicaEditorSubsystem::PollGenerateMeshStatus);
-        GEditor->GetTimerManager()->SetTimer(GenerateMeshTimer, TimerDelegate, 1.0f, true);
+        FTimerDelegate TimerDelegate = FTimerDelegate::CreateUObject(this, &UMythicaEditorSubsystem::PollJobStatus);
+        GEditor->GetTimerManager()->SetTimer(JobPollTimer, TimerDelegate, 1.0f, true);
     }
 
     return RequestId;
 }
 
-void UMythicaEditorSubsystem::SetGenerateMeshRequestState(int RequestId, EMythicaGenerateMeshState State)
+void UMythicaEditorSubsystem::SetJobState(int RequestId, EMythicaJobState State)
 {
-    FMythicaGenerateMeshRequest* RequestData = GenerateMeshRequests.Find(RequestId);
-    if (!RequestData || RequestData->State == State)
+    FMythicaJob* JobData = Jobs.Find(RequestId);
+    if (!JobData || JobData->State == State)
     {
         return;
     }
 
-    RequestData->State = State;
-    OnGenerateMeshStateChange.Broadcast(RequestId, State);
+    JobData->State = State;
+    OnJobStateChange.Broadcast(RequestId, State);
 
     // TODO: Expire old request data
 
-    if (GenerateMeshRequests.Num() == 0)
+    if (Jobs.Num() == 0)
     {
-        GEditor->GetTimerManager()->ClearTimer(GenerateMeshTimer);
+        GEditor->GetTimerManager()->ClearTimer(JobPollTimer);
     }
 }
 
-void UMythicaEditorSubsystem::PollGenerateMeshStatus()
+void UMythicaEditorSubsystem::PollJobStatus()
 {
-    for (const TTuple<int, FMythicaGenerateMeshRequest>& RequestEntry : GenerateMeshRequests)
+    for (const TTuple<int, FMythicaJob>& JobEntry : Jobs)
     {
-        int RequestId = RequestEntry.Key;
-        const FMythicaGenerateMeshRequest& RequestData = RequestEntry.Value;
+        int RequestId = JobEntry.Key;
+        const FMythicaJob& JobData = JobEntry.Value;
 
-        if (RequestData.State != EMythicaGenerateMeshState::Queued && RequestData.State != EMythicaGenerateMeshState::Processing)
+        if (JobData.State != EMythicaJobState::Queued && JobData.State != EMythicaJobState::Processing)
         {
             continue;
         }
 
         const UMythicaDeveloperSettings* Settings = GetDefault<UMythicaDeveloperSettings>();
 
-        FString Url = FString::Printf(TEXT("%s/v1/jobs/generate-mesh/status/%s"), *Settings->ServiceURL, *RequestData.EventId);
+        FString Url = FString::Printf(TEXT("%s/v1/jobs/results/%s"), *Settings->ServiceURL, *JobData.JobId);
 
         auto Callback = [this, RequestId](FHttpRequestPtr Request, FHttpResponsePtr Response, bool bConnectedSuccessfully)
         {
-            OnGenerateMeshStatusResponse(Request, Response, bConnectedSuccessfully, RequestId);
+            OnJobResultsResponse(Request, Response, bConnectedSuccessfully, RequestId);
         };
 
         TSharedRef<IHttpRequest, ESPMode::ThreadSafe> Request = FHttpModule::Get().CreateRequest();
@@ -980,31 +980,31 @@ void UMythicaEditorSubsystem::PollGenerateMeshStatus()
     }
 }
 
-static EMythicaGenerateMeshState ParseGenerateMeshState(const FString& StateString)
+static EMythicaJobState ParseJobState(const FString& StateString)
 {
     if (StateString == TEXT("queued"))
     {
-        return EMythicaGenerateMeshState::Queued;
+        return EMythicaJobState::Queued;
     }
     if (StateString == TEXT("processing"))
     {
-        return EMythicaGenerateMeshState::Processing;
+        return EMythicaJobState::Processing;
     }
     if (StateString == TEXT("failed"))
     {
-        return EMythicaGenerateMeshState::Failed;
+        return EMythicaJobState::Failed;
     }
     if (StateString == TEXT("completed"))
     {
-        return EMythicaGenerateMeshState::Completed;
+        return EMythicaJobState::Completed;
     }
 
-    return EMythicaGenerateMeshState::Invalid;
+    return EMythicaJobState::Invalid;
 }
 
-void UMythicaEditorSubsystem::OnGenerateMeshStatusResponse(FHttpRequestPtr Request, FHttpResponsePtr Response, bool bWasSuccessful, int RequestId)
+void UMythicaEditorSubsystem::OnJobResultsResponse(FHttpRequestPtr Request, FHttpResponsePtr Response, bool bWasSuccessful, int RequestId)
 {
-    FMythicaGenerateMeshRequest* RequestData = GenerateMeshRequests.Find(RequestId);
+    FMythicaJob* RequestData = Jobs.Find(RequestId);
     if (!RequestData)
     {
         return;
@@ -1012,7 +1012,7 @@ void UMythicaEditorSubsystem::OnGenerateMeshStatusResponse(FHttpRequestPtr Reque
 
     if (!bWasSuccessful || !Response.IsValid())
     {
-        UE_LOG(LogMythica, Error, TEXT("Failed to get generate mesh status for request %d"), RequestId);
+        UE_LOG(LogMythica, Error, TEXT("Failed to get job for request %d"), RequestId);
         return;
     }
 
@@ -1022,49 +1022,49 @@ void UMythicaEditorSubsystem::OnGenerateMeshStatusResponse(FHttpRequestPtr Reque
     TSharedPtr<FJsonObject> JsonObject;
     if (!FJsonSerializer::Deserialize(Reader, JsonObject) || !JsonObject.IsValid())
     {
-        UE_LOG(LogMythica, Error, TEXT("Failed to parse generate mesh status JSON string"));
+        UE_LOG(LogMythica, Error, TEXT("Failed to parse job status JSON string"));
         return;
     }
 
     FString StateString;
     if (!JsonObject->TryGetStringField(TEXT("state"), StateString))
     {
-        UE_LOG(LogMythica, Error, TEXT("Failed to get State from JSON string"));
+        UE_LOG(LogMythica, Error, TEXT("Failed to get job state from JSON string"));
         return;
     }
 
-    EMythicaGenerateMeshState State = ParseGenerateMeshState(StateString);
-    if (State == EMythicaGenerateMeshState::Invalid)
+    EMythicaJobState State = ParseJobState(StateString);
+    if (State == EMythicaJobState::Invalid)
     {
-        UE_LOG(LogMythica, Error, TEXT("Unexpected generate mesh state %s"), *StateString);
+        UE_LOG(LogMythica, Error, TEXT("Unexpected job state %s"), *StateString);
         return;
     }
 
-    if (State == EMythicaGenerateMeshState::Queued)
+    if (State == EMythicaJobState::Queued)
     {
         return;
     }
 
-    if (State == EMythicaGenerateMeshState::Processing)
+    if (State == EMythicaJobState::Processing)
     {
-        if (RequestData->State == EMythicaGenerateMeshState::Queued)
+        if (RequestData->State == EMythicaJobState::Queued)
         {
-            SetGenerateMeshRequestState(RequestId, EMythicaGenerateMeshState::Processing);
+            SetJobState(RequestId, EMythicaJobState::Processing);
         }
         return;
     }
     
-    if (State == EMythicaGenerateMeshState::Failed)
+    if (State == EMythicaJobState::Failed)
     {
-        UE_LOG(LogMythica, Error, TEXT("Generate mesh request failed %d"), RequestId);
-        SetGenerateMeshRequestState(RequestId, EMythicaGenerateMeshState::Failed);
+        UE_LOG(LogMythica, Error, TEXT("Job failed %d"), RequestId);
+        SetJobState(RequestId, EMythicaJobState::Failed);
         return;
     }
 
     FString FileId;
     if (!JsonObject->TryGetStringField(TEXT("file_id"), FileId))
     {
-        UE_LOG(LogMythica, Error, TEXT("Failed to get FileId from JSON string"));
+        UE_LOG(LogMythica, Error, TEXT("Failed to get job result FileId from JSON string"));
         return;
     }
 
@@ -1085,7 +1085,7 @@ void UMythicaEditorSubsystem::OnGenerateMeshStatusResponse(FHttpRequestPtr Reque
 
     DownloadInfoRequest->ProcessRequest();
 
-    SetGenerateMeshRequestState(RequestId, EMythicaGenerateMeshState::Importing);
+    SetJobState(RequestId, EMythicaJobState::Importing);
 }
 
 void UMythicaEditorSubsystem::OnMeshDownloadInfoResponse(FHttpRequestPtr Request, FHttpResponsePtr Response, bool bWasSuccessful, int RequestId)
@@ -1093,7 +1093,7 @@ void UMythicaEditorSubsystem::OnMeshDownloadInfoResponse(FHttpRequestPtr Request
     if (!bWasSuccessful || !Response.IsValid())
     {
         UE_LOG(LogMythica, Error, TEXT("Failed to get mesh download info"));
-        SetGenerateMeshRequestState(RequestId, EMythicaGenerateMeshState::Failed);
+        SetJobState(RequestId, EMythicaJobState::Failed);
         return;
     }
 
@@ -1104,7 +1104,7 @@ void UMythicaEditorSubsystem::OnMeshDownloadInfoResponse(FHttpRequestPtr Request
     if (!FJsonSerializer::Deserialize(Reader, JsonObject) || !JsonObject.IsValid())
     {
         UE_LOG(LogMythica, Error, TEXT("Failed to parse mesh download info JSON string"));
-        SetGenerateMeshRequestState(RequestId, EMythicaGenerateMeshState::Failed);
+        SetJobState(RequestId, EMythicaJobState::Failed);
         return;
     }
 
@@ -1113,7 +1113,7 @@ void UMythicaEditorSubsystem::OnMeshDownloadInfoResponse(FHttpRequestPtr Request
     if (DownloadURL.IsEmpty())
     {
         UE_LOG(LogMythica, Error, TEXT("Failed to get download URL for mesh"));
-        SetGenerateMeshRequestState(RequestId, EMythicaGenerateMeshState::Failed);
+        SetJobState(RequestId, EMythicaJobState::Failed);
         return;
     }
 
@@ -1133,7 +1133,7 @@ void UMythicaEditorSubsystem::OnMeshDownloadInfoResponse(FHttpRequestPtr Request
 
 void UMythicaEditorSubsystem::OnMeshDownloadResponse(FHttpRequestPtr Request, FHttpResponsePtr Response, bool bWasSuccessful, int RequestId)
 {
-    FMythicaGenerateMeshRequest* RequestData = GenerateMeshRequests.Find(RequestId);
+    FMythicaJob* RequestData = Jobs.Find(RequestId);
     if (!RequestData)
     {
         return;
@@ -1142,7 +1142,7 @@ void UMythicaEditorSubsystem::OnMeshDownloadResponse(FHttpRequestPtr Request, FH
     if (!bWasSuccessful || !Response.IsValid())
     {
         UE_LOG(LogMythica, Error, TEXT("Failed to download asset"));
-        SetGenerateMeshRequestState(RequestId, EMythicaGenerateMeshState::Failed);
+        SetJobState(RequestId, EMythicaJobState::Failed);
         return;
     }
 
@@ -1166,7 +1166,7 @@ void UMythicaEditorSubsystem::OnMeshDownloadResponse(FHttpRequestPtr Request, FH
     if (!PackageWritten)
     {
         UE_LOG(LogMythica, Error, TEXT("Failed to write mesh file %s"), *FilePath);
-        SetGenerateMeshRequestState(RequestId, EMythicaGenerateMeshState::Failed);
+        SetJobState(RequestId, EMythicaJobState::Failed);
         return;
     }
 
@@ -1181,7 +1181,7 @@ void UMythicaEditorSubsystem::OnMeshDownloadResponse(FHttpRequestPtr Request, FH
     if (Objects.Num() != 1)
     {
         UE_LOG(LogMythica, Error, TEXT("Failed to import generated mesh"));
-        SetGenerateMeshRequestState(RequestId, EMythicaGenerateMeshState::Failed);
+        SetJobState(RequestId, EMythicaJobState::Failed);
         return;
     }
 
@@ -1201,7 +1201,7 @@ void UMythicaEditorSubsystem::OnMeshDownloadResponse(FHttpRequestPtr Request, FH
     UEditorLoadingAndSavingUtils::SavePackages(Packages, true);
 
     RequestData->ImportDirectory = CreatedImportDirectory;
-    SetGenerateMeshRequestState(RequestId, EMythicaGenerateMeshState::Completed);
+    SetJobState(RequestId, EMythicaJobState::Completed);
 }
 
 void UMythicaEditorSubsystem::SetSessionState(EMythicaSessionState NewState)
