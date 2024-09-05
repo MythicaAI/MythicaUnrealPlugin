@@ -229,7 +229,6 @@ private:
 	void SetSessionState(EMythicaSessionState NewState);
 
 	void LoadInstalledAssetList();
-	FString GetUniqueImportDirectory(const FString& PackageName);
 	void AddInstalledAsset(const FString& PackageId, const FString& ImportDirectory);
 	void UpdateStats();
 
@@ -241,6 +240,7 @@ private:
 	EMythicaSessionState SessionState = EMythicaSessionState::None;
 	FString AuthToken;
 
+	TArray<FMythicaJobDefinition> JobDefinitionList;
 	int NextRequestId = 1;
 	TMap<int, FMythicaJob> Jobs;
 	FTimerHandle JobPollTimer;
@@ -248,8 +248,6 @@ private:
 	TMap<FString, FString> InstalledAssets;
 	TArray<FMythicaAsset> AssetList;
 	FMythicaStats Stats;
-
-	TArray<FMythicaJobDefinition> JobDefinitionList;
 
 	UPROPERTY()
 	TMap<FString, UTexture2D*> ThumbnailCache;
