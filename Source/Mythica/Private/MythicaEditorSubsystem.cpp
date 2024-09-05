@@ -836,20 +836,7 @@ void UMythicaEditorSubsystem::OnJobResultsResponse(FHttpRequestPtr Request, FHtt
     for (TSharedPtr<FJsonValue> Value : Results)
     {
         TSharedPtr<FJsonObject> ResultObject = Value->AsObject();
-        if (!ResultObject.IsValid())
-        {
-            continue;
-        }
-
-        FString ResultData = ResultObject->GetStringField(TEXT("result_data"));
-        TSharedRef<TJsonReader<>> ResultDataReader = TJsonReaderFactory<>::Create(ResultData);
-
-        TSharedPtr<FJsonObject> ResultDataObject;
-        if (!FJsonSerializer::Deserialize(ResultDataReader, ResultDataObject) || !ResultDataObject.IsValid())
-        {
-            UE_LOG(LogMythica, Error, TEXT("Failed to parse result JSON string"));
-            continue;
-        }
+        TSharedPtr<FJsonObject> ResultDataObject = ResultObject->GetObjectField(TEXT("result_data"));
         
         if (ResultDataObject->TryGetStringField(TEXT("file_id"), FileId))
         {
