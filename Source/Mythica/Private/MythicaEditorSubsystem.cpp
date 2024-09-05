@@ -787,6 +787,7 @@ void UMythicaEditorSubsystem::PollJobStatus()
         TSharedRef<IHttpRequest, ESPMode::ThreadSafe> Request = FHttpModule::Get().CreateRequest();
         Request->SetURL(Url);
         Request->SetVerb("GET");
+        Request->SetHeader("Authorization", FString::Printf(TEXT("Bearer %s"), *AuthToken));
         Request->SetHeader("Content-Type", "application/json");
         Request->OnProcessRequestComplete().BindLambda(Callback);
 
