@@ -85,6 +85,9 @@ struct FMythicaJobDefinition
 	FString Description;
 
 	UPROPERTY(BlueprintReadOnly, Category = "Data")
+	FMythicaInputs Inputs;
+
+	UPROPERTY(BlueprintReadOnly, Category = "Data")
 	FMythicaParameters Parameters;
 };
 
