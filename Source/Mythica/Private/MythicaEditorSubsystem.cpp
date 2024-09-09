@@ -633,7 +633,7 @@ void UMythicaEditorSubsystem::OnJobDefinitionsResponse(FHttpRequestPtr Request, 
         FString JobType = JsonObject->GetStringField(TEXT("job_type"));
         FString Name = JsonObject->GetStringField(TEXT("name"));
         FString Description = JsonObject->GetStringField(TEXT("description"));
-        int InputCount = 3; //JsonObject->GetStringField(TEXT("input_files"));
+        int InputCount = JsonObject->GetNumberField(TEXT("input_files"));
         TSharedPtr<FJsonObject> ParamsSchema = JsonObject->GetObjectField(TEXT("params_schema"));
 
         FMythicaInputs Inputs;
