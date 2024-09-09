@@ -10,7 +10,7 @@
 DECLARE_LOG_CATEGORY_EXTERN(LogMythica, Log, All);
 
 UENUM(BlueprintType)
-enum EMythicaSessionState
+enum class EMythicaSessionState : uint8
 {
 	None,
 	RequestingSession,
@@ -19,7 +19,7 @@ enum EMythicaSessionState
 };
 
 UENUM(BlueprintType)
-enum EMythicaJobState
+enum class EMythicaJobState : uint8
 {
 	Invalid,
 	Requesting,		// Request has been sent to the server
@@ -85,6 +85,9 @@ struct FMythicaJobDefinition
 	FString Description;
 
 	UPROPERTY(BlueprintReadOnly, Category = "Data")
+	FMythicaInputs Inputs;
+
+	UPROPERTY(BlueprintReadOnly, Category = "Data")
 	FMythicaParameters Parameters;
 };
 
@@ -121,13 +124,30 @@ struct FMythicaAsset
 	int32 DigitalAssetCount;
 };
 
+USTRUCT()
 struct FMythicaJob
 {
+	GENERATED_BODY()
+
+	UPROPERTY()
 	FString JobDefId;
+
+	UPROPERTY()
+	FMythicaInputs Inputs;
+
+	UPROPERTY()
+	FMythicaParameters Params;
+
+	UPROPERTY()
 	FString ImportName;
 
+	UPROPERTY()
 	EMythicaJobState State = EMythicaJobState::Requesting;
+
+	UPROPERTY()
 	FString JobId;
+
+	UPROPERTY()
 	FString ImportDirectory;
 };
 
@@ -185,7 +205,7 @@ public:
 	void UpdateJobDefinitionList();
 
 	UFUNCTION(BlueprintCallable, Category = "Mythica")
-	int ExecuteJob(const FString& JobDefId, const FMythicaParameters& Params, const FString& ImportName);
+	int ExecuteJob(const FString& JobDefId, const FMythicaInputs& Inputs, const FMythicaParameters& Params, const FString& ImportName);
 
 	// Delegates
 	UPROPERTY(BlueprintAssignable, Category = "Mythica")
@@ -222,7 +242,7 @@ private:
 	void OnMeshDownloadInfoResponse(FHttpRequestPtr Request, FHttpResponsePtr Response, bool bWasSuccessful, int RequestId);
 	void OnMeshDownloadResponse(FHttpRequestPtr Request, FHttpResponsePtr Response, bool bWasSuccessful, int RequestId);
 
-	int CreateJob(const FString& JobDefId, const FString& ImportName);
+	int CreateJob(const FString& JobDefId, const FMythicaInputs& Inputs, const FMythicaParameters& Params, const FString& ImportName);
 	void SetJobState(int RequestId, EMythicaJobState State);
 	void PollJobStatus();
 
@@ -241,9 +261,11 @@ private:
 	FString AuthToken;
 
 	TArray<FMythicaJobDefinition> JobDefinitionList;
-	int NextRequestId = 1;
+
+	UPROPERTY()
 	TMap<int, FMythicaJob> Jobs;
 	FTimerHandle JobPollTimer;
+	int NextRequestId = 1;
 
 	TMap<FString, FString> InstalledAssets;
 	TArray<FMythicaAsset> AssetList;

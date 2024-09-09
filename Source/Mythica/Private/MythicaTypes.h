@@ -5,6 +5,37 @@
 
 #include "MythicaTypes.generated.h"
 
+UENUM(BlueprintType)
+enum class EMythicaInputType : uint8
+{
+    Mesh,
+    World
+};
+
+USTRUCT(BlueprintType)
+struct FMythicaInput
+{
+    GENERATED_BODY()
+
+    UPROPERTY(BlueprintReadWrite, EditAnywhere)
+    EMythicaInputType Type = EMythicaInputType::Mesh;
+
+    UPROPERTY(BlueprintReadWrite, EditAnywhere, meta = (EditCondition = "Type == EMythicaInputType::Mesh", EditConditionHides))
+    UStaticMesh* Mesh = nullptr;
+
+    UPROPERTY(BlueprintReadWrite, EditAnywhere, meta = (EditCondition = "Type == EMythicaInputType::World", EditConditionHides))
+    AActor* Actor = nullptr;
+};
+
+USTRUCT(BlueprintType)
+struct FMythicaInputs
+{
+    GENERATED_BODY()
+
+    UPROPERTY(BlueprintReadWrite, EditAnywhere)
+    TArray<FMythicaInput> Inputs;
+};
+
 struct FMythicaParameterInt
 {
     TArray<int> Values;

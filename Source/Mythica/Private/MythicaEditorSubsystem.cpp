@@ -633,18 +633,22 @@ void UMythicaEditorSubsystem::OnJobDefinitionsResponse(FHttpRequestPtr Request, 
         FString JobType = JsonObject->GetStringField(TEXT("job_type"));
         FString Name = JsonObject->GetStringField(TEXT("name"));
         FString Description = JsonObject->GetStringField(TEXT("description"));
+        int InputCount = JsonObject->GetNumberField(TEXT("input_files"));
         TSharedPtr<FJsonObject> ParamsSchema = JsonObject->GetObjectField(TEXT("params_schema"));
+
+        FMythicaInputs Inputs;
+        Inputs.Inputs.AddDefaulted(InputCount);
 
         FMythicaParameters Params;
         Mythica::ReadParameters(ParamsSchema, Params);
 
-        JobDefinitionList.Push({ JobDefId, JobType, Name, Description, Params });
+        JobDefinitionList.Push({ JobDefId, JobType, Name, Description, Inputs, Params });
     }
 
     OnJobDefinitionListUpdated.Broadcast();
 }
 
-int UMythicaEditorSubsystem::ExecuteJob(const FString& JobDefId, const FMythicaParameters& Params, const FString& ImportName)
+int UMythicaEditorSubsystem::ExecuteJob(const FString& JobDefId, const FMythicaInputs& Inputs, const FMythicaParameters& Params, const FString& ImportName)
 {
     if (SessionState != EMythicaSessionState::SessionCreated)
     {
@@ -655,8 +659,12 @@ int UMythicaEditorSubsystem::ExecuteJob(const FString& JobDefId, const FMythicaP
     TSharedPtr<FJsonObject> ParamsSetObject = MakeShareable(new FJsonObject);
     Mythica::WriteParameters(Params, ParamsSetObject);
 
+    // TODO: Populate from Inputs
+    TArray<TSharedPtr<FJsonValue>> InputsArray;
+
     TSharedPtr<FJsonObject> JsonObject = MakeShareable(new FJsonObject);
     JsonObject->SetStringField(TEXT("job_def_id"), JobDefId);
+    JsonObject->SetArrayField(TEXT("input_files"), InputsArray);
     JsonObject->SetObjectField(TEXT("params"), ParamsSetObject);
 
     FString ContentJson;
@@ -668,7 +676,7 @@ int UMythicaEditorSubsystem::ExecuteJob(const FString& JobDefId, const FMythicaP
     }
 
     // Send request
-    int RequestId = CreateJob(JobDefId, ImportName);
+    int RequestId = CreateJob(JobDefId, Inputs, Params, ImportName);
 
     const UMythicaDeveloperSettings* Settings = GetDefault<UMythicaDeveloperSettings>();
 
@@ -730,10 +738,10 @@ void UMythicaEditorSubsystem::OnExecuteJobResponse(FHttpRequestPtr Request, FHtt
     SetJobState(RequestId, EMythicaJobState::Queued);
 }
 
-int UMythicaEditorSubsystem::CreateJob(const FString& JobDefId, const FString& ImportName)
+int UMythicaEditorSubsystem::CreateJob(const FString& JobDefId, const FMythicaInputs& Inputs, const FMythicaParameters& Params, const FString& ImportName)
 {
     int RequestId = NextRequestId++;
-    Jobs.Add(RequestId, { JobDefId, ImportName });
+    Jobs.Add(RequestId, { JobDefId, Inputs, Params, ImportName });
 
     if (!JobPollTimer.IsValid())
     {
