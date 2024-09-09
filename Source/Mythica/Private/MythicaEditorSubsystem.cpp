@@ -1,7 +1,9 @@
 #include "MythicaEditorSubsystem.h"
 
+#include "AssetExportTask.h"
 #include "AssetRegistry/AssetRegistryModule.h"
 #include "AssetToolsModule.h"
+#include "Exporters/Exporter.h"
 #include "FileHelpers.h"
 #include "FileUtilities/ZipArchiveReader.h"
 #include "HAL/FileManager.h"
@@ -12,6 +14,7 @@
 #include "Interfaces/IPluginManager.h"
 #include "MythicaDeveloperSettings.h"
 #include "ObjectTools.h"
+#include "UObject/GCObjectScopeGuard.h"
 #include "UObject/SavePackage.h"
 
 DEFINE_LOG_CATEGORY(LogMythica);
@@ -646,6 +649,138 @@ void UMythicaEditorSubsystem::OnJobDefinitionsResponse(FHttpRequestPtr Request, 
     }
 
     OnJobDefinitionListUpdated.Broadcast();
+}
+
+static bool MythicaExportMesh(UStaticMesh* Mesh, const FString& ExportPath)
+{
+    UAssetExportTask* ExportTask = NewObject<UAssetExportTask>();
+    FGCObjectScopeGuard ExportTaskGuard(ExportTask);
+    ExportTask->Object = Mesh;
+    ExportTask->Options = nullptr;
+    ExportTask->Exporter = nullptr;
+    ExportTask->Filename = ExportPath;
+    ExportTask->bSelected = false;
+    ExportTask->bReplaceIdentical = true;
+    ExportTask->bPrompt = false;
+    ExportTask->bUseFileArchive = false;
+    ExportTask->bWriteEmptyFiles = false;
+    ExportTask->bAutomated = true;
+
+    return UExporter::RunAssetExportTask(ExportTask);
+}
+
+bool UMythicaEditorSubsystem::UploadInputs(const FMythicaInputs& Inputs)
+{
+    // Gather files to upload
+    TArray<FString> Files;
+    TArray<int> InputMapping;
+
+    FString ExportFolder = FPaths::Combine(FPaths::ProjectIntermediateDir(), TEXT("MythicaCache"), TEXT("ExportCache"));
+    for (int i = 0; i < Inputs.Inputs.Num(); i++)
+    {
+        const FMythicaInput& Input = Inputs.Inputs[i];
+        if (Input.Type == EMythicaInputType::Mesh && Input.Mesh != nullptr)
+        {
+            FString FilePath = FPaths::Combine(ExportFolder, FString::Format(TEXT("InputMesh{0}.usd"), { i }));
+            bool Success = MythicaExportMesh(Input.Mesh, FilePath);
+            if (!Success)
+            {
+                UE_LOG(LogMythica, Error, TEXT("Failed to export mesh %s"), *Input.Mesh->GetName());
+                return false;
+            }
+
+            Files.Add(FilePath);
+            InputMapping.Add(i);
+        }
+    }
+
+    if (Files.Num() == 0)
+    {
+        return true;
+    }
+
+    // Construct the upload request
+    const UMythicaDeveloperSettings* Settings = GetDefault<UMythicaDeveloperSettings>();
+
+    FString Url = FString::Printf(TEXT("%s/v1/upload/store"), *Settings->ServiceURL);
+
+    auto Callback = [this, InputMapping](FHttpRequestPtr Request, FHttpResponsePtr Response, bool bConnectedSuccessfully)
+    {
+        OnUploadInputsResponse(Request, Response, bConnectedSuccessfully, InputMapping);
+    };
+
+    FString NewLine = "\r\n";
+    FString Boundary = "---------------------------" + FString::FromInt(FDateTime::Now().GetTicks());
+
+    TSharedRef<IHttpRequest, ESPMode::ThreadSafe> Request = FHttpModule::Get().CreateRequest();
+    Request->SetURL(Url);
+    Request->SetVerb("POST");
+    Request->SetHeader("Authorization", FString::Printf(TEXT("Bearer %s"), *AuthToken));
+    Request->SetHeader(TEXT("Content-Type"), TEXT("multipart/form-data; boundary =" + Boundary));
+    Request->OnProcessRequestComplete().BindLambda(Callback);
+
+    // Construct the payload
+    TArray<uint8> RequestBodyBytes;
+
+    for (const FString& File : Files)
+    {
+        TArray<uint8> FileBytes;
+        bool PackageWritten = FFileHelper::LoadFileToArray(FileBytes, *File);
+
+        FString RequestContent;
+        RequestContent += "--" + Boundary + NewLine;
+        RequestContent += "Content-Disposition: form-data; name=\"files\"; filename=\"" + FPaths::GetCleanFilename(File) + "\"" + NewLine;
+        RequestContent += "Content-Type: application/octet-stream" + NewLine + NewLine;
+
+        RequestBodyBytes.Append((uint8*)TCHAR_TO_ANSI(*RequestContent), RequestContent.Len());
+        RequestBodyBytes.Append(FileBytes);
+        RequestBodyBytes.Append((uint8*)TCHAR_TO_ANSI(*NewLine), NewLine.Len());
+    }
+
+    FString ClosingBoundary = "--" + Boundary + "--" + NewLine;
+    RequestBodyBytes.Append((uint8*)TCHAR_TO_ANSI(*ClosingBoundary), ClosingBoundary.Len());
+
+    Request->SetContent(RequestBodyBytes);
+
+    // Send the request
+    Request->ProcessRequest();
+
+    return true;
+}
+
+void UMythicaEditorSubsystem::OnUploadInputsResponse(FHttpRequestPtr Request, FHttpResponsePtr Response, bool bWasSuccessful, const TArray<int>& InputMapping)
+{
+    if (!bWasSuccessful || !Response.IsValid())
+    {
+        UE_LOG(LogMythica, Error, TEXT("Failed to upload inputs"));
+        return;
+    }
+
+    FString ResponseContent = Response->GetContentAsString();
+    TSharedRef<TJsonReader<>> Reader = TJsonReaderFactory<>::Create(ResponseContent);
+
+    TSharedPtr<FJsonObject> JsonObject;
+    if (!FJsonSerializer::Deserialize(Reader, JsonObject) || !JsonObject.IsValid())
+    {
+        UE_LOG(LogMythica, Error, TEXT("Failed to parse upload inputs JSON string"));
+        return;
+    }
+
+    TArray<TSharedPtr<FJsonValue>> Files = JsonObject->GetArrayField(TEXT("files"));
+    if (Files.Num() != InputMapping.Num())
+    {
+        UE_LOG(LogMythica, Error, TEXT("Unexpected number of uploaded files"));
+        return;
+    }
+
+    for (int i = 0; i < Files.Num(); i++)
+    {
+        TSharedPtr<FJsonObject> FileObject = Files[i]->AsObject();
+        FString FileId = FileObject->GetStringField(TEXT("file_id"));
+
+        int InputIndex = InputMapping[i];
+        UE_LOG(LogMythica, Error, TEXT("Input %d File: %s"), InputIndex, *FileId);
+    }
 }
 
 int UMythicaEditorSubsystem::ExecuteJob(const FString& JobDefId, const FMythicaInputs& Inputs, const FMythicaParameters& Params, const FString& ImportName)
