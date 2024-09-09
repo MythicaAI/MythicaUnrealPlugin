@@ -637,7 +637,7 @@ void UMythicaEditorSubsystem::OnJobDefinitionsResponse(FHttpRequestPtr Request, 
         TSharedPtr<FJsonObject> ParamsSchema = JsonObject->GetObjectField(TEXT("params_schema"));
 
         FMythicaInputs Inputs;
-        Inputs.InputCount = InputCount;
+        Inputs.Inputs.AddDefaulted(InputCount);
 
         FMythicaParameters Params;
         Mythica::ReadParameters(ParamsSchema, Params);
@@ -664,8 +664,8 @@ int UMythicaEditorSubsystem::ExecuteJob(const FString& JobDefId, const FMythicaI
 
     TSharedPtr<FJsonObject> JsonObject = MakeShareable(new FJsonObject);
     JsonObject->SetStringField(TEXT("job_def_id"), JobDefId);
-    JsonObject->SetObjectField(TEXT("params"), ParamsSetObject);
     JsonObject->SetArrayField(TEXT("input_files"), InputsArray);
+    JsonObject->SetObjectField(TEXT("params"), ParamsSetObject);
 
     FString ContentJson;
     TSharedRef<TJsonWriter<>> Writer = TJsonWriterFactory<>::Create(&ContentJson);

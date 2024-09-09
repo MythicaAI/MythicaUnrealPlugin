@@ -32,23 +32,8 @@ struct FMythicaInputs
 {
     GENERATED_BODY()
 
-    UPROPERTY()
-    int InputCount = 0;
-
-    UPROPERTY(BlueprintReadWrite, EditAnywhere, meta = (EditCondition = "InputCount > 0", EditConditionHides))
-    FMythicaInput Input0;
-
-    UPROPERTY(BlueprintReadWrite, EditAnywhere, meta = (EditCondition = "InputCount > 1", EditConditionHides))
-    FMythicaInput Input1;
-
-    UPROPERTY(BlueprintReadWrite, EditAnywhere, meta = (EditCondition = "InputCount > 2", EditConditionHides))
-    FMythicaInput Input2;
-
-    UPROPERTY(BlueprintReadWrite, EditAnywhere, meta = (EditCondition = "InputCount > 3", EditConditionHides))
-    FMythicaInput Input3;
-
-    UPROPERTY(BlueprintReadWrite, EditAnywhere, meta = (EditCondition = "InputCount > 4", EditConditionHides))
-    FMythicaInput Input4;
+    UPROPERTY(BlueprintReadWrite, EditAnywhere)
+    TArray<FMythicaInput> Inputs;
 };
 
 struct FMythicaParameterInt
