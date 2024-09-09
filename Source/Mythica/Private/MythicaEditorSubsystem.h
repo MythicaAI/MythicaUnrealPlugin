@@ -237,6 +237,9 @@ private:
 
 	void OnJobDefinitionsResponse(FHttpRequestPtr Request, FHttpResponsePtr Response, bool bWasSuccessful);
 
+	bool UploadInputs(const FMythicaInputs& Inputs);
+	void OnUploadInputsResponse(FHttpRequestPtr Request, FHttpResponsePtr Response, bool bWasSuccessful, const TArray<int>& InputMapping);
+
 	void OnExecuteJobResponse(FHttpRequestPtr Request, FHttpResponsePtr Response, bool bWasSuccessful, int RequestId);
 	void OnJobResultsResponse(FHttpRequestPtr Request, FHttpResponsePtr Response, bool bWasSuccessful, int RequestId);
 	void OnMeshDownloadInfoResponse(FHttpRequestPtr Request, FHttpResponsePtr Response, bool bWasSuccessful, int RequestId);
