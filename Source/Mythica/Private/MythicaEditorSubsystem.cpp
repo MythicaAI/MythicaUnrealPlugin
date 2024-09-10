@@ -669,12 +669,8 @@ static bool MythicaExportMesh(UStaticMesh* Mesh, const FString& ExportPath)
     return UExporter::RunAssetExportTask(ExportTask);
 }
 
-bool UMythicaEditorSubsystem::UploadInputs(const FMythicaInputs& Inputs)
+bool UMythicaEditorSubsystem::PrepareInputFiles(const FMythicaInputs& Inputs, TMap<int, FString>& InputFiles)
 {
-    // Gather files to upload
-    TArray<FString> Files;
-    TArray<int> InputMapping;
-
     FString ExportFolder = FPaths::Combine(FPaths::ProjectIntermediateDir(), TEXT("MythicaCache"), TEXT("ExportCache"));
     for (int i = 0; i < Inputs.Inputs.Num(); i++)
     {
@@ -689,24 +685,23 @@ bool UMythicaEditorSubsystem::UploadInputs(const FMythicaInputs& Inputs)
                 return false;
             }
 
-            Files.Add(FilePath);
-            InputMapping.Add(i);
+            InputFiles.Add(i, FilePath);
         }
     }
 
-    if (Files.Num() == 0)
-    {
-        return true;
-    }
+    return true;
+}
 
+void UMythicaEditorSubsystem::UploadInputFiles(int RequestId, const TMap<int, FString>& InputFiles)
+{
     // Construct the upload request
     const UMythicaDeveloperSettings* Settings = GetDefault<UMythicaDeveloperSettings>();
 
     FString Url = FString::Printf(TEXT("%s/v1/upload/store"), *Settings->ServiceURL);
 
-    auto Callback = [this, InputMapping](FHttpRequestPtr Request, FHttpResponsePtr Response, bool bConnectedSuccessfully)
+    auto Callback = [this, RequestId, InputFiles](FHttpRequestPtr Request, FHttpResponsePtr Response, bool bConnectedSuccessfully)
     {
-        OnUploadInputsResponse(Request, Response, bConnectedSuccessfully, InputMapping);
+        OnUploadInputFilesResponse(Request, Response, bConnectedSuccessfully, RequestId, InputFiles);
     };
 
     FString NewLine = "\r\n";
@@ -722,8 +717,10 @@ bool UMythicaEditorSubsystem::UploadInputs(const FMythicaInputs& Inputs)
     // Construct the payload
     TArray<uint8> RequestBodyBytes;
 
-    for (const FString& File : Files)
+    for (TMap<int, FString>::TConstIterator It(InputFiles); It; ++It)
     {
+        const FString& File = It.Value();
+
         TArray<uint8> FileBytes;
         bool PackageWritten = FFileHelper::LoadFileToArray(FileBytes, *File);
 
@@ -744,15 +741,14 @@ bool UMythicaEditorSubsystem::UploadInputs(const FMythicaInputs& Inputs)
 
     // Send the request
     Request->ProcessRequest();
-
-    return true;
 }
 
-void UMythicaEditorSubsystem::OnUploadInputsResponse(FHttpRequestPtr Request, FHttpResponsePtr Response, bool bWasSuccessful, const TArray<int>& InputMapping)
+void UMythicaEditorSubsystem::OnUploadInputFilesResponse(FHttpRequestPtr Request, FHttpResponsePtr Response, bool bWasSuccessful, int RequestId, const TMap<int, FString>& InputFiles)
 {
     if (!bWasSuccessful || !Response.IsValid())
     {
         UE_LOG(LogMythica, Error, TEXT("Failed to upload inputs"));
+        SetJobState(RequestId, EMythicaJobState::Failed);
         return;
     }
 
@@ -763,24 +759,34 @@ void UMythicaEditorSubsystem::OnUploadInputsResponse(FHttpRequestPtr Request, FH
     if (!FJsonSerializer::Deserialize(Reader, JsonObject) || !JsonObject.IsValid())
     {
         UE_LOG(LogMythica, Error, TEXT("Failed to parse upload inputs JSON string"));
+        SetJobState(RequestId, EMythicaJobState::Failed);
         return;
     }
 
     TArray<TSharedPtr<FJsonValue>> Files = JsonObject->GetArrayField(TEXT("files"));
-    if (Files.Num() != InputMapping.Num())
+    if (Files.Num() != InputFiles.Num())
     {
         UE_LOG(LogMythica, Error, TEXT("Unexpected number of uploaded files"));
+        SetJobState(RequestId, EMythicaJobState::Failed);
         return;
     }
 
-    for (int i = 0; i < Files.Num(); i++)
+    TArray<FString> InputFileIds;
+
+    int FileIndex = 0;
+    for (TMap<int, FString>::TConstIterator It(InputFiles); It; ++It, ++FileIndex)
     {
-        TSharedPtr<FJsonObject> FileObject = Files[i]->AsObject();
+        int InputIndex = It.Key();
+        const FString& File = It.Value();
+
+        TSharedPtr<FJsonObject> FileObject = Files[FileIndex]->AsObject();
         FString FileId = FileObject->GetStringField(TEXT("file_id"));
 
-        int InputIndex = InputMapping[i];
-        UE_LOG(LogMythica, Error, TEXT("Input %d File: %s"), InputIndex, *FileId);
+        InputFileIds.SetNum(InputIndex + 1, false);
+        InputFileIds[InputIndex] = FileId;
     }
+
+    SendJobRequest(RequestId, InputFileIds);
 }
 
 int UMythicaEditorSubsystem::ExecuteJob(const FString& JobDefId, const FMythicaInputs& Inputs, const FMythicaParameters& Params, const FString& ImportName)
@@ -790,29 +796,55 @@ int UMythicaEditorSubsystem::ExecuteJob(const FString& JobDefId, const FMythicaI
         return -1;
     }
 
-    // Create JSON payload
-    TSharedPtr<FJsonObject> ParamsSetObject = MakeShareable(new FJsonObject);
-    Mythica::WriteParameters(Params, ParamsSetObject);
+    TMap<int, FString> InputFiles;
+    bool Success = PrepareInputFiles(Inputs, InputFiles);
+    if (!Success)
+    {
+        UE_LOG(LogMythica, Error, TEXT("Failed to prepare job input files"));
+        return -1;
+    }
 
-    // TODO: Populate from Inputs
+    int RequestId = CreateJob(JobDefId, Inputs, Params, ImportName);
+
+    if (InputFiles.IsEmpty())
+    {
+        SendJobRequest(RequestId, {});
+    }
+    else
+    {
+        UploadInputFiles(RequestId, InputFiles);
+    }
+
+    return RequestId;
+}
+
+void UMythicaEditorSubsystem::SendJobRequest(int RequestId, const TArray<FString>& InputFilesArray)
+{
+    FMythicaJob* RequestData = Jobs.Find(RequestId);
+    if (!RequestData)
+    {
+        return;
+    }
+
+    // Create JSON payload
     TArray<TSharedPtr<FJsonValue>> InputsArray;
+    for (const FString& InputFile : InputFilesArray)
+    {
+        InputsArray.Add(MakeShareable(new FJsonValueString(InputFile)));
+    }
+
+    TSharedPtr<FJsonObject> ParamsSetObject = MakeShareable(new FJsonObject);
+    Mythica::WriteParameters(RequestData->Params, ParamsSetObject);
 
     TSharedPtr<FJsonObject> JsonObject = MakeShareable(new FJsonObject);
-    JsonObject->SetStringField(TEXT("job_def_id"), JobDefId);
+    JsonObject->SetStringField(TEXT("job_def_id"), RequestData->JobDefId);
     JsonObject->SetArrayField(TEXT("input_files"), InputsArray);
     JsonObject->SetObjectField(TEXT("params"), ParamsSetObject);
 
     FString ContentJson;
     TSharedRef<TJsonWriter<>> Writer = TJsonWriterFactory<>::Create(&ContentJson);
-    if (!FJsonSerializer::Serialize(JsonObject.ToSharedRef(), Writer))
-    {
-        UE_LOG(LogMythica, Error, TEXT("Failed to create execute job JSON request object"));
-        return -1;
-    }
 
     // Send request
-    int RequestId = CreateJob(JobDefId, Inputs, Params, ImportName);
-
     const UMythicaDeveloperSettings* Settings = GetDefault<UMythicaDeveloperSettings>();
 
     FString Url = FString::Printf(TEXT("%s/v1/jobs/"), *Settings->ServiceURL);
@@ -831,8 +863,6 @@ int UMythicaEditorSubsystem::ExecuteJob(const FString& JobDefId, const FMythicaI
     Request->OnProcessRequestComplete().BindLambda(Callback);
 
     Request->ProcessRequest();
-
-    return RequestId;
 }
 
 void UMythicaEditorSubsystem::OnExecuteJobResponse(FHttpRequestPtr Request, FHttpResponsePtr Response, bool bWasSuccessful, int RequestId)
