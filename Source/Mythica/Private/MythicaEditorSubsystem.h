@@ -237,8 +237,10 @@ private:
 
 	void OnJobDefinitionsResponse(FHttpRequestPtr Request, FHttpResponsePtr Response, bool bWasSuccessful);
 
-	bool UploadInputs(const FMythicaInputs& Inputs);
-	void OnUploadInputsResponse(FHttpRequestPtr Request, FHttpResponsePtr Response, bool bWasSuccessful, const TArray<int>& InputMapping);
+	bool PrepareInputFiles(const FMythicaInputs& Inputs, TMap<int, FString>& InputFiles);
+	void UploadInputFiles(int RequestId, const TMap<int, FString>& InputFiles);
+	void OnUploadInputFilesResponse(FHttpRequestPtr Request, FHttpResponsePtr Response, bool bWasSuccessful, int RequestId, const TMap<int, FString>& InputFiles);
+	void SendJobRequest(int RequestId, const TArray<FString>& InputFileIds);
 
 	void OnExecuteJobResponse(FHttpRequestPtr Request, FHttpResponsePtr Response, bool bWasSuccessful, int RequestId);
 	void OnJobResultsResponse(FHttpRequestPtr Request, FHttpResponsePtr Response, bool bWasSuccessful, int RequestId);
