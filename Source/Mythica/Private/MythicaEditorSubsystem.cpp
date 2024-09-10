@@ -808,7 +808,9 @@ int UMythicaEditorSubsystem::ExecuteJob(const FString& JobDefId, const FMythicaI
 
     if (InputFiles.IsEmpty())
     {
-        SendJobRequest(RequestId, {});
+        TArray<FString> InputFiledIds;
+        InputFiledIds.SetNum(Inputs.Inputs.Num());
+        SendJobRequest(RequestId, InputFiledIds);
     }
     else
     {
@@ -843,6 +845,8 @@ void UMythicaEditorSubsystem::SendJobRequest(int RequestId, const TArray<FString
 
     FString ContentJson;
     TSharedRef<TJsonWriter<>> Writer = TJsonWriterFactory<>::Create(&ContentJson);
+    bool Success = FJsonSerializer::Serialize(JsonObject.ToSharedRef(), Writer);
+    check(Success);
 
     // Send request
     const UMythicaDeveloperSettings* Settings = GetDefault<UMythicaDeveloperSettings>();
