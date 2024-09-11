@@ -669,6 +669,8 @@ static bool MythicaConvertUSDtoUSDZ(const FString& InFile, const FString& OutFil
 
 static bool MythicaExportMesh(UStaticMesh* Mesh, const FString& ExportPath)
 {
+    FString USDPath = FPaths::ChangeExtension(ExportPath, "usd");
+
     UStaticMeshExporterUSDOptions* StaticMeshOptions = NewObject<UStaticMeshExporterUSDOptions>();
     StaticMeshOptions->StageOptions.MetersPerUnit = 1.0f;
     StaticMeshOptions->StageOptions.UpAxis = EUsdUpAxis::YAxis;
@@ -678,7 +680,7 @@ static bool MythicaExportMesh(UStaticMesh* Mesh, const FString& ExportPath)
     ExportTask->Object = Mesh;
     ExportTask->Options = StaticMeshOptions;
     ExportTask->Exporter = nullptr;
-    ExportTask->Filename = ExportPath;
+    ExportTask->Filename = USDPath;
     ExportTask->bSelected = false;
     ExportTask->bReplaceIdentical = true;
     ExportTask->bPrompt = false;
@@ -686,7 +688,12 @@ static bool MythicaExportMesh(UStaticMesh* Mesh, const FString& ExportPath)
     ExportTask->bWriteEmptyFiles = false;
     ExportTask->bAutomated = true;
 
-    return UExporter::RunAssetExportTask(ExportTask);
+    if (!UExporter::RunAssetExportTask(ExportTask))
+    {
+        return false;
+    }
+
+    return MythicaConvertUSDtoUSDZ(USDPath, ExportPath);
 }
 
 static bool MythicaExportActor(AActor* Actor, const FString& ExportPath)
@@ -730,7 +737,7 @@ bool UMythicaEditorSubsystem::PrepareInputFiles(const FMythicaInputs& Inputs, TM
         const FMythicaInput& Input = Inputs.Inputs[i];
         if (Input.Type == EMythicaInputType::Mesh && Input.Mesh != nullptr)
         {
-            FString FilePath = FPaths::Combine(ExportFolder, FString::Format(TEXT("InputMesh{0}.usd"), { i }));
+            FString FilePath = FPaths::Combine(ExportFolder, FString::Format(TEXT("InputMesh{0}.usdz"), { i }));
             bool Success = MythicaExportMesh(Input.Mesh, FilePath);
             if (!Success)
             {
