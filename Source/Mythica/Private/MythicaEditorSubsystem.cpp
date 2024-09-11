@@ -12,6 +12,8 @@
 #include "ImageCoreUtils.h"
 #include "ImageUtils.h"
 #include "Interfaces/IPluginManager.h"
+#include "LevelEditor.h"
+#include "LevelExporterUSDOptions.h"
 #include "MythicaDeveloperSettings.h"
 #include "ObjectTools.h"
 #include "StaticMeshExporterUSDOptions.h"
@@ -674,6 +676,32 @@ static bool MythicaExportMesh(UStaticMesh* Mesh, const FString& ExportPath)
     return UExporter::RunAssetExportTask(ExportTask);
 }
 
+static bool MythicaExportActor(AActor* Actor, const FString& ExportPath)
+{
+    GEditor->SelectNone(false, true, false);
+    GEditor->SelectActor(Actor, true, true);
+    GEditor->NoteSelectionChange();
+
+    ULevelExporterUSDOptions* LevelOptions = GetMutableDefault<ULevelExporterUSDOptions>();
+    LevelOptions->StageOptions.MetersPerUnit = 1.0f;
+    LevelOptions->StageOptions.UpAxis = EUsdUpAxis::YAxis;
+
+    UAssetExportTask* ExportTask = NewObject<UAssetExportTask>();
+    FGCObjectScopeGuard ExportTaskGuard(ExportTask);
+    ExportTask->Object = GWorld;
+    ExportTask->Options = LevelOptions;
+    ExportTask->Exporter = nullptr;
+    ExportTask->Filename = ExportPath;
+    ExportTask->bSelected = true;
+    ExportTask->bReplaceIdentical = true;
+    ExportTask->bPrompt = false;
+    ExportTask->bUseFileArchive = false;
+    ExportTask->bWriteEmptyFiles = false;
+    ExportTask->bAutomated = true;
+
+    return UExporter::RunAssetExportTask(ExportTask);
+}
+
 bool UMythicaEditorSubsystem::PrepareInputFiles(const FMythicaInputs& Inputs, TMap<int, FString>& InputFiles)
 {
     FString ExportFolder = FPaths::Combine(FPaths::ProjectIntermediateDir(), TEXT("MythicaCache"), TEXT("ExportCache"));
@@ -687,6 +715,18 @@ bool UMythicaEditorSubsystem::PrepareInputFiles(const FMythicaInputs& Inputs, TM
             if (!Success)
             {
                 UE_LOG(LogMythica, Error, TEXT("Failed to export mesh %s"), *Input.Mesh->GetName());
+                return false;
+            }
+
+            InputFiles.Add(i, FilePath);
+        }
+        if (Input.Type == EMythicaInputType::World && Input.Actor != nullptr)
+        {
+            FString FilePath = FPaths::Combine(ExportFolder, FString::Format(TEXT("InputMesh{0}.usd"), { i }));
+            bool Success = MythicaExportActor(Input.Actor, FilePath);
+            if (!Success)
+            {
+                UE_LOG(LogMythica, Error, TEXT("Failed to export actor %s"), *Input.Actor->GetName());
                 return false;
             }
 
