@@ -12,6 +12,7 @@
 #include "ImageCoreUtils.h"
 #include "ImageUtils.h"
 #include "Interfaces/IPluginManager.h"
+#include "IPythonScriptPlugin.h"
 #include "LevelEditor.h"
 #include "LevelExporterUSDOptions.h"
 #include "MythicaDeveloperSettings.h"
@@ -654,6 +655,18 @@ void UMythicaEditorSubsystem::OnJobDefinitionsResponse(FHttpRequestPtr Request, 
     OnJobDefinitionListUpdated.Broadcast();
 }
 
+static bool MythicaConvertUSDtoUSDZ(const FString& InFile, const FString& OutFile)
+{
+    if (!IPythonScriptPlugin::Get()->IsPythonAvailable())
+    {
+        return false;
+    }
+    
+    FString Command = FString::Printf(TEXT("from pxr import UsdUtils; UsdUtils.CreateNewUsdzPackage('%s','%s')"), *InFile, *OutFile);
+    IPythonScriptPlugin::Get()->ExecPythonCommand(*Command);
+    return true;
+}
+
 static bool MythicaExportMesh(UStaticMesh* Mesh, const FString& ExportPath)
 {
     UStaticMeshExporterUSDOptions* StaticMeshOptions = NewObject<UStaticMeshExporterUSDOptions>();
@@ -678,6 +691,8 @@ static bool MythicaExportMesh(UStaticMesh* Mesh, const FString& ExportPath)
 
 static bool MythicaExportActor(AActor* Actor, const FString& ExportPath)
 {
+    FString USDPath = FPaths::ChangeExtension(ExportPath, "usd");
+
     GEditor->SelectNone(false, true, false);
     GEditor->SelectActor(Actor, true, true);
     GEditor->NoteSelectionChange();
@@ -691,7 +706,7 @@ static bool MythicaExportActor(AActor* Actor, const FString& ExportPath)
     ExportTask->Object = GWorld;
     ExportTask->Options = LevelOptions;
     ExportTask->Exporter = nullptr;
-    ExportTask->Filename = ExportPath;
+    ExportTask->Filename = USDPath;
     ExportTask->bSelected = true;
     ExportTask->bReplaceIdentical = true;
     ExportTask->bPrompt = false;
@@ -699,7 +714,12 @@ static bool MythicaExportActor(AActor* Actor, const FString& ExportPath)
     ExportTask->bWriteEmptyFiles = false;
     ExportTask->bAutomated = true;
 
-    return UExporter::RunAssetExportTask(ExportTask);
+    if (!UExporter::RunAssetExportTask(ExportTask))
+    {
+        return false;
+    }
+
+    return MythicaConvertUSDtoUSDZ(USDPath, ExportPath);
 }
 
 bool UMythicaEditorSubsystem::PrepareInputFiles(const FMythicaInputs& Inputs, TMap<int, FString>& InputFiles)
@@ -722,7 +742,7 @@ bool UMythicaEditorSubsystem::PrepareInputFiles(const FMythicaInputs& Inputs, TM
         }
         if (Input.Type == EMythicaInputType::World && Input.Actor != nullptr)
         {
-            FString FilePath = FPaths::Combine(ExportFolder, FString::Format(TEXT("InputMesh{0}.usd"), { i }));
+            FString FilePath = FPaths::Combine(ExportFolder, FString::Format(TEXT("InputMesh{0}.usdz"), { i }));
             bool Success = MythicaExportActor(Input.Actor, FilePath);
             if (!Success)
             {
