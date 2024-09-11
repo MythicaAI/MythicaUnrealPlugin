@@ -50,7 +50,7 @@ public class Mythica : ModuleRules
 				"MaterialBaking",
 				"Projects",
 				"PythonScriptPlugin",
-                "Slate",
+				"Slate",
 				"SlateCore",
 				"UMGEditor",
 				"UnrealEd",
