@@ -12,6 +12,9 @@
 #include "ImageCoreUtils.h"
 #include "ImageUtils.h"
 #include "Interfaces/IPluginManager.h"
+#include "IPythonScriptPlugin.h"
+#include "LevelEditor.h"
+#include "LevelExporterUSDOptions.h"
 #include "MythicaDeveloperSettings.h"
 #include "ObjectTools.h"
 #include "StaticMeshExporterUSDOptions.h"
@@ -652,8 +655,22 @@ void UMythicaEditorSubsystem::OnJobDefinitionsResponse(FHttpRequestPtr Request, 
     OnJobDefinitionListUpdated.Broadcast();
 }
 
+static bool MythicaConvertUSDtoUSDZ(const FString& InFile, const FString& OutFile)
+{
+    if (!IPythonScriptPlugin::Get()->IsPythonAvailable())
+    {
+        return false;
+    }
+    
+    FString Command = FString::Printf(TEXT("from pxr import UsdUtils; UsdUtils.CreateNewUsdzPackage('%s','%s')"), *InFile, *OutFile);
+    IPythonScriptPlugin::Get()->ExecPythonCommand(*Command);
+    return true;
+}
+
 static bool MythicaExportMesh(UStaticMesh* Mesh, const FString& ExportPath)
 {
+    FString USDPath = FPaths::ChangeExtension(ExportPath, "usd");
+
     UStaticMeshExporterUSDOptions* StaticMeshOptions = NewObject<UStaticMeshExporterUSDOptions>();
     StaticMeshOptions->StageOptions.MetersPerUnit = 1.0f;
     StaticMeshOptions->StageOptions.UpAxis = EUsdUpAxis::YAxis;
@@ -663,7 +680,7 @@ static bool MythicaExportMesh(UStaticMesh* Mesh, const FString& ExportPath)
     ExportTask->Object = Mesh;
     ExportTask->Options = StaticMeshOptions;
     ExportTask->Exporter = nullptr;
-    ExportTask->Filename = ExportPath;
+    ExportTask->Filename = USDPath;
     ExportTask->bSelected = false;
     ExportTask->bReplaceIdentical = true;
     ExportTask->bPrompt = false;
@@ -671,7 +688,45 @@ static bool MythicaExportMesh(UStaticMesh* Mesh, const FString& ExportPath)
     ExportTask->bWriteEmptyFiles = false;
     ExportTask->bAutomated = true;
 
-    return UExporter::RunAssetExportTask(ExportTask);
+    if (!UExporter::RunAssetExportTask(ExportTask))
+    {
+        return false;
+    }
+
+    return MythicaConvertUSDtoUSDZ(USDPath, ExportPath);
+}
+
+static bool MythicaExportActor(AActor* Actor, const FString& ExportPath)
+{
+    FString USDPath = FPaths::ChangeExtension(ExportPath, "usd");
+
+    GEditor->SelectNone(false, true, false);
+    GEditor->SelectActor(Actor, true, true);
+    GEditor->NoteSelectionChange();
+
+    ULevelExporterUSDOptions* LevelOptions = GetMutableDefault<ULevelExporterUSDOptions>();
+    LevelOptions->StageOptions.MetersPerUnit = 1.0f;
+    LevelOptions->StageOptions.UpAxis = EUsdUpAxis::YAxis;
+
+    UAssetExportTask* ExportTask = NewObject<UAssetExportTask>();
+    FGCObjectScopeGuard ExportTaskGuard(ExportTask);
+    ExportTask->Object = GWorld;
+    ExportTask->Options = LevelOptions;
+    ExportTask->Exporter = nullptr;
+    ExportTask->Filename = USDPath;
+    ExportTask->bSelected = true;
+    ExportTask->bReplaceIdentical = true;
+    ExportTask->bPrompt = false;
+    ExportTask->bUseFileArchive = false;
+    ExportTask->bWriteEmptyFiles = false;
+    ExportTask->bAutomated = true;
+
+    if (!UExporter::RunAssetExportTask(ExportTask))
+    {
+        return false;
+    }
+
+    return MythicaConvertUSDtoUSDZ(USDPath, ExportPath);
 }
 
 bool UMythicaEditorSubsystem::PrepareInputFiles(const FMythicaInputs& Inputs, TMap<int, FString>& InputFiles)
@@ -682,11 +737,23 @@ bool UMythicaEditorSubsystem::PrepareInputFiles(const FMythicaInputs& Inputs, TM
         const FMythicaInput& Input = Inputs.Inputs[i];
         if (Input.Type == EMythicaInputType::Mesh && Input.Mesh != nullptr)
         {
-            FString FilePath = FPaths::Combine(ExportFolder, FString::Format(TEXT("InputMesh{0}.usd"), { i }));
+            FString FilePath = FPaths::Combine(ExportFolder, FString::Format(TEXT("InputMesh{0}.usdz"), { i }));
             bool Success = MythicaExportMesh(Input.Mesh, FilePath);
             if (!Success)
             {
                 UE_LOG(LogMythica, Error, TEXT("Failed to export mesh %s"), *Input.Mesh->GetName());
+                return false;
+            }
+
+            InputFiles.Add(i, FilePath);
+        }
+        if (Input.Type == EMythicaInputType::World && Input.Actor != nullptr)
+        {
+            FString FilePath = FPaths::Combine(ExportFolder, FString::Format(TEXT("InputMesh{0}.usdz"), { i }));
+            bool Success = MythicaExportActor(Input.Actor, FilePath);
+            if (!Success)
+            {
+                UE_LOG(LogMythica, Error, TEXT("Failed to export actor %s"), *Input.Actor->GetName());
                 return false;
             }
 
