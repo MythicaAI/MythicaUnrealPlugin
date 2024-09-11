@@ -14,6 +14,7 @@
 #include "Interfaces/IPluginManager.h"
 #include "MythicaDeveloperSettings.h"
 #include "ObjectTools.h"
+#include "StaticMeshExporterUSDOptions.h"
 #include "UObject/GCObjectScopeGuard.h"
 #include "UObject/SavePackage.h"
 
@@ -653,10 +654,14 @@ void UMythicaEditorSubsystem::OnJobDefinitionsResponse(FHttpRequestPtr Request, 
 
 static bool MythicaExportMesh(UStaticMesh* Mesh, const FString& ExportPath)
 {
+    UStaticMeshExporterUSDOptions* StaticMeshOptions = NewObject<UStaticMeshExporterUSDOptions>();
+    StaticMeshOptions->StageOptions.MetersPerUnit = 1.0f;
+    StaticMeshOptions->StageOptions.UpAxis = EUsdUpAxis::YAxis;
+
     UAssetExportTask* ExportTask = NewObject<UAssetExportTask>();
     FGCObjectScopeGuard ExportTaskGuard(ExportTask);
     ExportTask->Object = Mesh;
-    ExportTask->Options = nullptr;
+    ExportTask->Options = StaticMeshOptions;
     ExportTask->Exporter = nullptr;
     ExportTask->Filename = ExportPath;
     ExportTask->bSelected = false;

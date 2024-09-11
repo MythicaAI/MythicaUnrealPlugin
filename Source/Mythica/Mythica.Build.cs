@@ -47,11 +47,13 @@ public class Mythica : ModuleRules
 				"ImageCore",
 				"InputCore",
 				"Json",
+				"MaterialBaking",
 				"Projects",
 				"Slate",
 				"SlateCore",
 				"UMGEditor",
-				"UnrealEd"
+				"UnrealEd",
+				"USDExporter"
 				// ... add private dependencies that you statically link with here ...	
 			}
 			);
