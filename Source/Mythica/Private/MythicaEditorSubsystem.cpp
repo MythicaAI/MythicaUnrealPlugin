@@ -669,7 +669,9 @@ static bool MythicaConvertUSDtoUSDZ(const FString& InFile, const FString& OutFil
 
 static bool MythicaExportMesh(UStaticMesh* Mesh, const FString& ExportPath)
 {
-    FString USDPath = FPaths::ChangeExtension(ExportPath, "usd");
+    FString TempFolder = FPaths::Combine(FPaths::GetPath(ExportPath), "USDExport");
+    FString UniqueTempFolder = MakeUniquePath(TempFolder);
+    FString USDPath = FPaths::Combine(UniqueTempFolder, "Export.usd");
 
     UStaticMeshExporterUSDOptions* StaticMeshOptions = NewObject<UStaticMeshExporterUSDOptions>();
     StaticMeshOptions->StageOptions.MetersPerUnit = 1.0f;
@@ -698,7 +700,9 @@ static bool MythicaExportMesh(UStaticMesh* Mesh, const FString& ExportPath)
 
 static bool MythicaExportActors(const TArray<AActor*> Actors, const FString& ExportPath)
 {
-    FString USDPath = FPaths::ChangeExtension(ExportPath, "usd");
+    FString TempFolder = FPaths::Combine(FPaths::GetPath(ExportPath), "USDExport");
+    FString UniqueTempFolder = MakeUniquePath(TempFolder);
+    FString USDPath = FPaths::Combine(UniqueTempFolder, "Export.usd");
 
     GEditor->SelectNone(false, true, false);
     for (AActor* Actor : Actors)
