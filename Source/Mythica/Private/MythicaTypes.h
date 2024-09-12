@@ -24,7 +24,7 @@ struct FMythicaInput
     UStaticMesh* Mesh = nullptr;
 
     UPROPERTY(BlueprintReadWrite, EditAnywhere, meta = (EditCondition = "Type == EMythicaInputType::World", EditConditionHides))
-    AActor* Actor = nullptr;
+    TArray<AActor*> Actors;
 };
 
 USTRUCT(BlueprintType)
