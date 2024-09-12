@@ -669,7 +669,9 @@ static bool MythicaConvertUSDtoUSDZ(const FString& InFile, const FString& OutFil
 
 static bool MythicaExportMesh(UStaticMesh* Mesh, const FString& ExportPath)
 {
-    FString USDPath = FPaths::ChangeExtension(ExportPath, "usd");
+    FString TempFolder = FPaths::Combine(FPaths::GetPath(ExportPath), "USDExport");
+    FString UniqueTempFolder = MakeUniquePath(TempFolder);
+    FString USDPath = FPaths::Combine(UniqueTempFolder, "Export.usd");
 
     UStaticMeshExporterUSDOptions* StaticMeshOptions = NewObject<UStaticMeshExporterUSDOptions>();
     StaticMeshOptions->StageOptions.MetersPerUnit = 1.0f;
@@ -696,12 +698,17 @@ static bool MythicaExportMesh(UStaticMesh* Mesh, const FString& ExportPath)
     return MythicaConvertUSDtoUSDZ(USDPath, ExportPath);
 }
 
-static bool MythicaExportActor(AActor* Actor, const FString& ExportPath)
+static bool MythicaExportActors(const TArray<AActor*> Actors, const FString& ExportPath)
 {
-    FString USDPath = FPaths::ChangeExtension(ExportPath, "usd");
+    FString TempFolder = FPaths::Combine(FPaths::GetPath(ExportPath), "USDExport");
+    FString UniqueTempFolder = MakeUniquePath(TempFolder);
+    FString USDPath = FPaths::Combine(UniqueTempFolder, "Export.usd");
 
     GEditor->SelectNone(false, true, false);
-    GEditor->SelectActor(Actor, true, true);
+    for (AActor* Actor : Actors)
+    {
+        GEditor->SelectActor(Actor, true, true, true);
+    }
     GEditor->NoteSelectionChange();
 
     ULevelExporterUSDOptions* LevelOptions = GetMutableDefault<ULevelExporterUSDOptions>();
@@ -747,13 +754,13 @@ bool UMythicaEditorSubsystem::PrepareInputFiles(const FMythicaInputs& Inputs, TM
 
             InputFiles.Add(i, FilePath);
         }
-        if (Input.Type == EMythicaInputType::World && Input.Actor != nullptr)
+        if (Input.Type == EMythicaInputType::World && !Input.Actors.IsEmpty())
         {
             FString FilePath = FPaths::Combine(ExportFolder, FString::Format(TEXT("InputMesh{0}.usdz"), { i }));
-            bool Success = MythicaExportActor(Input.Actor, FilePath);
+            bool Success = MythicaExportActors(Input.Actors, FilePath);
             if (!Success)
             {
-                UE_LOG(LogMythica, Error, TEXT("Failed to export actor %s"), *Input.Actor->GetName());
+                UE_LOG(LogMythica, Error, TEXT("Failed to export actors"));
                 return false;
             }
 
