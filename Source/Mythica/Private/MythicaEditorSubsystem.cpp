@@ -149,7 +149,7 @@ void UMythicaEditorSubsystem::CreateSession()
         return;
     }
 
-    FString Url = FString::Printf(TEXT("%s/v1/profiles/start_session/%s"), *Settings->ServiceURL, *Settings->ProfileId);
+    FString Url = FString::Printf(TEXT("%s/v1/sessions/direct/%s"), *Settings->ServiceURL, *Settings->ProfileId);
 
     TSharedRef<IHttpRequest, ESPMode::ThreadSafe> Request = FHttpModule::Get().CreateRequest();
     Request->SetURL(Url);
