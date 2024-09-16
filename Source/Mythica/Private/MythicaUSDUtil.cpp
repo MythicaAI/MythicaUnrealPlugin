@@ -2,11 +2,20 @@
 
 #include "MythicaUSDUtil.h"
 
+#include "Components/SplineComponent.h"
 #include "Exporters/Exporter.h"
 #include "IPythonScriptPlugin.h"
 #include "LevelExporterUSDOptions.h"
 #include "StaticMeshExporterUSDOptions.h"
 #include "UObject/GCObjectScopeGuard.h"
+#include "UnrealUSDWrapper.h"
+#include "UsdWrappers/SdfLayer.h"
+#include "UsdWrappers/UsdStage.h"
+
+#include "USDIncludesStart.h"
+    #include "pxr/usd/usd/stage.h"
+    #include "pxr/usd/usdGeom/basisCurves.h"
+#include "USDIncludesEnd.h"
 
 static bool ConvertUSDtoUSDZ(const FString& InFile, const FString& OutFile)
 {
@@ -67,6 +76,15 @@ bool Mythica::ExportMesh(UStaticMesh* Mesh, const FString& ExportPath)
 
 bool Mythica::ExportActors(const TArray<AActor*> Actors, const FString& ExportPath)
 {
+    for (AActor* Actor : Actors)
+    {
+        USplineComponent* SplineComponent = Actor->FindComponentByClass<USplineComponent>();
+        if (SplineComponent)
+        {
+            return ExportSpline(SplineComponent, ExportPath);
+        }
+    }
+
     FString TempFolder = FPaths::Combine(FPaths::GetPath(ExportPath), "USDExport");
     FString UniqueTempFolder = MakeUniquePath(TempFolder);
     FString USDPath = FPaths::Combine(UniqueTempFolder, "Export.usd");
@@ -103,3 +121,42 @@ bool Mythica::ExportActors(const TArray<AActor*> Actors, const FString& ExportPa
     return ConvertUSDtoUSDZ(USDPath, ExportPath);
 }
 
+bool Mythica::ExportSpline(USplineComponent* SplineComponent, const FString& ExportPath)
+{
+    FString TempFolder = FPaths::Combine(FPaths::GetPath(ExportPath), "USDExport");
+    FString UniqueTempFolder = MakeUniquePath(TempFolder);
+    FString USDPath = FPaths::Combine(UniqueTempFolder, "Export.usd");
+
+    // Gather point data
+    int NumPoints = SplineComponent->GetNumberOfSplinePoints();
+
+    pxr::VtArray<pxr::GfVec3f> UsdPoints;
+    UsdPoints.reserve(NumPoints);
+
+    for (int32 i = 0; i < NumPoints; ++i)
+    {
+        FVector Point = SplineComponent->GetLocationAtSplinePoint(i, ESplineCoordinateSpace::World);
+        pxr::GfVec3f UsdPoint(Point.X, Point.Y, Point.Z);
+        UsdPoints.push_back(UsdPoint);
+    }
+
+    // Create curve primitive
+    UE::FUsdStage Stage = UnrealUSDWrapper::NewStage(*USDPath);
+    if (!Stage)
+    {
+        return false;
+    }
+
+    pxr::UsdGeomBasisCurves Curves = pxr::UsdGeomBasisCurves::Define(Stage, pxr::SdfPath("/SplineCurve"));
+
+    Curves.CreateCurveVertexCountsAttr().Set(pxr::VtArray<int>{NumPoints});
+    Curves.CreatePointsAttr().Set(UsdPoints);
+
+    Curves.CreateTypeAttr().Set(pxr::TfToken("cubic"));
+    Curves.CreateBasisAttr().Set(pxr::TfToken("bezier"));
+    Curves.CreateWrapAttr().Set(pxr::TfToken("nonperiodic"));
+
+    Stage.GetRootLayer().Save();
+
+    return ConvertUSDtoUSDZ(USDPath, ExportPath);
+}
