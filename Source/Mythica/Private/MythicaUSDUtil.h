@@ -2,7 +2,6 @@
 
 class AActor;
 class UStaticMesh;
-class USplineComponent;
 
 namespace Mythica
 {
@@ -10,5 +9,5 @@ namespace Mythica
     
     bool ExportMesh(UStaticMesh* Mesh, const FString& ExportPath);
     bool ExportActors(const TArray<AActor*> Actors, const FString& ExportPath);
-    bool ExportSpline(USplineComponent* SplineComponent, const FString& ExportPath);
+    bool ExportSpline(AActor* SplineActor, const FString& ExportPath);
 }

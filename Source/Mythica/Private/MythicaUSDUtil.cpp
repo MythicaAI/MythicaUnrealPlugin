@@ -77,15 +77,6 @@ bool Mythica::ExportMesh(UStaticMesh* Mesh, const FString& ExportPath)
 
 bool Mythica::ExportActors(const TArray<AActor*> Actors, const FString& ExportPath)
 {
-    for (AActor* Actor : Actors)
-    {
-        USplineComponent* SplineComponent = Actor->FindComponentByClass<USplineComponent>();
-        if (SplineComponent)
-        {
-            return ExportSpline(SplineComponent, ExportPath);
-        }
-    }
-
     FString TempFolder = FPaths::Combine(FPaths::GetPath(ExportPath), "USDExport");
     FString UniqueTempFolder = MakeUniquePath(TempFolder);
     FString USDPath = FPaths::Combine(UniqueTempFolder, "Export.usd");
@@ -122,11 +113,17 @@ bool Mythica::ExportActors(const TArray<AActor*> Actors, const FString& ExportPa
     return ConvertUSDtoUSDZ(USDPath, ExportPath);
 }
 
-bool Mythica::ExportSpline(USplineComponent* SplineComponent, const FString& ExportPath)
+bool Mythica::ExportSpline(AActor* SplineActor, const FString& ExportPath)
 {
     FString TempFolder = FPaths::Combine(FPaths::GetPath(ExportPath), "USDExport");
     FString UniqueTempFolder = MakeUniquePath(TempFolder);
     FString USDPath = FPaths::Combine(UniqueTempFolder, "Export.usd");
+
+    USplineComponent* SplineComponent = SplineActor->FindComponentByClass<USplineComponent>();
+    if (!SplineComponent)
+    {
+        return false;
+    }
 
     // Gather point data
     int NumPoints = SplineComponent->GetNumberOfSplinePoints();
