@@ -85,6 +85,15 @@ struct FMythicaParameters
     TArray<FMythicaParameter> Parameters;
 };
 
+USTRUCT(BlueprintType)
+struct FMythicaMaterialParameters
+{
+    GENERATED_BODY()
+
+    UPROPERTY(BlueprintReadWrite, EditAnywhere)
+    UMaterialInterface* Material;
+};
+
 namespace Mythica
 {
     void ReadParameters(const TSharedPtr<FJsonObject>& ParameterDef, FMythicaParameters& OutParameters);

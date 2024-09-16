@@ -139,6 +139,9 @@ struct FMythicaJob
 	FMythicaParameters Params;
 
 	UPROPERTY()
+	FMythicaMaterialParameters MaterialParams;
+
+	UPROPERTY()
 	FString ImportName;
 
 	UPROPERTY()
@@ -205,7 +208,7 @@ public:
 	void UpdateJobDefinitionList();
 
 	UFUNCTION(BlueprintCallable, Category = "Mythica")
-	int ExecuteJob(const FString& JobDefId, const FMythicaInputs& Inputs, const FMythicaParameters& Params, const FString& ImportName);
+	int ExecuteJob(const FString& JobDefId, const FMythicaInputs& Inputs, const FMythicaParameters& Params, const FMythicaMaterialParameters& MaterialParams, const FString& ImportName);
 
 	// Delegates
 	UPROPERTY(BlueprintAssignable, Category = "Mythica")
@@ -247,7 +250,7 @@ private:
 	void OnMeshDownloadInfoResponse(FHttpRequestPtr Request, FHttpResponsePtr Response, bool bWasSuccessful, int RequestId);
 	void OnMeshDownloadResponse(FHttpRequestPtr Request, FHttpResponsePtr Response, bool bWasSuccessful, int RequestId);
 
-	int CreateJob(const FString& JobDefId, const FMythicaInputs& Inputs, const FMythicaParameters& Params, const FString& ImportName);
+	int CreateJob(const FString& JobDefId, const FMythicaInputs& Inputs, const FMythicaParameters& Params, const FMythicaMaterialParameters& MaterialParams, const FString& ImportName);
 	void SetJobState(int RequestId, EMythicaJobState State);
 	void PollJobStatus();
 
