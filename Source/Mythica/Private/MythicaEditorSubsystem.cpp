@@ -3,7 +3,6 @@
 #include "AssetExportTask.h"
 #include "AssetRegistry/AssetRegistryModule.h"
 #include "AssetToolsModule.h"
-#include "Exporters/Exporter.h"
 #include "FileHelpers.h"
 #include "FileUtilities/ZipArchiveReader.h"
 #include "HAL/FileManager.h"
@@ -12,13 +11,10 @@
 #include "ImageCoreUtils.h"
 #include "ImageUtils.h"
 #include "Interfaces/IPluginManager.h"
-#include "IPythonScriptPlugin.h"
 #include "LevelEditor.h"
-#include "LevelExporterUSDOptions.h"
 #include "MythicaDeveloperSettings.h"
+#include "MythicaUSDUtil.h"
 #include "ObjectTools.h"
-#include "StaticMeshExporterUSDOptions.h"
-#include "UObject/GCObjectScopeGuard.h"
 #include "UObject/SavePackage.h"
 
 DEFINE_LOG_CATEGORY(LogMythica);
@@ -399,20 +395,6 @@ void UMythicaEditorSubsystem::OnDownloadInfoResponse(FHttpRequestPtr Request, FH
     DownloadRequest->ProcessRequest();
 }
 
-static FString MakeUniquePath(const FString& AbsolutePath)
-{
-    FString UniquePath = AbsolutePath;
-
-    uint32 Counter = 1;
-    while (IFileManager::Get().DirectoryExists(*UniquePath))
-    {
-        UniquePath = FString::Printf(TEXT("%s_%d"), *AbsolutePath, Counter);
-        Counter++;
-    }
-
-    return UniquePath;
-}
-
 struct FFileImportData
 {
     FString FilePath;
@@ -500,7 +482,7 @@ void UMythicaEditorSubsystem::OnDownloadAssetResponse(FHttpRequestPtr Request, F
     FString ImportPackagePath = FPaths::Combine(Settings->ImportDirectory, ObjectTools::SanitizeObjectName(Asset->Name));
     FString DirectoryRelative = FPackageName::LongPackageNameToFilename(ImportPackagePath);
     FString DirectoryAbsolute = FPaths::ConvertRelativePathToFull(DirectoryRelative);
-    FString BaseImportDirectory = MakeUniquePath(DirectoryAbsolute);
+    FString BaseImportDirectory = Mythica::MakeUniquePath(DirectoryAbsolute);
 
     // Import HDA files into Unreal
     FAssetToolsModule& AssetToolsModule = FModuleManager::GetModuleChecked<FAssetToolsModule>("AssetTools");
@@ -655,87 +637,6 @@ void UMythicaEditorSubsystem::OnJobDefinitionsResponse(FHttpRequestPtr Request, 
     OnJobDefinitionListUpdated.Broadcast();
 }
 
-static bool MythicaConvertUSDtoUSDZ(const FString& InFile, const FString& OutFile)
-{
-    if (!IPythonScriptPlugin::Get()->IsPythonAvailable())
-    {
-        return false;
-    }
-    
-    FString Command = FString::Printf(TEXT("from pxr import UsdUtils; UsdUtils.CreateNewUsdzPackage('%s','%s')"), *InFile, *OutFile);
-    IPythonScriptPlugin::Get()->ExecPythonCommand(*Command);
-    return true;
-}
-
-static bool MythicaExportMesh(UStaticMesh* Mesh, const FString& ExportPath)
-{
-    FString TempFolder = FPaths::Combine(FPaths::GetPath(ExportPath), "USDExport");
-    FString UniqueTempFolder = MakeUniquePath(TempFolder);
-    FString USDPath = FPaths::Combine(UniqueTempFolder, "Export.usd");
-
-    UStaticMeshExporterUSDOptions* StaticMeshOptions = NewObject<UStaticMeshExporterUSDOptions>();
-    StaticMeshOptions->StageOptions.MetersPerUnit = 1.0f;
-    StaticMeshOptions->StageOptions.UpAxis = EUsdUpAxis::YAxis;
-
-    UAssetExportTask* ExportTask = NewObject<UAssetExportTask>();
-    FGCObjectScopeGuard ExportTaskGuard(ExportTask);
-    ExportTask->Object = Mesh;
-    ExportTask->Options = StaticMeshOptions;
-    ExportTask->Exporter = nullptr;
-    ExportTask->Filename = USDPath;
-    ExportTask->bSelected = false;
-    ExportTask->bReplaceIdentical = true;
-    ExportTask->bPrompt = false;
-    ExportTask->bUseFileArchive = false;
-    ExportTask->bWriteEmptyFiles = false;
-    ExportTask->bAutomated = true;
-
-    if (!UExporter::RunAssetExportTask(ExportTask))
-    {
-        return false;
-    }
-
-    return MythicaConvertUSDtoUSDZ(USDPath, ExportPath);
-}
-
-static bool MythicaExportActors(const TArray<AActor*> Actors, const FString& ExportPath)
-{
-    FString TempFolder = FPaths::Combine(FPaths::GetPath(ExportPath), "USDExport");
-    FString UniqueTempFolder = MakeUniquePath(TempFolder);
-    FString USDPath = FPaths::Combine(UniqueTempFolder, "Export.usd");
-
-    GEditor->SelectNone(false, true, false);
-    for (AActor* Actor : Actors)
-    {
-        GEditor->SelectActor(Actor, true, true, true);
-    }
-    GEditor->NoteSelectionChange();
-
-    ULevelExporterUSDOptions* LevelOptions = GetMutableDefault<ULevelExporterUSDOptions>();
-    LevelOptions->StageOptions.MetersPerUnit = 1.0f;
-    LevelOptions->StageOptions.UpAxis = EUsdUpAxis::YAxis;
-
-    UAssetExportTask* ExportTask = NewObject<UAssetExportTask>();
-    FGCObjectScopeGuard ExportTaskGuard(ExportTask);
-    ExportTask->Object = GWorld;
-    ExportTask->Options = LevelOptions;
-    ExportTask->Exporter = nullptr;
-    ExportTask->Filename = USDPath;
-    ExportTask->bSelected = true;
-    ExportTask->bReplaceIdentical = true;
-    ExportTask->bPrompt = false;
-    ExportTask->bUseFileArchive = false;
-    ExportTask->bWriteEmptyFiles = false;
-    ExportTask->bAutomated = true;
-
-    if (!UExporter::RunAssetExportTask(ExportTask))
-    {
-        return false;
-    }
-
-    return MythicaConvertUSDtoUSDZ(USDPath, ExportPath);
-}
-
 bool UMythicaEditorSubsystem::PrepareInputFiles(const FMythicaInputs& Inputs, TMap<int, FString>& InputFiles)
 {
     FString ExportFolder = FPaths::Combine(FPaths::ProjectIntermediateDir(), TEXT("MythicaCache"), TEXT("ExportCache"));
@@ -745,7 +646,7 @@ bool UMythicaEditorSubsystem::PrepareInputFiles(const FMythicaInputs& Inputs, TM
         if (Input.Type == EMythicaInputType::Mesh && Input.Mesh != nullptr)
         {
             FString FilePath = FPaths::Combine(ExportFolder, FString::Format(TEXT("InputMesh{0}.usdz"), { i }));
-            bool Success = MythicaExportMesh(Input.Mesh, FilePath);
+            bool Success = Mythica::ExportMesh(Input.Mesh, FilePath);
             if (!Success)
             {
                 UE_LOG(LogMythica, Error, TEXT("Failed to export mesh %s"), *Input.Mesh->GetName());
@@ -757,7 +658,7 @@ bool UMythicaEditorSubsystem::PrepareInputFiles(const FMythicaInputs& Inputs, TM
         if (Input.Type == EMythicaInputType::World && !Input.Actors.IsEmpty())
         {
             FString FilePath = FPaths::Combine(ExportFolder, FString::Format(TEXT("InputMesh{0}.usdz"), { i }));
-            bool Success = MythicaExportActors(Input.Actors, FilePath);
+            bool Success = Mythica::ExportActors(Input.Actors, FilePath);
             if (!Success)
             {
                 UE_LOG(LogMythica, Error, TEXT("Failed to export actors"));
@@ -1204,7 +1105,7 @@ void UMythicaEditorSubsystem::OnMeshDownloadResponse(FHttpRequestPtr Request, FH
     FString DirectoryPackageName = FPaths::Combine(ImportDirectory, TEXT("Run"));
     FString DirectoryRelative = FPackageName::LongPackageNameToFilename(DirectoryPackageName);
     FString DirectoryAbsolute = FPaths::ConvertRelativePathToFull(DirectoryRelative);
-    FString UniqueDirectoryAbsolute = MakeUniquePath(DirectoryAbsolute);
+    FString UniqueDirectoryAbsolute = Mythica::MakeUniquePath(DirectoryAbsolute);
     FString UniqueDirectoryName = FPaths::GetBaseFilename(UniqueDirectoryAbsolute);
 
     // Save package to disk
