@@ -9,6 +9,7 @@
 #include "StaticMeshExporterUSDOptions.h"
 #include "UObject/GCObjectScopeGuard.h"
 #include "UnrealUSDWrapper.h"
+#include "USDConversionUtils.h"
 #include "UsdWrappers/SdfLayer.h"
 #include "UsdWrappers/UsdStage.h"
 
@@ -135,8 +136,10 @@ bool Mythica::ExportSpline(USplineComponent* SplineComponent, const FString& Exp
 
     for (int32 i = 0; i < NumPoints; ++i)
     {
+        // Unreal: Z-up, left handed, 1cm per unit
+        // USD: Y-up right handed, 1m per unit
         FVector Point = SplineComponent->GetLocationAtSplinePoint(i, ESplineCoordinateSpace::World);
-        pxr::GfVec3f UsdPoint(Point.X, Point.Y, Point.Z);
+        pxr::GfVec3f UsdPoint(Point.X / 100.0f, -Point.Z / 100.0f, Point.Y / 100.0f);
         UsdPoints.push_back(UsdPoint);
     }
 
@@ -146,6 +149,9 @@ bool Mythica::ExportSpline(USplineComponent* SplineComponent, const FString& Exp
     {
         return false;
     }
+
+    UsdUtils::SetUsdStageMetersPerUnit(Stage, 1.0f);
+    UsdUtils::SetUsdStageUpAxis(Stage, pxr::TfToken("Y"));
 
     pxr::UsdGeomBasisCurves Curves = pxr::UsdGeomBasisCurves::Define(Stage, pxr::SdfPath("/SplineCurve"));
 

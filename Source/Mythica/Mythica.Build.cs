@@ -56,7 +56,8 @@ public class Mythica : ModuleRules
 				"UMGEditor",
 				"UnrealEd",
 				"UnrealUSDWrapper",
-				"USDExporter"
+				"USDExporter",
+				"USDUtilities"
 				// ... add private dependencies that you statically link with here ...	
 			}
 			);
