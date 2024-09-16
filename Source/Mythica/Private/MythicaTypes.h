@@ -9,7 +9,8 @@ UENUM(BlueprintType)
 enum class EMythicaInputType : uint8
 {
     Mesh,
-    World
+    World,
+    Spline
 };
 
 USTRUCT(BlueprintType)
@@ -25,6 +26,9 @@ struct FMythicaInput
 
     UPROPERTY(BlueprintReadWrite, EditAnywhere, meta = (EditCondition = "Type == EMythicaInputType::World", EditConditionHides))
     TArray<AActor*> Actors;
+
+    UPROPERTY(BlueprintReadWrite, EditAnywhere, meta = (EditCondition = "Type == EMythicaInputType::Spline", EditConditionHides))
+    AActor* SplineActor;
 };
 
 USTRUCT(BlueprintType)

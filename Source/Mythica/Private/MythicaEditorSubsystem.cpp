@@ -655,10 +655,22 @@ bool UMythicaEditorSubsystem::PrepareInputFiles(const FMythicaInputs& Inputs, TM
 
             InputFiles.Add(i, FilePath);
         }
-        if (Input.Type == EMythicaInputType::World && !Input.Actors.IsEmpty())
+        else if (Input.Type == EMythicaInputType::World && !Input.Actors.IsEmpty())
         {
             FString FilePath = FPaths::Combine(ExportFolder, FString::Format(TEXT("InputMesh{0}.usdz"), { i }));
             bool Success = Mythica::ExportActors(Input.Actors, FilePath);
+            if (!Success)
+            {
+                UE_LOG(LogMythica, Error, TEXT("Failed to export actors"));
+                return false;
+            }
+
+            InputFiles.Add(i, FilePath);
+        }
+        else if (Input.Type == EMythicaInputType::Spline && Input.SplineActor != nullptr)
+        {
+            FString FilePath = FPaths::Combine(ExportFolder, FString::Format(TEXT("InputMesh{0}.usdz"), { i }));
+            bool Success = Mythica::ExportSpline(Input.SplineActor, FilePath);
             if (!Success)
             {
                 UE_LOG(LogMythica, Error, TEXT("Failed to export actors"));

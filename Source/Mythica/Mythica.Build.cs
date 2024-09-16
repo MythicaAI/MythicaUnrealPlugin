@@ -38,6 +38,7 @@ public class Mythica : ModuleRules
 				"AssetRegistry",
 				"AssetTools",
 				"Blutility",
+				"Boost",
 				"CoreUObject",
 				"DeveloperSettings",
 				"EditorSubsystem",
@@ -54,7 +55,9 @@ public class Mythica : ModuleRules
 				"SlateCore",
 				"UMGEditor",
 				"UnrealEd",
-				"USDExporter"
+				"UnrealUSDWrapper",
+				"USDExporter",
+				"USDUtilities"
 				// ... add private dependencies that you statically link with here ...	
 			}
 			);

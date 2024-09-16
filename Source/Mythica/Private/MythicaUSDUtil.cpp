@@ -2,11 +2,21 @@
 
 #include "MythicaUSDUtil.h"
 
+#include "Components/SplineComponent.h"
 #include "Exporters/Exporter.h"
 #include "IPythonScriptPlugin.h"
 #include "LevelExporterUSDOptions.h"
 #include "StaticMeshExporterUSDOptions.h"
 #include "UObject/GCObjectScopeGuard.h"
+#include "UnrealUSDWrapper.h"
+#include "USDConversionUtils.h"
+#include "UsdWrappers/SdfLayer.h"
+#include "UsdWrappers/UsdStage.h"
+
+#include "USDIncludesStart.h"
+    #include "pxr/usd/usd/stage.h"
+    #include "pxr/usd/usdGeom/basisCurves.h"
+#include "USDIncludesEnd.h"
 
 static bool ConvertUSDtoUSDZ(const FString& InFile, const FString& OutFile)
 {
@@ -103,3 +113,53 @@ bool Mythica::ExportActors(const TArray<AActor*> Actors, const FString& ExportPa
     return ConvertUSDtoUSDZ(USDPath, ExportPath);
 }
 
+bool Mythica::ExportSpline(AActor* SplineActor, const FString& ExportPath)
+{
+    FString TempFolder = FPaths::Combine(FPaths::GetPath(ExportPath), "USDExport");
+    FString UniqueTempFolder = MakeUniquePath(TempFolder);
+    FString USDPath = FPaths::Combine(UniqueTempFolder, "Export.usd");
+
+    USplineComponent* SplineComponent = SplineActor->FindComponentByClass<USplineComponent>();
+    if (!SplineComponent)
+    {
+        return false;
+    }
+
+    // Gather point data
+    int NumPoints = SplineComponent->GetNumberOfSplinePoints();
+
+    pxr::VtArray<pxr::GfVec3f> Points;
+    Points.reserve(NumPoints);
+
+    for (int i = 0; i < NumPoints; ++i)
+    {
+        // Unreal: Z-up, left handed, 1cm per unit
+        // USD: Y-up right handed, 1m per unit
+        FVector Point = SplineComponent->GetLocationAtSplinePoint(i, ESplineCoordinateSpace::World);
+        pxr::GfVec3f UsdPoint(Point.X / 100.0f, -Point.Z / 100.0f, Point.Y / 100.0f);
+        Points.push_back(UsdPoint);
+    }
+
+    // Create curve primitive
+    UE::FUsdStage Stage = UnrealUSDWrapper::NewStage(*USDPath);
+    if (!Stage)
+    {
+        return false;
+    }
+
+    UsdUtils::SetUsdStageMetersPerUnit(Stage, 1.0f);
+    UsdUtils::SetUsdStageUpAxis(Stage, pxr::TfToken("Y"));
+
+    pxr::UsdGeomBasisCurves Curves = pxr::UsdGeomBasisCurves::Define(Stage, pxr::SdfPath("/SplineCurve"));
+
+    Curves.CreateCurveVertexCountsAttr().Set(pxr::VtArray<int>{NumPoints});
+    Curves.CreatePointsAttr().Set(Points);
+
+    Curves.CreateTypeAttr().Set(pxr::TfToken("cubic"));
+    Curves.CreateBasisAttr().Set(pxr::TfToken("bezier"));
+    Curves.CreateWrapAttr().Set(pxr::TfToken("nonperiodic"));
+
+    Stage.GetRootLayer().Save();
+
+    return ConvertUSDtoUSDZ(USDPath, ExportPath);
+}
