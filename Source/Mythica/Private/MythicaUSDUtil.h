@@ -1,8 +1,5 @@
 #pragma once
 
-class AActor;
-class UStaticMesh;
-
 namespace Mythica
 {
     FString MakeUniquePath(const FString& AbsolutePath);

@@ -128,16 +128,16 @@ bool Mythica::ExportSpline(AActor* SplineActor, const FString& ExportPath)
     // Gather point data
     int NumPoints = SplineComponent->GetNumberOfSplinePoints();
 
-    pxr::VtArray<pxr::GfVec3f> UsdPoints;
-    UsdPoints.reserve(NumPoints);
+    pxr::VtArray<pxr::GfVec3f> Points;
+    Points.reserve(NumPoints);
 
-    for (int32 i = 0; i < NumPoints; ++i)
+    for (int i = 0; i < NumPoints; ++i)
     {
         // Unreal: Z-up, left handed, 1cm per unit
         // USD: Y-up right handed, 1m per unit
         FVector Point = SplineComponent->GetLocationAtSplinePoint(i, ESplineCoordinateSpace::World);
         pxr::GfVec3f UsdPoint(Point.X / 100.0f, -Point.Z / 100.0f, Point.Y / 100.0f);
-        UsdPoints.push_back(UsdPoint);
+        Points.push_back(UsdPoint);
     }
 
     // Create curve primitive
@@ -153,7 +153,7 @@ bool Mythica::ExportSpline(AActor* SplineActor, const FString& ExportPath)
     pxr::UsdGeomBasisCurves Curves = pxr::UsdGeomBasisCurves::Define(Stage, pxr::SdfPath("/SplineCurve"));
 
     Curves.CreateCurveVertexCountsAttr().Set(pxr::VtArray<int>{NumPoints});
-    Curves.CreatePointsAttr().Set(UsdPoints);
+    Curves.CreatePointsAttr().Set(Points);
 
     Curves.CreateTypeAttr().Set(pxr::TfToken("cubic"));
     Curves.CreateBasisAttr().Set(pxr::TfToken("bezier"));
