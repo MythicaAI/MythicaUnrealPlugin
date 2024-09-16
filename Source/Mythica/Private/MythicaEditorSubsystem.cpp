@@ -914,8 +914,16 @@ void UMythicaEditorSubsystem::SendJobRequest(int RequestId, const TArray<FString
         InputsArray.Add(MakeShareable(new FJsonValueString(InputFile)));
     }
 
+    TSharedPtr<FJsonObject> MeshParamsSetObject = MakeShareable(new FJsonObject);
+    Mythica::WriteParameters(RequestData->Params, MeshParamsSetObject);
+
+    TSharedPtr<FJsonObject> MaterialParamsSetObject = MakeShareable(new FJsonObject);
+    MaterialParamsSetObject->SetStringField(TEXT("type"), TEXT("Unreal"));
+    MaterialParamsSetObject->SetStringField(TEXT("sourceAsset"), RequestData->MaterialParams.Material->GetPathName());
+
     TSharedPtr<FJsonObject> ParamsSetObject = MakeShareable(new FJsonObject);
-    Mythica::WriteParameters(RequestData->Params, ParamsSetObject);
+    ParamsSetObject->SetObjectField(TEXT("mesh_params"), MeshParamsSetObject);
+    ParamsSetObject->SetObjectField(TEXT("material_params"), MaterialParamsSetObject);
 
     TSharedPtr<FJsonObject> JsonObject = MakeShareable(new FJsonObject);
     JsonObject->SetStringField(TEXT("job_def_id"), RequestData->JobDefId);
