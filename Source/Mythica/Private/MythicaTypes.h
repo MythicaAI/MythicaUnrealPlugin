@@ -28,7 +28,7 @@ struct FMythicaInput
     TArray<AActor*> Actors;
 
     UPROPERTY(BlueprintReadWrite, EditAnywhere, meta = (EditCondition = "Type == EMythicaInputType::Spline", EditConditionHides))
-    AActor* SplineActor;
+    AActor* SplineActor = nullptr;
 };
 
 USTRUCT(BlueprintType)
