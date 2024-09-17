@@ -18,16 +18,16 @@ struct FMythicaInput
 {
     GENERATED_BODY()
 
-    UPROPERTY(BlueprintReadWrite, EditAnywhere)
+    UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = "Input")
     EMythicaInputType Type = EMythicaInputType::Mesh;
 
-    UPROPERTY(BlueprintReadWrite, EditAnywhere, meta = (EditCondition = "Type == EMythicaInputType::Mesh", EditConditionHides))
+    UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = "Input", meta = (EditCondition = "Type == EMythicaInputType::Mesh", EditConditionHides))
     UStaticMesh* Mesh = nullptr;
 
-    UPROPERTY(BlueprintReadWrite, EditAnywhere, meta = (EditCondition = "Type == EMythicaInputType::World", EditConditionHides))
+    UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = "Input", meta = (EditCondition = "Type == EMythicaInputType::World", EditConditionHides))
     TArray<AActor*> Actors;
 
-    UPROPERTY(BlueprintReadWrite, EditAnywhere, meta = (EditCondition = "Type == EMythicaInputType::Spline", EditConditionHides))
+    UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = "Input", meta = (EditCondition = "Type == EMythicaInputType::Spline", EditConditionHides))
     AActor* SplineActor = nullptr;
 };
 
@@ -36,7 +36,7 @@ struct FMythicaInputs
 {
     GENERATED_BODY()
 
-    UPROPERTY(BlueprintReadWrite, EditAnywhere)
+    UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = "Input")
     TArray<FMythicaInput> Inputs;
 };
 
@@ -141,7 +141,7 @@ struct FMythicaParameters
 {
     GENERATED_BODY()
 
-    UPROPERTY(BlueprintReadOnly)
+    UPROPERTY(BlueprintReadOnly, Category = "Parameter")
     TArray<FMythicaParameter> Parameters;
 };
 
@@ -150,7 +150,7 @@ struct FMythicaMaterialParameters
 {
     GENERATED_BODY()
 
-    UPROPERTY(BlueprintReadWrite, EditAnywhere)
+    UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = "Material")
     UMaterialInterface* Material;
 };
 
