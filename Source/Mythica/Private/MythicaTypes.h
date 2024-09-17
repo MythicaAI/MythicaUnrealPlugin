@@ -40,44 +40,100 @@ struct FMythicaInputs
     TArray<FMythicaInput> Inputs;
 };
 
+UENUM()
+enum class EMythicaParameterType : uint8
+{
+    Int,
+    Float,
+    Bool,
+    String
+};
+
+USTRUCT()
 struct FMythicaParameterInt
 {
+    GENERATED_BODY()
+
+    UPROPERTY()
     TArray<int> Values;
+
+    UPROPERTY()
     TArray<int> DefaultValues;
+
+    UPROPERTY()
     TOptional<int> MinValue;
+
+    UPROPERTY()
     TOptional<int> MaxValue;
 };
 
+USTRUCT()
 struct FMythicaParameterFloat
 {
+    GENERATED_BODY()
+
+    UPROPERTY()
     TArray<float> Values;
+
+    UPROPERTY()
     TArray<float> DefaultValues;
+
+    UPROPERTY()
     TOptional<float> MinValue;
+
+    UPROPERTY()
     TOptional<float> MaxValue;
 };
 
+USTRUCT()
 struct FMythicaParameterBool
 {
+    GENERATED_BODY()
+
+    UPROPERTY()
     bool Value = false;
+
+    UPROPERTY()
     bool DefaultValue = false;
 };
 
+USTRUCT()
 struct FMythicaParameterString
 {
+    GENERATED_BODY()
+
+    UPROPERTY()
     FString Value;
+
+    UPROPERTY()
     FString DefaultValue;
 };
-
-using FMythicaParameterValue = TVariant<FMythicaParameterInt, FMythicaParameterFloat, FMythicaParameterBool, FMythicaParameterString>;
 
 USTRUCT(BlueprintType)
 struct FMythicaParameter
 {
     GENERATED_BODY()
 
+    UPROPERTY()
     FString Name;
+
+    UPROPERTY()
     FString Label;
-    FMythicaParameterValue Value;
+
+    UPROPERTY()
+    EMythicaParameterType Type = EMythicaParameterType::Int;
+
+    UPROPERTY()
+    FMythicaParameterInt ValueInt;
+
+    UPROPERTY()
+    FMythicaParameterFloat ValueFloat;
+
+    UPROPERTY()
+    FMythicaParameterBool ValueBool;
+
+    UPROPERTY()
+    FMythicaParameterString ValueString;
 };
 
 USTRUCT(BlueprintType)

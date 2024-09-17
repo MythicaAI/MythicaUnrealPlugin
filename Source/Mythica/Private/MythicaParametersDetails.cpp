@@ -56,125 +56,128 @@ void FMythicaParametersDetails::CustomizeChildren(TSharedRef<IPropertyHandle> St
         TSharedRef<SWidget> ValueWidget = SNullWidget::NullWidget;
         int DesiredWidthScalar = 1;
 
-        if (const FMythicaParameterFloat* FloatParameter = Parameter.Value.TryGet<FMythicaParameterFloat>())
+        switch (Parameter.Type)
         {
-            TSharedRef<SHorizontalBox> HorizontalBox = SNew(SHorizontalBox);
-
-            for (int ComponentIndex = 0; ComponentIndex < FloatParameter->Values.Num(); ++ComponentIndex)
+            case EMythicaParameterType::Float:
             {
-                auto Value = [=]()
+                TSharedRef<SHorizontalBox> HorizontalBox = SNew(SHorizontalBox);
+
+                for (int ComponentIndex = 0; ComponentIndex < Parameter.ValueFloat.Values.Num(); ++ComponentIndex)
+                {
+                    auto Value = [=]()
+                    {
+                        FMythicaParameters* Parameters = GetParametersFromHandleWeak(HandleWeak);
+                        return Parameters ? Parameters->Parameters[ParamIndex].ValueFloat.Values[ComponentIndex] : 0.0f;
+                    };
+
+                    auto OnValueChanged = [=](float NewValue)
+                    {
+                        FMythicaParameters* Parameters = GetParametersFromHandleWeak(HandleWeak);
+                        if (Parameters)
+                            Parameters->Parameters[ParamIndex].ValueFloat.Values[ComponentIndex] = NewValue;
+                    };
+
+                    HorizontalBox->AddSlot()
+                        .Padding(0.0f, 0.0f, 2.0f, 0.0f)
+                        [
+                            SNew(SNumericEntryBox<float>)
+                                .Value_Lambda(Value)
+                                .OnValueChanged_Lambda(OnValueChanged)
+                                .AllowSpin(true)
+                                .MinValue(Parameter.ValueFloat.MinValue)
+                                .MaxValue(Parameter.ValueFloat.MaxValue)
+                                .MinSliderValue(Parameter.ValueFloat.MinValue)
+                                .MaxSliderValue(Parameter.ValueFloat.MaxValue)
+                        ];
+                }
+
+                ValueWidget = HorizontalBox;
+                DesiredWidthScalar = Parameter.ValueFloat.Values.Num();
+                break;
+            }
+            case EMythicaParameterType::Int:
+            {
+                TSharedRef<SHorizontalBox> HorizontalBox = SNew(SHorizontalBox);
+
+                for (int ComponentIndex = 0; ComponentIndex < Parameter.ValueInt.Values.Num(); ++ComponentIndex)
+                {
+                    auto Value = [=]()
+                    {
+                        FMythicaParameters* Parameters = GetParametersFromHandleWeak(HandleWeak);
+                        return Parameters ? Parameters->Parameters[ParamIndex].ValueInt.Values[ComponentIndex] : 0;
+                    };
+
+                    auto OnValueChanged = [=](int NewValue)
+                    {
+                        FMythicaParameters* Parameters = GetParametersFromHandleWeak(HandleWeak);
+                        if (Parameters)
+                            Parameters->Parameters[ParamIndex].ValueInt.Values[ComponentIndex] = NewValue;
+                    };
+
+                    HorizontalBox->AddSlot()
+                        .Padding(0.0f, 0.0f, 2.0f, 0.0f)
+                        [
+                            SNew(SNumericEntryBox<int>)
+                                .Value_Lambda(Value)
+                                .OnValueChanged_Lambda(OnValueChanged)
+                                .AllowSpin(true)
+                                .MinValue(Parameter.ValueInt.MinValue)
+                                .MaxValue(Parameter.ValueInt.MaxValue)
+                                .MinSliderValue(Parameter.ValueInt.MinValue)
+                                .MaxSliderValue(Parameter.ValueInt.MaxValue)
+                        ];
+                }
+
+                ValueWidget = HorizontalBox;
+                DesiredWidthScalar = Parameter.ValueInt.Values.Num();
+                break;
+            }
+            case EMythicaParameterType::Bool:
+            {
+                auto IsChecked = [=]()
                 {
                     FMythicaParameters* Parameters = GetParametersFromHandleWeak(HandleWeak);
-                    return Parameters ? Parameters->Parameters[ParamIndex].Value.Get<FMythicaParameterFloat>().Values[ComponentIndex] : 0.0f;
+                    bool Value = Parameters ? Parameters->Parameters[ParamIndex].ValueBool.Value : false;
+                    return Value ? ECheckBoxState::Checked : ECheckBoxState::Unchecked;
                 };
 
-                auto OnValueChanged = [=](float NewValue)
+                auto OnCheckStateChanged = [=](ECheckBoxState NewState)
+                {
+                    if (NewState == ECheckBoxState::Undetermined)
+                        return;
+
+                    FMythicaParameters* Parameters = GetParametersFromHandleWeak(HandleWeak);
+                    if (Parameters)
+                        Parameters->Parameters[ParamIndex].ValueBool.Value = (NewState == ECheckBoxState::Checked);
+                };
+
+                ValueWidget = SNew(SCheckBox)
+                    .IsChecked_Lambda(IsChecked)
+                    .OnCheckStateChanged_Lambda(OnCheckStateChanged);
+                break;
+            }
+            case EMythicaParameterType::String:
+            {
+                auto Text = [=]()
+                {
+                    FMythicaParameters* Parameters = GetParametersFromHandleWeak(HandleWeak);
+                    return Parameters ? FText::FromString(Parameters->Parameters[ParamIndex].ValueString.Value) : FText();
+                };
+
+                auto OnTextCommitted = [=](const FText& InText, ETextCommit::Type InCommitType)
                 {
                     FMythicaParameters* Parameters = GetParametersFromHandleWeak(HandleWeak);
                     if (Parameters)
-                        Parameters->Parameters[ParamIndex].Value.Get<FMythicaParameterFloat>().Values[ComponentIndex] = NewValue;
+                        Parameters->Parameters[ParamIndex].ValueString.Value = InText.ToString();
                 };
 
-                HorizontalBox->AddSlot()
-                    .Padding(0.0f, 0.0f, 2.0f, 0.0f)
-                    [
-                        SNew(SNumericEntryBox<float>)
-                            .Value_Lambda(Value)
-                            .OnValueChanged_Lambda(OnValueChanged)
-                            .AllowSpin(true)
-                            .MinValue(FloatParameter->MinValue)
-                            .MaxValue(FloatParameter->MaxValue)
-                            .MinSliderValue(FloatParameter->MinValue)
-                            .MaxSliderValue(FloatParameter->MaxValue)
-                    ];
+                ValueWidget = SNew(SMultiLineEditableText)
+                    .Text_Lambda(Text)
+                    .OnTextCommitted_Lambda(OnTextCommitted)
+                    .AutoWrapText(true);
+                DesiredWidthScalar = 3;
+                break;
             }
-
-            ValueWidget = HorizontalBox;
-            DesiredWidthScalar = FloatParameter->Values.Num();
-        }
-        else if (const FMythicaParameterInt* IntParameter = Parameter.Value.TryGet<FMythicaParameterInt>())
-        {
-            TSharedRef<SHorizontalBox> HorizontalBox = SNew(SHorizontalBox);
-
-            for (int ComponentIndex = 0; ComponentIndex < IntParameter->Values.Num(); ++ComponentIndex)
-            {
-                auto Value = [=]()
-                {
-                    FMythicaParameters* Parameters = GetParametersFromHandleWeak(HandleWeak);
-                    return Parameters ? Parameters->Parameters[ParamIndex].Value.Get<FMythicaParameterInt>().Values[ComponentIndex] : 0;
-                };
-
-                auto OnValueChanged = [=](int NewValue)
-                {
-                    FMythicaParameters* Parameters = GetParametersFromHandleWeak(HandleWeak);
-                    if (Parameters)
-                        Parameters->Parameters[ParamIndex].Value.Get<FMythicaParameterInt>().Values[ComponentIndex] = NewValue;
-                };
-
-                HorizontalBox->AddSlot()
-                    .Padding(0.0f, 0.0f, 2.0f, 0.0f)
-                    [
-                        SNew(SNumericEntryBox<int>)
-                            .Value_Lambda(Value)
-                            .OnValueChanged_Lambda(OnValueChanged)
-                            .AllowSpin(true)
-                            .MinValue(IntParameter->MinValue)
-                            .MaxValue(IntParameter->MaxValue)
-                            .MinSliderValue(IntParameter->MinValue)
-                            .MaxSliderValue(IntParameter->MaxValue)
-                    ];
-            }
-
-            ValueWidget = HorizontalBox;
-            DesiredWidthScalar = IntParameter->Values.Num();
-        }
-        else if (const FMythicaParameterBool* BoolParameter = Parameter.Value.TryGet<FMythicaParameterBool>())
-        {
-            auto IsChecked = [=]()
-            {
-                FMythicaParameters* Parameters = GetParametersFromHandleWeak(HandleWeak);
-                bool Value = Parameters ? Parameters->Parameters[ParamIndex].Value.Get<FMythicaParameterBool>().Value : false;
-                return Value ? ECheckBoxState::Checked : ECheckBoxState::Unchecked;
-            };
-
-            auto OnCheckStateChanged = [=](ECheckBoxState NewState)
-            {
-                if (NewState == ECheckBoxState::Undetermined)
-                    return;
-
-                FMythicaParameters* Parameters = GetParametersFromHandleWeak(HandleWeak);
-                if (Parameters)
-                    Parameters->Parameters[ParamIndex].Value.Get<FMythicaParameterBool>().Value = (NewState == ECheckBoxState::Checked);
-            };
-
-            ValueWidget = SNew(SCheckBox)
-                .IsChecked_Lambda(IsChecked)
-                .OnCheckStateChanged_Lambda(OnCheckStateChanged);
-        }
-        else if (const FMythicaParameterString* StringParameter = Parameter.Value.TryGet<FMythicaParameterString>())
-        {
-            auto Text = [=]()
-            {
-                FMythicaParameters* Parameters = GetParametersFromHandleWeak(HandleWeak);
-                return Parameters ? FText::FromString(Parameters->Parameters[ParamIndex].Value.Get<FMythicaParameterString>().Value) : FText();
-            };
-
-            auto OnTextCommitted = [=](const FText& InText, ETextCommit::Type InCommitType)
-            {
-                FMythicaParameters* Parameters = GetParametersFromHandleWeak(HandleWeak);
-                if (Parameters)
-                    Parameters->Parameters[ParamIndex].Value.Get<FMythicaParameterString>().Value = InText.ToString();
-            };
-
-            ValueWidget = SNew(SMultiLineEditableText)
-                .Text_Lambda(Text)
-                .OnTextCommitted_Lambda(OnTextCommitted)
-                .AutoWrapText(true);
-            DesiredWidthScalar = 3;
-        }
-        else
-        {
-            continue;
         }
 
         StructBuilder.AddCustomRow(FText::FromString(Parameter.Label))
