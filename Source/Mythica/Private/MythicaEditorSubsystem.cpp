@@ -622,14 +622,16 @@ void UMythicaEditorSubsystem::OnJobDefinitionsResponse(FHttpRequestPtr Request, 
         FString JobType = JsonObject->GetStringField(TEXT("job_type"));
         FString Name = JsonObject->GetStringField(TEXT("name"));
         FString Description = JsonObject->GetStringField(TEXT("description"));
-        int InputCount = JsonObject->GetNumberField(TEXT("input_files"));
+
         TSharedPtr<FJsonObject> ParamsSchema = JsonObject->GetObjectField(TEXT("params_schema"));
+        TArray<TSharedPtr<FJsonValue>> InputsDef = ParamsSchema->GetArrayField(TEXT("inputs"));
+        TSharedPtr<FJsonObject> ParamsDef = ParamsSchema->GetObjectField(TEXT("params"));
 
         FMythicaInputs Inputs;
-        Inputs.Inputs.AddDefaulted(InputCount);
+        Mythica::ReadInputs(InputsDef, Inputs);
 
         FMythicaParameters Params;
-        Mythica::ReadParameters(ParamsSchema, Params);
+        Mythica::ReadParameters(ParamsDef, Params);
 
         JobDefinitionList.Push({ JobDefId, JobType, Name, Description, Inputs, Params });
     }

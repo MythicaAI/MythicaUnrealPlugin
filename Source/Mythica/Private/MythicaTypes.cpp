@@ -2,6 +2,15 @@
 
 #include "MythicaTypes.h"
 
+void Mythica::ReadInputs(const TArray<TSharedPtr<FJsonValue>>& InputsDef, FMythicaInputs& OutInputs)
+{
+    for (TSharedPtr<FJsonValue> InputValue : InputsDef)
+    {
+        FString InputLabel = InputValue->AsString();
+        OutInputs.Inputs.Add({ InputLabel });
+    }
+}
+
 void Mythica::ReadParameters(const TSharedPtr<FJsonObject>& ParameterDef, FMythicaParameters& OutParameters)
 {
     for (auto It = ParameterDef->Values.CreateConstIterator(); It; ++It)

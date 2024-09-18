@@ -18,6 +18,9 @@ struct FMythicaInput
 {
     GENERATED_BODY()
 
+    UPROPERTY(BlueprintReadOnly, VisibleAnywhere, Category = "Input")
+    FString Label;
+
     UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = "Input")
     EMythicaInputType Type = EMythicaInputType::Mesh;
 
@@ -156,6 +159,7 @@ struct FMythicaMaterialParameters
 
 namespace Mythica
 {
+    void ReadInputs(const TArray<TSharedPtr<FJsonValue>>& InputsDef, FMythicaInputs& OutInputs);
     void ReadParameters(const TSharedPtr<FJsonObject>& ParameterDef, FMythicaParameters& OutParameters);
     void WriteParameters(const FMythicaParameters& Parameters, const TSharedPtr<FJsonObject>& ParameterSet);
 }
