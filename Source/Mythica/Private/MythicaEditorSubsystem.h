@@ -179,6 +179,9 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "Mythica")
 	TArray<FMythicaJobDefinition> GetJobDefinitionList(const FString& JobType);
 
+	UFUNCTION(BlueprintCallable, Category = "Mythica")
+	FMythicaJobDefinition GetJobDefinitionById(const FString& JobDefId);
+
 	UFUNCTION(BlueprintPure, Category = "Mythica")
 	bool IsAssetInstalled(const FString& PackageId);
 
