@@ -4,7 +4,7 @@
 
 UMythicaComponent::UMythicaComponent()
 {
-	PrimaryComponentTick.bCanEverTick = false;
+    PrimaryComponentTick.bCanEverTick = false;
 }
 
 void UMythicaComponent::EndPlay(const EEndPlayReason::Type EndPlayReason)
