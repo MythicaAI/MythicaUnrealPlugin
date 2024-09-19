@@ -45,4 +45,7 @@ public:
 private:
 	UPROPERTY()
 	int RequestId = -1;
+
+	UPROPERTY()
+	TArray<FName> MeshComponentNames;
 };

@@ -78,6 +78,23 @@ void UMythicaComponent::OnJobStateChanged(int InRequestId, EMythicaJobState Stat
 
 void UMythicaComponent::UpdateMesh()
 {
+    AActor* OwnerActor = GetOwner();
+
+    // Remove existing meshes
+    for (FName Name : MeshComponentNames)
+    {
+        for (UActorComponent* Component : OwnerActor->GetComponents())
+        {
+            if (Component->GetFName() == Name)
+            {
+                Component->DestroyComponent();
+                break;
+            }
+        }
+    }
+    MeshComponentNames.Reset();
+
+    // Spawn new meshes
     UMythicaEditorSubsystem* MythicaEditorSubsystem = GEditor->GetEditorSubsystem<UMythicaEditorSubsystem>();
     FString ImportDirectory = MythicaEditorSubsystem->GetImportDirectory(RequestId);
 
@@ -86,19 +103,18 @@ void UMythicaComponent::UpdateMesh()
     TArray<FAssetData> Assets;
     AssetRegistryModule.Get().GetAssetsByPath(*ImportDirectory, Assets, true, false);
 
-    AActor* OwnerActor = GetOwner();
-    USceneComponent* ParentComponent = GetAttachParent();
-
     for (FAssetData Asset : Assets)
     {
         if (Asset.IsInstanceOf(UStaticMesh::StaticClass()))
         {
             UStaticMeshComponent* StaticMeshComponent = NewObject<UStaticMeshComponent>(OwnerActor);
             StaticMeshComponent->SetStaticMesh(Cast<UStaticMesh>(Asset.GetAsset()));
-            StaticMeshComponent->AttachToComponent(ParentComponent, FAttachmentTransformRules::KeepRelativeTransform);
+            StaticMeshComponent->AttachToComponent(GetAttachParent(), FAttachmentTransformRules::KeepRelativeTransform);
 
             OwnerActor->AddInstanceComponent(StaticMeshComponent);
             StaticMeshComponent->RegisterComponent();
+
+            MeshComponentNames.Add(StaticMeshComponent->GetFName());
         }
     }
 }
