@@ -102,6 +102,19 @@ TArray<FMythicaJobDefinition> UMythicaEditorSubsystem::GetJobDefinitionList(cons
     return Definitions;
 }
 
+FMythicaJobDefinition UMythicaEditorSubsystem::GetJobDefinitionById(const FString& JobDefId)
+{
+    for (const FMythicaJobDefinition& Definition : JobDefinitionList)
+    {
+        if (Definition.JobDefId == JobDefId)
+        {
+            return Definition;
+        }
+    }
+
+    return {};
+}
+
 bool UMythicaEditorSubsystem::IsAssetInstalled(const FString& PackageId)
 {
     return InstalledAssets.Contains(PackageId);

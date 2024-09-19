@@ -14,6 +14,12 @@ class UMythicaComponent : public USceneComponent
 public:
 	UMythicaComponent();
 
+	virtual void PostEditChangeProperty(FPropertyChangedEvent& PropertyChangedEvent) override;
+
+private:
+    void OnJobDefIdChanged();
+
+public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Mythica")
 	FString JobDefId;
 
