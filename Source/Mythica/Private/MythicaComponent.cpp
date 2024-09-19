@@ -5,6 +5,13 @@ UMythicaComponent::UMythicaComponent()
 	PrimaryComponentTick.bCanEverTick = false;
 }
 
+void UMythicaComponent::RegenerateMesh()
+{
+    UMythicaEditorSubsystem* MythicaEditorSubsystem = GEditor->GetEditorSubsystem<UMythicaEditorSubsystem>();
+
+    JobId = MythicaEditorSubsystem->ExecuteJob(JobDefId, Inputs, Parameters, MaterialParameters, "GeneratedMesh");
+}
+
 void UMythicaComponent::PostEditChangeProperty(FPropertyChangedEvent& PropertyChangedEvent)
 {
     Super::PostEditChangeProperty(PropertyChangedEvent);

@@ -14,6 +14,9 @@ class UMythicaComponent : public USceneComponent
 public:
 	UMythicaComponent();
 
+	UFUNCTION(BlueprintCallable, CallInEditor, Category = "Mythica")
+	void RegenerateMesh();
+
 	virtual void PostEditChangeProperty(FPropertyChangedEvent& PropertyChangedEvent) override;
 
 private:
@@ -31,4 +34,8 @@ public:
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Mythica")
 	FMythicaMaterialParameters MaterialParameters;
+
+private:
+	UPROPERTY()
+	int JobId = -1;
 };
