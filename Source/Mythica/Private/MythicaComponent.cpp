@@ -1,15 +1,37 @@
 #include "MythicaComponent.h"
 
+#include "AssetRegistry/AssetRegistryModule.h"
+
 UMythicaComponent::UMythicaComponent()
 {
 	PrimaryComponentTick.bCanEverTick = false;
 }
 
+void UMythicaComponent::EndPlay(const EEndPlayReason::Type EndPlayReason)
+{
+    Super::EndPlay(EndPlayReason);
+
+    if (RequestId > 0)
+    {
+        UMythicaEditorSubsystem* MythicaEditorSubsystem = GEditor->GetEditorSubsystem<UMythicaEditorSubsystem>();
+        MythicaEditorSubsystem->OnJobStateChange.RemoveDynamic(this, &UMythicaComponent::OnJobStateChanged);
+    }
+}
+
 void UMythicaComponent::RegenerateMesh()
 {
-    UMythicaEditorSubsystem* MythicaEditorSubsystem = GEditor->GetEditorSubsystem<UMythicaEditorSubsystem>();
+    if (RequestId > 0)
+    {
+        return;
+    }
 
-    JobId = MythicaEditorSubsystem->ExecuteJob(JobDefId, Inputs, Parameters, MaterialParameters, "GeneratedMesh");
+    UMythicaEditorSubsystem* MythicaEditorSubsystem = GEditor->GetEditorSubsystem<UMythicaEditorSubsystem>();
+    RequestId = MythicaEditorSubsystem->ExecuteJob(JobDefId, Inputs, Parameters, MaterialParameters, "GeneratedMesh");
+
+    if (RequestId > 0)
+    {
+        MythicaEditorSubsystem->OnJobStateChange.AddDynamic(this, &UMythicaComponent::OnJobStateChanged);
+    }
 }
 
 void UMythicaComponent::PostEditChangeProperty(FPropertyChangedEvent& PropertyChangedEvent)
@@ -30,4 +52,52 @@ void UMythicaComponent::OnJobDefIdChanged()
     Inputs = Definition.Inputs;
     Parameters = Definition.Parameters;
     MaterialParameters = FMythicaMaterialParameters();
+}
+
+void UMythicaComponent::OnJobStateChanged(int InRequestId, EMythicaJobState State)
+{
+    if (InRequestId != RequestId)
+    {
+        return;
+    }
+
+    if (State != EMythicaJobState::Completed && State != EMythicaJobState::Failed)
+    {
+        return;
+    }
+
+    if (State == EMythicaJobState::Completed)
+    {
+        UpdateMesh();
+    }
+
+    UMythicaEditorSubsystem* MythicaEditorSubsystem = GEditor->GetEditorSubsystem<UMythicaEditorSubsystem>();
+    MythicaEditorSubsystem->OnJobStateChange.RemoveDynamic(this, &UMythicaComponent::OnJobStateChanged);
+    RequestId = -1;
+}
+
+void UMythicaComponent::UpdateMesh()
+{
+    UMythicaEditorSubsystem* MythicaEditorSubsystem = GEditor->GetEditorSubsystem<UMythicaEditorSubsystem>();
+    FString ImportDirectory = MythicaEditorSubsystem->GetImportDirectory(RequestId);
+
+    FAssetRegistryModule& AssetRegistryModule = FModuleManager::LoadModuleChecked<FAssetRegistryModule>("AssetRegistry");
+
+    TArray<FAssetData> Assets;
+    AssetRegistryModule.Get().GetAssetsByPath(*ImportDirectory, Assets, true, false);
+
+    for (FAssetData Asset : Assets)
+    {
+        if (Asset.IsInstanceOf(UStaticMesh::StaticClass()))
+        {
+            AActor* OwnerActor = GetOwner();
+
+            UStaticMeshComponent* StaticMeshComponent = NewObject<UStaticMeshComponent>(OwnerActor);
+            StaticMeshComponent->SetStaticMesh(Cast<UStaticMesh>(Asset.GetAsset()));
+            StaticMeshComponent->AttachToComponent(this, FAttachmentTransformRules::KeepRelativeTransform);
+
+            OwnerActor->AddInstanceComponent(StaticMeshComponent);
+            StaticMeshComponent->RegisterComponent();
+        }
+    }
 }

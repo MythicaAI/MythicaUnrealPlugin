@@ -14,6 +14,8 @@ class UMythicaComponent : public USceneComponent
 public:
 	UMythicaComponent();
 
+	void EndPlay(const EEndPlayReason::Type EndPlayReason);
+
 	UFUNCTION(BlueprintCallable, CallInEditor, Category = "Mythica")
 	void RegenerateMesh();
 
@@ -21,6 +23,11 @@ public:
 
 private:
     void OnJobDefIdChanged();
+
+	UFUNCTION()
+	void OnJobStateChanged(int InRequestId, EMythicaJobState State);
+
+	void UpdateMesh();
 
 public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Mythica")
@@ -37,5 +44,5 @@ public:
 
 private:
 	UPROPERTY()
-	int JobId = -1;
+	int RequestId = -1;
 };
