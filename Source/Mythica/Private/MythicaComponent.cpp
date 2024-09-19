@@ -86,15 +86,16 @@ void UMythicaComponent::UpdateMesh()
     TArray<FAssetData> Assets;
     AssetRegistryModule.Get().GetAssetsByPath(*ImportDirectory, Assets, true, false);
 
+    AActor* OwnerActor = GetOwner();
+    USceneComponent* ParentComponent = GetAttachParent();
+
     for (FAssetData Asset : Assets)
     {
         if (Asset.IsInstanceOf(UStaticMesh::StaticClass()))
         {
-            AActor* OwnerActor = GetOwner();
-
             UStaticMeshComponent* StaticMeshComponent = NewObject<UStaticMeshComponent>(OwnerActor);
             StaticMeshComponent->SetStaticMesh(Cast<UStaticMesh>(Asset.GetAsset()));
-            StaticMeshComponent->AttachToComponent(this, FAttachmentTransformRules::KeepRelativeTransform);
+            StaticMeshComponent->AttachToComponent(ParentComponent, FAttachmentTransformRules::KeepRelativeTransform);
 
             OwnerActor->AddInstanceComponent(StaticMeshComponent);
             StaticMeshComponent->RegisterComponent();
