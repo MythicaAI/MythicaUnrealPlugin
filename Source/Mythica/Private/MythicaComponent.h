@@ -33,14 +33,14 @@ public:
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Mythica")
     FMythicaJobDefinitionId JobDefId;
 
-    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Mythica")
-    FMythicaInputs Inputs;
-
-    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Mythica")
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Parameters")
     FMythicaParameters Parameters;
 
-    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Mythica")
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Parameters")
     FMythicaMaterialParameters MaterialParameters;
+
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Parameters")
+    FMythicaInputs Inputs;
 
 private:
     UPROPERTY()

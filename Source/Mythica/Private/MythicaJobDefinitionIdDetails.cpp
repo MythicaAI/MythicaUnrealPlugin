@@ -27,7 +27,7 @@ void FMythicaJobDefinitionIdDetails::CustomizeHeader(TSharedRef<IPropertyHandle>
 
     HeaderRow.NameContent()
     [
-        StructPropertyHandle->CreatePropertyNameWidget()
+        StructPropertyHandle->CreatePropertyNameWidget(FText::FromString(TEXT("Tool")))
     ]
     .ValueContent()
     [
@@ -53,7 +53,7 @@ void FMythicaJobDefinitionIdDetails::CustomizeHeader(TSharedRef<IPropertyHandle>
                         return FText::FromString(GetSelectedOption(StringFieldHandle));
                     })
             ]
-        ];
+    ];
 }
 
 void FMythicaJobDefinitionIdDetails::CustomizeChildren(TSharedRef<IPropertyHandle> StructPropertyHandle, IDetailChildrenBuilder& StructBuilder, IPropertyTypeCustomizationUtils& StructCustomizationUtils)

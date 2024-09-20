@@ -70,9 +70,9 @@ void UMythicaComponent::OnJobDefIdChanged()
     UMythicaEditorSubsystem* MythicaEditorSubsystem = GEditor->GetEditorSubsystem<UMythicaEditorSubsystem>();
 
     FMythicaJobDefinition Definition = MythicaEditorSubsystem->GetJobDefinitionById(JobDefId.JobDefId);
-    Inputs = Definition.Inputs;
     Parameters = Definition.Parameters;
     MaterialParameters = FMythicaMaterialParameters();
+    Inputs = Definition.Inputs;
 
     ForceRefreshDetailsViewPanel();
 }
