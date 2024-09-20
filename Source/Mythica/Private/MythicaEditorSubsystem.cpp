@@ -61,6 +61,8 @@ void UMythicaEditorSubsystem::Initialize(FSubsystemCollectionBase& Collection)
 {
     Super::Initialize(Collection);
 
+    CreateSession();
+
     LoadInstalledAssetList();
 }
 
@@ -800,6 +802,7 @@ int UMythicaEditorSubsystem::ExecuteJob(const FString& JobDefId, const FMythicaI
 {
     if (SessionState != EMythicaSessionState::SessionCreated)
     {
+        UE_LOG(LogMythica, Error, TEXT("Unable to create job due to session not created"));
         return -1;
     }
 
