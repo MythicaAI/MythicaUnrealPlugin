@@ -6,6 +6,7 @@
 #include "Exporters/Exporter.h"
 #include "IPythonScriptPlugin.h"
 #include "LevelExporterUSDOptions.h"
+#include "Selection.h"
 #include "StaticMeshExporterUSDOptions.h"
 #include "UObject/GCObjectScopeGuard.h"
 #include "UnrealUSDWrapper.h"
@@ -81,13 +82,20 @@ bool Mythica::ExportActors(const TArray<AActor*> Actors, const FString& ExportPa
     FString UniqueTempFolder = MakeUniquePath(TempFolder);
     FString USDPath = FPaths::Combine(UniqueTempFolder, "Export.usd");
 
-    GEditor->SelectNone(false, true, false);
+    // Save original selection
+    TArray<AActor*> OriginalSelection;
+    TArray<UActorComponent*> OriginalComponentSelection;
+    GEditor->GetSelectedActors()->GetSelectedObjects<AActor>(OriginalSelection);
+    GEditor->GetSelectedComponents()->GetSelectedObjects<UActorComponent>(OriginalComponentSelection);
+
+    // Set selection to target actors
+    GEditor->SelectNone(false, false, false);
     for (AActor* Actor : Actors)
     {
-        GEditor->SelectActor(Actor, true, true, true);
+        GEditor->SelectActor(Actor, true, false, true);
     }
-    GEditor->NoteSelectionChange();
 
+    // Export selected actors
     ULevelExporterUSDOptions* LevelOptions = GetMutableDefault<ULevelExporterUSDOptions>();
     LevelOptions->StageOptions.MetersPerUnit = 1.0f;
     LevelOptions->StageOptions.UpAxis = EUsdUpAxis::YAxis;
@@ -105,12 +113,21 @@ bool Mythica::ExportActors(const TArray<AActor*> Actors, const FString& ExportPa
     ExportTask->bWriteEmptyFiles = false;
     ExportTask->bAutomated = true;
 
-    if (!UExporter::RunAssetExportTask(ExportTask))
-    {
-        return false;
-    }
+    bool Success = UExporter::RunAssetExportTask(ExportTask);
 
-    return ConvertUSDtoUSDZ(USDPath, ExportPath);
+    // Restore original selection
+    GEditor->SelectNone(false, false, false);
+    for (AActor* Actor : OriginalSelection)
+    {
+        GEditor->SelectActor(Actor, true, false, true);
+    }
+    for (UActorComponent* Component : OriginalComponentSelection)
+    {
+        GEditor->SelectComponent(Component, true, false, true);
+    }
+    GEditor->NoteSelectionChange();
+
+    return Success ? ConvertUSDtoUSDZ(USDPath, ExportPath) : false;
 }
 
 bool Mythica::ExportSpline(AActor* SplineActor, const FString& ExportPath)
