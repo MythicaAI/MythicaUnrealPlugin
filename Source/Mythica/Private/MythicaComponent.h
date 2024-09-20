@@ -17,6 +17,7 @@ public:
     void EndPlay(const EEndPlayReason::Type EndPlayReason);
 
     void RegenerateMesh();
+    EMythicaJobState GetJobState() const { return State; }
 
     virtual void PostEditChangeProperty(FPropertyChangedEvent& PropertyChangedEvent) override;
 
@@ -24,7 +25,7 @@ private:
     void OnJobDefIdChanged();
 
     UFUNCTION()
-    void OnJobStateChanged(int InRequestId, EMythicaJobState State);
+    void OnJobStateChanged(int InRequestId, EMythicaJobState InState);
 
     void UpdateMesh();
 
@@ -44,6 +45,9 @@ public:
 private:
     UPROPERTY()
     int RequestId = -1;
+
+    UPROPERTY()
+    EMythicaJobState State = EMythicaJobState::Invalid;
 
     UPROPERTY()
     TArray<FName> MeshComponentNames;

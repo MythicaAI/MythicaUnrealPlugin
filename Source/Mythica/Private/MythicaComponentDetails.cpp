@@ -28,15 +28,39 @@ void FMythicaComponentDetails::CustomizeDetails(IDetailLayoutBuilder& DetailBuil
     MyCategory.AddCustomRow(FText::FromString("RegenerateMeshRow"))
         .WholeRowContent()
         [
-            SNew(SButton)
-                .Text(FText::FromString("Regenerate Mesh"))
-                .OnClicked_Lambda([ComponentWeak]()
-                {
-                    if (ComponentWeak.IsValid())
-                    {
-                        ComponentWeak->RegenerateMesh();
-                    }
-                    return FReply::Handled();
-                })
+            SNew(SHorizontalBox)
+                + SHorizontalBox::Slot()
+                .HAlign(HAlign_Center)
+                .VAlign(VAlign_Center)
+                .FillWidth(0.5f)
+                [
+                    SNew(SButton)
+                        .Text(FText::FromString("Regenerate Mesh"))
+                        .OnClicked_Lambda([ComponentWeak]()
+                        {
+                            if (ComponentWeak.IsValid())
+                            {
+                                ComponentWeak->RegenerateMesh();
+                            }
+                            return FReply::Handled();
+                        })
+                ]
+                + SHorizontalBox::Slot()
+                .HAlign(HAlign_Center)
+                .VAlign(VAlign_Center)
+                .FillWidth(0.5f)
+                [
+                    SNew(STextBlock)
+                        .Text_Lambda([ComponentWeak]()
+                        {
+                            if (ComponentWeak.IsValid())
+                            {
+                                EMythicaJobState State = ComponentWeak->GetJobState();
+                                FString StateString = StaticEnum<EMythicaJobState>()->GetNameStringByValue(static_cast<int64>(State));
+                                return FText::FromString(StateString);
+                            }
+                            return FText::FromString("Invalid Object");
+                        })
+                ]
         ];
 }
