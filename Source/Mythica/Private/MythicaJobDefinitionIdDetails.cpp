@@ -16,8 +16,6 @@ void FMythicaJobDefinitionIdDetails::CustomizeHeader(TSharedRef<IPropertyHandle>
     UMythicaEditorSubsystem* MythicaEditorSubsystem = GEditor->GetEditorSubsystem<UMythicaEditorSubsystem>();
     TArray<FMythicaJobDefinition> JobDefinitions = MythicaEditorSubsystem->GetJobDefinitionList("houdini_generate_mesh");
 
-    Options.Add(MakeShared<FString>(""));
-    JobDefIds.Add(FString(""));
     for (const FMythicaJobDefinition& JobDefinition : JobDefinitions)
     {
         Options.Add(MakeShared<FString>(JobDefinition.Name));
@@ -38,7 +36,7 @@ void FMythicaJobDefinitionIdDetails::CustomizeHeader(TSharedRef<IPropertyHandle>
             .OnSelectionChanged_Lambda([this, StringFieldHandle](TSharedPtr<FString> NewValue, ESelectInfo::Type SelectInfo)
             {
                 int32 SelectedIndex = Options.IndexOfByKey(NewValue);
-                if (SelectedIndex > 0)
+                if (Options.IsValidIndex(SelectedIndex))
                 {
                     OnSelectionChanged(JobDefIds[SelectedIndex], StringFieldHandle);
                 }
@@ -52,7 +50,7 @@ void FMythicaJobDefinitionIdDetails::CustomizeHeader(TSharedRef<IPropertyHandle>
                 SNew(STextBlock)
                     .Text_Lambda([this, StringFieldHandle]() -> FText
                     {
-                        return FText::FromString(*GetSelectedOption(StringFieldHandle));
+                        return FText::FromString(GetSelectedOption(StringFieldHandle));
                     })
             ]
         ];
@@ -68,17 +66,17 @@ void FMythicaJobDefinitionIdDetails::OnSelectionChanged(const FString& NewValue,
     PropertyHandle->SetValue(*NewValue);
 }
 
-TSharedPtr<FString> FMythicaJobDefinitionIdDetails::GetSelectedOption(TSharedPtr<IPropertyHandle> PropertyHandle) const
+FString FMythicaJobDefinitionIdDetails::GetSelectedOption(TSharedPtr<IPropertyHandle> PropertyHandle) const
 {
     FString CurrentValue;
     if (PropertyHandle->GetValue(CurrentValue) == FPropertyAccess::Success)
     {
         int32 SelectedIndex = JobDefIds.IndexOfByKey(CurrentValue);
-        if (SelectedIndex > 0)
+        if (JobDefIds.IsValidIndex(SelectedIndex))
         {
-            return Options[SelectedIndex];
+            return *Options[SelectedIndex];
         }
     }
 
-    return Options[0];
+    return FString(TEXT(""));
 }

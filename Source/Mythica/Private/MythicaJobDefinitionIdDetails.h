@@ -15,5 +15,5 @@ private:
     TArray<FString> JobDefIds;
 
     void OnSelectionChanged(const FString& NewValue, TSharedPtr<IPropertyHandle> PropertyHandle);
-    TSharedPtr<FString> GetSelectedOption(TSharedPtr<IPropertyHandle> PropertyHandle) const;
+    FString GetSelectedOption(TSharedPtr<IPropertyHandle> PropertyHandle) const;
 };
