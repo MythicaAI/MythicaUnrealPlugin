@@ -5,6 +5,7 @@
 #include "EditorUtilitySubsystem.h"
 #include "EditorUtilityWidgetBlueprint.h"
 #include "LevelEditor.h"
+#include "MythicaComponentDetails.h"
 #include "MythicaJobDefinitionIdDetails.h"
 #include "MythicaParametersDetails.h"
 
@@ -26,6 +27,10 @@ void FMythicaModule::StartupModule()
 	LevelEditorModule.GetMenuExtensibilityManager()->AddExtender(MenuExtender);
 
 	FPropertyEditorModule& PropertyModule = FModuleManager::LoadModuleChecked<FPropertyEditorModule>("PropertyEditor");
+	PropertyModule.RegisterCustomClassLayout(
+		"MythicaComponent", 
+		FOnGetDetailCustomizationInstance::CreateStatic(&FMythicaComponentDetails::MakeInstance)
+	);
 	PropertyModule.RegisterCustomPropertyTypeLayout(
 		"MythicaParameters",
 		FOnGetPropertyTypeCustomizationInstance::CreateStatic(&FMythicaParametersDetails::MakeInstance)
@@ -42,6 +47,7 @@ void FMythicaModule::ShutdownModule()
 	if (FModuleManager::Get().IsModuleLoaded("PropertyEditor"))
 	{
 		FPropertyEditorModule& PropertyModule = FModuleManager::GetModuleChecked<FPropertyEditorModule>("PropertyEditor");
+		PropertyModule.UnregisterCustomClassLayout("MythicaComponent");
 		PropertyModule.UnregisterCustomPropertyTypeLayout("MythicaParameters");
 		PropertyModule.UnregisterCustomPropertyTypeLayout("MythicaJobDefinitionId");
 		PropertyModule.NotifyCustomizationModuleChanged();

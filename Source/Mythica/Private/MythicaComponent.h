@@ -16,8 +16,8 @@ public:
 
     void EndPlay(const EEndPlayReason::Type EndPlayReason);
 
-    UFUNCTION(BlueprintCallable, CallInEditor, Category = "Mythica")
     void RegenerateMesh();
+    EMythicaJobState GetJobState() const { return State; }
 
     virtual void PostEditChangeProperty(FPropertyChangedEvent& PropertyChangedEvent) override;
 
@@ -25,7 +25,7 @@ private:
     void OnJobDefIdChanged();
 
     UFUNCTION()
-    void OnJobStateChanged(int InRequestId, EMythicaJobState State);
+    void OnJobStateChanged(int InRequestId, EMythicaJobState InState);
 
     void UpdateMesh();
 
@@ -43,8 +43,8 @@ public:
     FMythicaInputs Inputs;
 
 private:
-    UPROPERTY()
     int RequestId = -1;
+    EMythicaJobState State = EMythicaJobState::Invalid;
 
     UPROPERTY()
     TArray<FName> MeshComponentNames;

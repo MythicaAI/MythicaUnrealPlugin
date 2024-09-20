@@ -77,13 +77,14 @@ void UMythicaComponent::OnJobDefIdChanged()
     ForceRefreshDetailsViewPanel();
 }
 
-void UMythicaComponent::OnJobStateChanged(int InRequestId, EMythicaJobState State)
+void UMythicaComponent::OnJobStateChanged(int InRequestId, EMythicaJobState InState)
 {
     if (InRequestId != RequestId)
     {
         return;
     }
 
+    State = InState;
     if (State != EMythicaJobState::Completed && State != EMythicaJobState::Failed)
     {
         return;
