@@ -26,7 +26,7 @@ void UMythicaComponent::RegenerateMesh()
     }
 
     UMythicaEditorSubsystem* MythicaEditorSubsystem = GEditor->GetEditorSubsystem<UMythicaEditorSubsystem>();
-    RequestId = MythicaEditorSubsystem->ExecuteJob(JobDefId, Inputs, Parameters, MaterialParameters, "GeneratedMesh");
+    RequestId = MythicaEditorSubsystem->ExecuteJob(JobDefId.JobDefId, Inputs, Parameters, MaterialParameters, "GeneratedMesh");
 
     if (RequestId > 0)
     {
@@ -38,9 +38,30 @@ void UMythicaComponent::PostEditChangeProperty(FPropertyChangedEvent& PropertyCh
 {
     Super::PostEditChangeProperty(PropertyChangedEvent);
 
-    if (PropertyChangedEvent.Property->GetFName() == GET_MEMBER_NAME_CHECKED(UMythicaComponent, JobDefId))
+    if (PropertyChangedEvent.MemberProperty->GetFName() == GET_MEMBER_NAME_CHECKED(UMythicaComponent, JobDefId))
     {
         OnJobDefIdChanged();
+    }
+}
+
+static void ForceRefreshDetailsViewPanel()
+{
+    FPropertyEditorModule& PropertyModule = FModuleManager::GetModuleChecked<FPropertyEditorModule>("PropertyEditor");
+    
+    static const FName DetailsTabIdentifiers[] = {
+        "LevelEditorSelectionDetails",
+        "LevelEditorSelectionDetails2",
+        "LevelEditorSelectionDetails3",
+        "LevelEditorSelectionDetails4" 
+    };
+
+    for (const FName DetailsPanelName : DetailsTabIdentifiers)
+    {
+        TSharedPtr<IDetailsView> DetailsView = PropertyModule.FindDetailView(DetailsPanelName);
+        if (DetailsView.IsValid())
+        {
+            DetailsView->ForceRefresh();
+        }
     }
 }
 
@@ -48,10 +69,12 @@ void UMythicaComponent::OnJobDefIdChanged()
 {
     UMythicaEditorSubsystem* MythicaEditorSubsystem = GEditor->GetEditorSubsystem<UMythicaEditorSubsystem>();
 
-    FMythicaJobDefinition Definition = MythicaEditorSubsystem->GetJobDefinitionById(JobDefId);
-    Inputs = Definition.Inputs;
+    FMythicaJobDefinition Definition = MythicaEditorSubsystem->GetJobDefinitionById(JobDefId.JobDefId);
     Parameters = Definition.Parameters;
     MaterialParameters = FMythicaMaterialParameters();
+    Inputs = Definition.Inputs;
+
+    ForceRefreshDetailsViewPanel();
 }
 
 void UMythicaComponent::OnJobStateChanged(int InRequestId, EMythicaJobState State)
