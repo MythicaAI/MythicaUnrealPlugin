@@ -43,10 +43,7 @@ public:
     FMythicaInputs Inputs;
 
 private:
-    UPROPERTY()
     int RequestId = -1;
-
-    UPROPERTY()
     EMythicaJobState State = EMythicaJobState::Invalid;
 
     UPROPERTY()
