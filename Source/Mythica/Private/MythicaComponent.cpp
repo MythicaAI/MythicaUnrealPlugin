@@ -44,6 +44,27 @@ void UMythicaComponent::PostEditChangeProperty(FPropertyChangedEvent& PropertyCh
     }
 }
 
+static void ForceRefreshDetailsViewPanel()
+{
+    FPropertyEditorModule& PropertyModule = FModuleManager::GetModuleChecked<FPropertyEditorModule>("PropertyEditor");
+    
+    static const FName DetailsTabIdentifiers[] = {
+        "LevelEditorSelectionDetails",
+        "LevelEditorSelectionDetails2",
+        "LevelEditorSelectionDetails3",
+        "LevelEditorSelectionDetails4" 
+    };
+
+    for (const FName DetailsPanelName : DetailsTabIdentifiers)
+    {
+        TSharedPtr<IDetailsView> DetailsView = PropertyModule.FindDetailView(DetailsPanelName);
+        if (DetailsView.IsValid())
+        {
+            DetailsView->ForceRefresh();
+        }
+    }
+}
+
 void UMythicaComponent::OnJobDefIdChanged()
 {
     UMythicaEditorSubsystem* MythicaEditorSubsystem = GEditor->GetEditorSubsystem<UMythicaEditorSubsystem>();
@@ -52,6 +73,8 @@ void UMythicaComponent::OnJobDefIdChanged()
     Inputs = Definition.Inputs;
     Parameters = Definition.Parameters;
     MaterialParameters = FMythicaMaterialParameters();
+
+    ForceRefreshDetailsViewPanel();
 }
 
 void UMythicaComponent::OnJobStateChanged(int InRequestId, EMythicaJobState State)
