@@ -6,6 +6,7 @@
 #include "EditorUtilityWidgetBlueprint.h"
 #include "LevelEditor.h"
 #include "MythicaParametersDetails.h"
+#include "MythicaJobDefinitionIdDetails.h"
 
 #define LOCTEXT_NAMESPACE "FMythicaModule"
 
@@ -29,6 +30,10 @@ void FMythicaModule::StartupModule()
 		"MythicaParameters",
 		FOnGetPropertyTypeCustomizationInstance::CreateStatic(&FMythicaParametersDetails::MakeInstance)
 	);
+	PropertyModule.RegisterCustomPropertyTypeLayout(
+		"MythicaJobDefinitionId",
+		FOnGetPropertyTypeCustomizationInstance::CreateStatic(&FMythicaJobDefinitionIdDetails::MakeInstance)
+	);
 	PropertyModule.NotifyCustomizationModuleChanged();
 }
 
@@ -37,7 +42,8 @@ void FMythicaModule::ShutdownModule()
 	if (FModuleManager::Get().IsModuleLoaded("PropertyEditor"))
 	{
 		FPropertyEditorModule& PropertyModule = FModuleManager::GetModuleChecked<FPropertyEditorModule>("PropertyEditor");
-		PropertyModule.UnregisterCustomPropertyTypeLayout("FMythicaParameters");
+		PropertyModule.UnregisterCustomPropertyTypeLayout("MythicaParameters");
+		PropertyModule.UnregisterCustomPropertyTypeLayout("MythicaJobDefinitionId");
 		PropertyModule.NotifyCustomizationModuleChanged();
 	}
 }

@@ -68,6 +68,15 @@ struct FMythicaAssetVersion
 };
 
 USTRUCT(BlueprintType)
+struct FMythicaJobDefinitionId
+{
+	GENERATED_BODY()
+
+	UPROPERTY(BlueprintReadOnly, Category = "Data")
+	FString JobDefId;
+};
+
+USTRUCT(BlueprintType)
 struct FMythicaJobDefinition
 {
 	GENERATED_BODY()
