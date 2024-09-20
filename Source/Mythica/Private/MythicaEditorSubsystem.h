@@ -72,7 +72,7 @@ struct FMythicaJobDefinitionId
 {
 	GENERATED_BODY()
 
-	UPROPERTY(BlueprintReadOnly, Category = "Data")
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Data")
 	FString JobDefId;
 };
 

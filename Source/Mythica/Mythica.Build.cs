@@ -53,6 +53,7 @@ public class Mythica : ModuleRules
 				"PythonScriptPlugin",
 				"Slate",
 				"SlateCore",
+				"ToolWidgets",
 				"UMGEditor",
 				"UnrealEd",
 				"UnrealUSDWrapper",

@@ -31,7 +31,7 @@ private:
 
 public:
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Mythica")
-    FString JobDefId;
+    FMythicaJobDefinitionId JobDefId;
 
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Mythica")
     FMythicaInputs Inputs;
