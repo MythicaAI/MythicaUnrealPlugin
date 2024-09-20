@@ -16,7 +16,6 @@ public:
 
     void EndPlay(const EEndPlayReason::Type EndPlayReason);
 
-    UFUNCTION(BlueprintCallable, CallInEditor, Category = "Mythica")
     void RegenerateMesh();
 
     virtual void PostEditChangeProperty(FPropertyChangedEvent& PropertyChangedEvent) override;
