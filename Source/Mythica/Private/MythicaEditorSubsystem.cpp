@@ -204,6 +204,8 @@ void UMythicaEditorSubsystem::OnCreateSessionResponse(FHttpRequestPtr Request, F
     AuthToken = Token;
 
     SetSessionState(EMythicaSessionState::SessionCreated);
+
+    UpdateJobDefinitionList();
 }
 
 void UMythicaEditorSubsystem::UpdateAssetList()
