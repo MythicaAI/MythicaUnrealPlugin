@@ -36,6 +36,18 @@ void FMythicaComponentDetails::CustomizeDetails(IDetailLayoutBuilder& DetailBuil
                 [
                     SNew(SButton)
                         .Text(FText::FromString("Regenerate Mesh"))
+                        .IsEnabled_Lambda([ComponentWeak]()
+                        {
+                            if (ComponentWeak.IsValid())
+                            {
+                                EMythicaJobState State = ComponentWeak->GetJobState();
+                                return State == EMythicaJobState::Invalid ||
+                                       State == EMythicaJobState::Failed ||
+                                       State == EMythicaJobState::Completed;
+                            }
+
+                            return false;
+                        })
                         .OnClicked_Lambda([ComponentWeak]()
                         {
                             if (ComponentWeak.IsValid())
@@ -56,8 +68,11 @@ void FMythicaComponentDetails::CustomizeDetails(IDetailLayoutBuilder& DetailBuil
                             if (ComponentWeak.IsValid())
                             {
                                 EMythicaJobState State = ComponentWeak->GetJobState();
-                                FString StateString = StaticEnum<EMythicaJobState>()->GetNameStringByValue(static_cast<int64>(State));
-                                return FText::FromString(StateString);
+                                if (State != EMythicaJobState::Invalid)
+                                {
+                                    FString StateString = StaticEnum<EMythicaJobState>()->GetNameStringByValue(static_cast<int64>(State));
+                                    return FText::FromString(StateString);
+                                }
                             }
                             return FText::FromString("Invalid Object");
                         })
