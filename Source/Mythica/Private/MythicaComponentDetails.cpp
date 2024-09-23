@@ -68,13 +68,13 @@ void FMythicaComponentDetails::CustomizeDetails(IDetailLayoutBuilder& DetailBuil
                             if (ComponentWeak.IsValid())
                             {
                                 EMythicaJobState State = ComponentWeak->GetJobState();
-                                if (State != EMythicaJobState::Invalid)
+                                if (State != EMythicaJobState::Invalid && State != EMythicaJobState::Completed)
                                 {
                                     FString StateString = StaticEnum<EMythicaJobState>()->GetNameStringByValue(static_cast<int64>(State));
                                     return FText::FromString(StateString);
                                 }
                             }
-                            return FText::FromString("Invalid Object");
+                            return FText::FromString("");
                         })
                 ]
         ];
