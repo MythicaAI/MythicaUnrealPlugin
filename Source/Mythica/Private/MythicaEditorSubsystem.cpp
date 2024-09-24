@@ -1180,7 +1180,12 @@ void UMythicaEditorSubsystem::OnMeshDownloadResponse(FHttpRequestPtr Request, FH
     {
         Packages.Add(Asset.GetPackage());
     }
+
+    bool PrevSilent = GIsSilent;
+    GIsSilent = true;
     UEditorLoadingAndSavingUtils::SavePackages(Packages, true);
+    FTimerHandle DummyHandle;
+    GEditor->GetTimerManager()->SetTimer(DummyHandle, [=]() { GIsSilent = PrevSilent; }, 0.1f, true); // Delay until after asset validation
 
     RequestData->ImportDirectory = CreatedImportDirectory;
     SetJobState(RequestId, EMythicaJobState::Completed);
