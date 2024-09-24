@@ -47,7 +47,13 @@ void UMythicaComponent::PostEditChangeProperty(FPropertyChangedEvent& PropertyCh
     {
         if (RegenerateOnParameterChange)
         {
-            RegenerateMesh();
+            if (PropertyChangedEvent.ChangeType == EPropertyChangeType::Interactive)
+            {
+                GEditor->GetTimerManager()->SetTimer(DelayRegenerateHandle, [this]() { RegenerateMesh(); }, 0.05f, false); }
+            else
+            {
+                RegenerateMesh();
+            }
         }
     }
 }

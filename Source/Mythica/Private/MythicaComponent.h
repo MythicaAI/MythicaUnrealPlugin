@@ -49,6 +49,7 @@ private:
     int RequestId = -1;
     EMythicaJobState State = EMythicaJobState::Invalid;
     bool QueueRegenerate = false;
+    FTimerHandle DelayRegenerateHandle;
 
     UPROPERTY()
     TArray<FName> MeshComponentNames;
