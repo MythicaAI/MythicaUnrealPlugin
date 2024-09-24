@@ -12,6 +12,8 @@ void UMythicaComponent::PostLoad()
     Super::PostLoad();
 
     BindWorldInputListeners();
+
+    TransformUpdated.AddUObject(this, &UMythicaComponent::OnWorldInputTransformUpdated);
 }
 
 void UMythicaComponent::EndPlay(const EEndPlayReason::Type EndPlayReason)
@@ -159,6 +161,11 @@ void UMythicaComponent::OnWorldInputTransformUpdated(USceneComponent* InComponen
     {
         GEditor->GetTimerManager()->SetTimer(DelayRegenerateHandle, [this]() { RegenerateMesh(); }, 0.05f, false);
     }
+}
+
+void UMythicaComponent::OnTransformUpdated(USceneComponent* InComponent, EUpdateTransformFlags InFlags, ETeleportType InType)
+{
+    RegenerateMesh();
 }
 
 void UMythicaComponent::OnJobStateChanged(int InRequestId, EMythicaJobState InState)

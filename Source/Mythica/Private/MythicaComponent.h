@@ -27,6 +27,7 @@ private:
 
     void BindWorldInputListeners();
     void OnWorldInputTransformUpdated(USceneComponent* InComponent, EUpdateTransformFlags InFlags, ETeleportType InType);
+    void OnTransformUpdated(USceneComponent* InComponent, EUpdateTransformFlags InFlags, ETeleportType InType);
 
     UFUNCTION()
     void OnJobStateChanged(int InRequestId, EMythicaJobState InState);
