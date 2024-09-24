@@ -22,6 +22,7 @@ void UMythicaComponent::RegenerateMesh()
 {
     if (RequestId > 0)
     {
+        QueueRegenerate = true;
         return;
     }
 
@@ -102,6 +103,12 @@ void UMythicaComponent::OnJobStateChanged(int InRequestId, EMythicaJobState InSt
     UMythicaEditorSubsystem* MythicaEditorSubsystem = GEditor->GetEditorSubsystem<UMythicaEditorSubsystem>();
     MythicaEditorSubsystem->OnJobStateChange.RemoveDynamic(this, &UMythicaComponent::OnJobStateChanged);
     RequestId = -1;
+
+    if (QueueRegenerate)
+    {
+        QueueRegenerate = false;
+        RegenerateMesh();
+    }
 }
 
 void UMythicaComponent::UpdateMesh()

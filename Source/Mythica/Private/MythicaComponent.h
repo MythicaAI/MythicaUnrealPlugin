@@ -45,6 +45,7 @@ public:
 private:
     int RequestId = -1;
     EMythicaJobState State = EMythicaJobState::Invalid;
+    bool QueueRegenerate = false;
 
     UPROPERTY()
     TArray<FName> MeshComponentNames;
