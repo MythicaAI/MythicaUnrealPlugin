@@ -48,7 +48,7 @@ void FMythicaParametersDetails::CustomizeChildren(TSharedRef<IPropertyHandle> St
         return;
     }
 
-    TWeakPtr<IPropertyHandle> HandleWeak = StructPropertyHandle.ToWeakPtr();
+    HandleWeak = StructPropertyHandle.ToWeakPtr();
     for (int32 ParamIndex = 0; ParamIndex < Parameters->Parameters.Num(); ++ParamIndex)
     {
         const FMythicaParameter& Parameter = Parameters->Parameters[ParamIndex];
@@ -64,17 +64,30 @@ void FMythicaParametersDetails::CustomizeChildren(TSharedRef<IPropertyHandle> St
 
                 for (int ComponentIndex = 0; ComponentIndex < Parameter.ValueFloat.Values.Num(); ++ComponentIndex)
                 {
-                    auto Value = [=]()
+                    auto Value = [this, ParamIndex, ComponentIndex]()
                     {
                         FMythicaParameters* Parameters = GetParametersFromHandleWeak(HandleWeak);
                         return Parameters ? Parameters->Parameters[ParamIndex].ValueFloat.Values[ComponentIndex] : 0.0f;
                     };
 
-                    auto OnValueChanged = [=](float NewValue)
+                    auto OnValueChanged = [this, ParamIndex, ComponentIndex](float NewValue)
                     {
                         FMythicaParameters* Parameters = GetParametersFromHandleWeak(HandleWeak);
                         if (Parameters)
+                        {
                             Parameters->Parameters[ParamIndex].ValueFloat.Values[ComponentIndex] = NewValue;
+                            HandleWeak.Pin()->NotifyPostChange(UsingSlider ? EPropertyChangeType::Interactive : EPropertyChangeType::ValueSet);
+                        }
+                    };
+
+                    auto OnBeginSliderMovement = [this]() 
+                    {
+                        UsingSlider = true;
+                    };
+
+                    auto OnEndSliderMovement = [this](float NewValue)
+                    {
+                        UsingSlider = false;
                     };
 
                     HorizontalBox->AddSlot()
@@ -83,6 +96,8 @@ void FMythicaParametersDetails::CustomizeChildren(TSharedRef<IPropertyHandle> St
                             SNew(SNumericEntryBox<float>)
                                 .Value_Lambda(Value)
                                 .OnValueChanged_Lambda(OnValueChanged)
+                                .OnBeginSliderMovement_Lambda(OnBeginSliderMovement)
+                                .OnEndSliderMovement_Lambda(OnEndSliderMovement)
                                 .AllowSpin(true)
                                 .MinValue(Parameter.ValueFloat.MinValue)
                                 .MaxValue(Parameter.ValueFloat.MaxValue)
@@ -101,17 +116,30 @@ void FMythicaParametersDetails::CustomizeChildren(TSharedRef<IPropertyHandle> St
 
                 for (int ComponentIndex = 0; ComponentIndex < Parameter.ValueInt.Values.Num(); ++ComponentIndex)
                 {
-                    auto Value = [=]()
+                    auto Value = [this, ParamIndex, ComponentIndex]()
                     {
                         FMythicaParameters* Parameters = GetParametersFromHandleWeak(HandleWeak);
                         return Parameters ? Parameters->Parameters[ParamIndex].ValueInt.Values[ComponentIndex] : 0;
                     };
 
-                    auto OnValueChanged = [=](int NewValue)
+                    auto OnValueChanged = [this, ParamIndex, ComponentIndex](int NewValue)
                     {
                         FMythicaParameters* Parameters = GetParametersFromHandleWeak(HandleWeak);
                         if (Parameters)
+                        {
                             Parameters->Parameters[ParamIndex].ValueInt.Values[ComponentIndex] = NewValue;
+                            HandleWeak.Pin()->NotifyPostChange(UsingSlider ? EPropertyChangeType::Interactive : EPropertyChangeType::ValueSet);
+                        }
+                    };
+
+                    auto OnBeginSliderMovement = [this]()
+                    {
+                        UsingSlider = true;
+                    };
+
+                    auto OnEndSliderMovement = [this](int NewValue)
+                    {
+                        UsingSlider = false;
                     };
 
                     HorizontalBox->AddSlot()
@@ -120,6 +148,8 @@ void FMythicaParametersDetails::CustomizeChildren(TSharedRef<IPropertyHandle> St
                             SNew(SNumericEntryBox<int>)
                                 .Value_Lambda(Value)
                                 .OnValueChanged_Lambda(OnValueChanged)
+                                .OnBeginSliderMovement_Lambda(OnBeginSliderMovement)
+                                .OnEndSliderMovement_Lambda(OnEndSliderMovement)
                                 .AllowSpin(true)
                                 .MinValue(Parameter.ValueInt.MinValue)
                                 .MaxValue(Parameter.ValueInt.MaxValue)
@@ -134,21 +164,24 @@ void FMythicaParametersDetails::CustomizeChildren(TSharedRef<IPropertyHandle> St
             }
             case EMythicaParameterType::Bool:
             {
-                auto IsChecked = [=]()
+                auto IsChecked = [this, ParamIndex]()
                 {
                     FMythicaParameters* Parameters = GetParametersFromHandleWeak(HandleWeak);
                     bool Value = Parameters ? Parameters->Parameters[ParamIndex].ValueBool.Value : false;
                     return Value ? ECheckBoxState::Checked : ECheckBoxState::Unchecked;
                 };
 
-                auto OnCheckStateChanged = [=](ECheckBoxState NewState)
+                auto OnCheckStateChanged = [this, ParamIndex](ECheckBoxState NewState)
                 {
                     if (NewState == ECheckBoxState::Undetermined)
                         return;
 
                     FMythicaParameters* Parameters = GetParametersFromHandleWeak(HandleWeak);
                     if (Parameters)
+                    {
                         Parameters->Parameters[ParamIndex].ValueBool.Value = (NewState == ECheckBoxState::Checked);
+                        HandleWeak.Pin()->NotifyPostChange(EPropertyChangeType::ValueSet);
+                    }
                 };
 
                 ValueWidget = SNew(SCheckBox)
@@ -158,17 +191,20 @@ void FMythicaParametersDetails::CustomizeChildren(TSharedRef<IPropertyHandle> St
             }
             case EMythicaParameterType::String:
             {
-                auto Text = [=]()
+                auto Text = [this, ParamIndex]()
                 {
                     FMythicaParameters* Parameters = GetParametersFromHandleWeak(HandleWeak);
                     return Parameters ? FText::FromString(Parameters->Parameters[ParamIndex].ValueString.Value) : FText();
                 };
 
-                auto OnTextCommitted = [=](const FText& InText, ETextCommit::Type InCommitType)
+                auto OnTextCommitted = [this, ParamIndex](const FText& InText, ETextCommit::Type InCommitType)
                 {
                     FMythicaParameters* Parameters = GetParametersFromHandleWeak(HandleWeak);
                     if (Parameters)
+                    {
                         Parameters->Parameters[ParamIndex].ValueString.Value = InText.ToString();
+                        HandleWeak.Pin()->NotifyPostChange(EPropertyChangeType::ValueSet);
+                    }
                 };
 
                 ValueWidget = SNew(SMultiLineEditableText)

@@ -33,6 +33,9 @@ public:
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Mythica")
     FMythicaJobDefinitionId JobDefId;
 
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Mythica")
+    bool RegenerateOnParameterChange = true;
+
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Parameters")
     FMythicaParameters Parameters;
 
@@ -45,6 +48,8 @@ public:
 private:
     int RequestId = -1;
     EMythicaJobState State = EMythicaJobState::Invalid;
+    bool QueueRegenerate = false;
+    FTimerHandle DelayRegenerateHandle;
 
     UPROPERTY()
     TArray<FName> MeshComponentNames;

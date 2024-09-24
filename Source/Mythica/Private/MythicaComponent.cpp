@@ -22,6 +22,7 @@ void UMythicaComponent::RegenerateMesh()
 {
     if (RequestId > 0)
     {
+        QueueRegenerate = true;
         return;
     }
 
@@ -41,6 +42,20 @@ void UMythicaComponent::PostEditChangeProperty(FPropertyChangedEvent& PropertyCh
     if (PropertyChangedEvent.MemberProperty->GetFName() == GET_MEMBER_NAME_CHECKED(UMythicaComponent, JobDefId))
     {
         OnJobDefIdChanged();
+    }
+    else if (PropertyChangedEvent.MemberProperty->GetFName() == GET_MEMBER_NAME_CHECKED(UMythicaComponent, Parameters))
+    {
+        if (RegenerateOnParameterChange)
+        {
+            if (PropertyChangedEvent.ChangeType == EPropertyChangeType::Interactive)
+            {
+                GEditor->GetTimerManager()->SetTimer(DelayRegenerateHandle, [this]() { RegenerateMesh(); }, 0.05f, false); 
+            }
+            else
+            {
+                RegenerateMesh();
+            }
+        }
     }
 }
 
@@ -98,6 +113,12 @@ void UMythicaComponent::OnJobStateChanged(int InRequestId, EMythicaJobState InSt
     UMythicaEditorSubsystem* MythicaEditorSubsystem = GEditor->GetEditorSubsystem<UMythicaEditorSubsystem>();
     MythicaEditorSubsystem->OnJobStateChange.RemoveDynamic(this, &UMythicaComponent::OnJobStateChanged);
     RequestId = -1;
+
+    if (QueueRegenerate)
+    {
+        QueueRegenerate = false;
+        RegenerateMesh();
+    }
 }
 
 void UMythicaComponent::UpdateMesh()
