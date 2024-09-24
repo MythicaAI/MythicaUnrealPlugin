@@ -39,6 +39,9 @@ public:
 
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Mythica")
     bool RegenerateOnParameterChange = true;
+    
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Mythica")
+    bool RegenerateOnInputChange = true;
 
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Parameters")
     FMythicaParameters Parameters;

@@ -66,8 +66,15 @@ void UMythicaComponent::PostEditChangeProperty(FPropertyChangedEvent& PropertyCh
     }
     else if (PropertyChangedEvent.MemberProperty->GetFName() == GET_MEMBER_NAME_CHECKED(UMythicaComponent, Inputs))
     {
+        if (RegenerateOnInputChange)
+        {
+            BindWorldInputListeners();
+            RegenerateMesh();
+        }
+    }
+    else if (PropertyChangedEvent.MemberProperty->GetFName() == GET_MEMBER_NAME_CHECKED(UMythicaComponent, RegenerateOnInputChange))
+    {
         BindWorldInputListeners();
-        RegenerateMesh();
     }
 }
 
@@ -111,6 +118,11 @@ void UMythicaComponent::BindWorldInputListeners()
         Component->TransformUpdated.RemoveAll(this);
     }
     WorldInputComponents.Reset();
+
+    if (!RegenerateOnInputChange)
+    {
+        return;
+    }
 
     for (FMythicaInput& Input : Inputs.Inputs)
     {
