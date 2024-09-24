@@ -13,7 +13,7 @@ void UMythicaComponent::PostLoad()
 
     BindWorldInputListeners();
 
-    TransformUpdated.AddUObject(this, &UMythicaComponent::OnWorldInputTransformUpdated);
+    TransformUpdated.AddUObject(this, &UMythicaComponent::OnTransformUpdated);
 }
 
 void UMythicaComponent::EndPlay(const EEndPlayReason::Type EndPlayReason)
@@ -165,7 +165,10 @@ void UMythicaComponent::OnWorldInputTransformUpdated(USceneComponent* InComponen
 
 void UMythicaComponent::OnTransformUpdated(USceneComponent* InComponent, EUpdateTransformFlags InFlags, ETeleportType InType)
 {
-    RegenerateMesh();
+    if (RegenerateOnTransformChange)
+    {
+        RegenerateMesh();
+    }
 }
 
 void UMythicaComponent::OnJobStateChanged(int InRequestId, EMythicaJobState InState)

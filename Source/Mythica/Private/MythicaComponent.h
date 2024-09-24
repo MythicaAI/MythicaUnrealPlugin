@@ -44,6 +44,9 @@ public:
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Mythica")
     bool RegenerateOnInputChange = true;
 
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Mythica")
+    bool RegenerateOnTransformChange = false;
+
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Parameters")
     FMythicaParameters Parameters;
 
