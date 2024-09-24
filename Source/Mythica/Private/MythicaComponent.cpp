@@ -154,7 +154,11 @@ void UMythicaComponent::BindWorldInputListeners()
 
 void UMythicaComponent::OnWorldInputTransformUpdated(USceneComponent* InComponent, EUpdateTransformFlags InFlags, ETeleportType InType)
 {
-    GEditor->GetTimerManager()->SetTimer(DelayRegenerateHandle, [this]() { RegenerateMesh(); }, 0.05f, false);
+    // Ignore events that fire during level load actor initialization
+    if (InComponent->GetOwner()->HasActorRegisteredAllComponents())
+    {
+        GEditor->GetTimerManager()->SetTimer(DelayRegenerateHandle, [this]() { RegenerateMesh(); }, 0.05f, false);
+    }
 }
 
 void UMythicaComponent::OnJobStateChanged(int InRequestId, EMythicaJobState InState)
