@@ -115,7 +115,10 @@ void UMythicaComponent::BindWorldInputListeners()
 {
     for (USceneComponent* Component : WorldInputComponents)
     {
-        Component->TransformUpdated.RemoveAll(this);
+        if (Component)
+        {
+            Component->TransformUpdated.RemoveAll(this);
+        }
     }
     WorldInputComponents.Reset();
 
