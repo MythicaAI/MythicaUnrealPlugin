@@ -50,7 +50,8 @@ void UMythicaComponent::PostEditChangeProperty(FPropertyChangedEvent& PropertyCh
     {
         OnJobDefIdChanged();
     }
-    else if (PropertyChangedEvent.MemberProperty->GetFName() == GET_MEMBER_NAME_CHECKED(UMythicaComponent, Parameters))
+    else if (PropertyChangedEvent.MemberProperty->GetFName() == GET_MEMBER_NAME_CHECKED(UMythicaComponent, Parameters) 
+        || PropertyChangedEvent.MemberProperty->GetFName() == GET_MEMBER_NAME_CHECKED(UMythicaComponent, MaterialParameters))
     {
         if (RegenerateOnParameterChange)
         {
