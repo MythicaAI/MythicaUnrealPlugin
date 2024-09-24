@@ -113,7 +113,10 @@ bool Mythica::ExportActors(const TArray<AActor*> Actors, const FString& ExportPa
     ExportTask->bWriteEmptyFiles = false;
     ExportTask->bAutomated = true;
 
+    bool PrevSilent = GIsSilent;
+    GIsSilent = true;
     bool Success = UExporter::RunAssetExportTask(ExportTask);
+    GIsSilent = PrevSilent;
 
     // Restore original selection
     GEditor->SelectNone(false, false, false);
