@@ -7,6 +7,13 @@ UMythicaComponent::UMythicaComponent()
     PrimaryComponentTick.bCanEverTick = false;
 }
 
+void UMythicaComponent::PostLoad()
+{
+    Super::PostLoad();
+
+    BindWorldInputListeners();
+}
+
 void UMythicaComponent::EndPlay(const EEndPlayReason::Type EndPlayReason)
 {
     Super::EndPlay(EndPlayReason);
@@ -57,6 +64,18 @@ void UMythicaComponent::PostEditChangeProperty(FPropertyChangedEvent& PropertyCh
             }
         }
     }
+    else if (PropertyChangedEvent.MemberProperty->GetFName() == GET_MEMBER_NAME_CHECKED(UMythicaComponent, Inputs))
+    {
+        if (RegenerateOnInputChange)
+        {
+            BindWorldInputListeners();
+            RegenerateMesh();
+        }
+    }
+    else if (PropertyChangedEvent.MemberProperty->GetFName() == GET_MEMBER_NAME_CHECKED(UMythicaComponent, RegenerateOnInputChange))
+    {
+        BindWorldInputListeners();
+    }
 }
 
 static void ForceRefreshDetailsViewPanel()
@@ -90,6 +109,51 @@ void UMythicaComponent::OnJobDefIdChanged()
     Inputs = Definition.Inputs;
 
     ForceRefreshDetailsViewPanel();
+}
+
+void UMythicaComponent::BindWorldInputListeners()
+{
+    for (USceneComponent* Component : WorldInputComponents)
+    {
+        if (Component)
+        {
+            Component->TransformUpdated.RemoveAll(this);
+        }
+    }
+    WorldInputComponents.Reset();
+
+    if (!RegenerateOnInputChange)
+    {
+        return;
+    }
+
+    for (FMythicaInput& Input : Inputs.Inputs)
+    {
+        if (Input.Type != EMythicaInputType::World)
+        {
+            continue;
+        }
+
+        for (AActor* Actor : Input.Actors)
+        {
+            if (!Actor)
+            {
+                continue;
+            }
+
+            USceneComponent* RootComponent = Actor->GetRootComponent();
+            if (!WorldInputComponents.Contains(RootComponent))
+            {
+                RootComponent->TransformUpdated.AddUObject(this, &UMythicaComponent::OnWorldInputTransformUpdated);
+                WorldInputComponents.Add(RootComponent);
+            }
+        }
+    }
+}
+
+void UMythicaComponent::OnWorldInputTransformUpdated(USceneComponent* InComponent, EUpdateTransformFlags InFlags, ETeleportType InType)
+{
+    GEditor->GetTimerManager()->SetTimer(DelayRegenerateHandle, [this]() { RegenerateMesh(); }, 0.05f, false);
 }
 
 void UMythicaComponent::OnJobStateChanged(int InRequestId, EMythicaJobState InState)

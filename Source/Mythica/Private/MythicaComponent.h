@@ -14,6 +14,7 @@ class UMythicaComponent : public USceneComponent
 public:
     UMythicaComponent();
 
+    virtual void PostLoad() override;
     void EndPlay(const EEndPlayReason::Type EndPlayReason);
 
     void RegenerateMesh();
@@ -23,6 +24,9 @@ public:
 
 private:
     void OnJobDefIdChanged();
+
+    void BindWorldInputListeners();
+    void OnWorldInputTransformUpdated(USceneComponent* InComponent, EUpdateTransformFlags InFlags, ETeleportType InType);
 
     UFUNCTION()
     void OnJobStateChanged(int InRequestId, EMythicaJobState InState);
@@ -35,6 +39,9 @@ public:
 
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Mythica")
     bool RegenerateOnParameterChange = true;
+    
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Mythica")
+    bool RegenerateOnInputChange = true;
 
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Parameters")
     FMythicaParameters Parameters;
@@ -50,6 +57,9 @@ private:
     EMythicaJobState State = EMythicaJobState::Invalid;
     bool QueueRegenerate = false;
     FTimerHandle DelayRegenerateHandle;
+
+    UPROPERTY(Transient)
+    TSet<USceneComponent*> WorldInputComponents;
 
     UPROPERTY()
     TArray<FName> MeshComponentNames;
