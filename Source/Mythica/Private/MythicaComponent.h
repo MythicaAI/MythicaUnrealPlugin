@@ -27,6 +27,7 @@ private:
 
     void BindWorldInputListeners();
     void OnWorldInputTransformUpdated(USceneComponent* InComponent, EUpdateTransformFlags InFlags, ETeleportType InType);
+    void OnTransformUpdated(USceneComponent* InComponent, EUpdateTransformFlags InFlags, ETeleportType InType);
 
     UFUNCTION()
     void OnJobStateChanged(int InRequestId, EMythicaJobState InState);
@@ -42,6 +43,9 @@ public:
     
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Mythica")
     bool RegenerateOnInputChange = true;
+
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Mythica")
+    bool RegenerateOnTransformChange = false;
 
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Parameters")
     FMythicaParameters Parameters;
