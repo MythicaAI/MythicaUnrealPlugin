@@ -74,7 +74,10 @@ void FMythicaParametersDetails::CustomizeChildren(TSharedRef<IPropertyHandle> St
                     {
                         FMythicaParameters* Parameters = GetParametersFromHandleWeak(HandleWeak);
                         if (Parameters)
+                        {
                             Parameters->Parameters[ParamIndex].ValueFloat.Values[ComponentIndex] = NewValue;
+                            HandleWeak.Pin()->NotifyPostChange(EPropertyChangeType::ValueSet);
+                        }
                     };
 
                     HorizontalBox->AddSlot()
@@ -111,7 +114,10 @@ void FMythicaParametersDetails::CustomizeChildren(TSharedRef<IPropertyHandle> St
                     {
                         FMythicaParameters* Parameters = GetParametersFromHandleWeak(HandleWeak);
                         if (Parameters)
+                        {
                             Parameters->Parameters[ParamIndex].ValueInt.Values[ComponentIndex] = NewValue;
+                            HandleWeak.Pin()->NotifyPostChange(EPropertyChangeType::ValueSet);
+                        }
                     };
 
                     HorizontalBox->AddSlot()
@@ -148,7 +154,10 @@ void FMythicaParametersDetails::CustomizeChildren(TSharedRef<IPropertyHandle> St
 
                     FMythicaParameters* Parameters = GetParametersFromHandleWeak(HandleWeak);
                     if (Parameters)
+                    {
                         Parameters->Parameters[ParamIndex].ValueBool.Value = (NewState == ECheckBoxState::Checked);
+                        HandleWeak.Pin()->NotifyPostChange(EPropertyChangeType::ValueSet);
+                    }
                 };
 
                 ValueWidget = SNew(SCheckBox)
@@ -168,7 +177,10 @@ void FMythicaParametersDetails::CustomizeChildren(TSharedRef<IPropertyHandle> St
                 {
                     FMythicaParameters* Parameters = GetParametersFromHandleWeak(HandleWeak);
                     if (Parameters)
+                    {
                         Parameters->Parameters[ParamIndex].ValueString.Value = InText.ToString();
+                        HandleWeak.Pin()->NotifyPostChange(EPropertyChangeType::ValueSet);
+                    }
                 };
 
                 ValueWidget = SNew(SMultiLineEditableText)
