@@ -61,6 +61,9 @@ void UMythicaEditorSubsystem::Initialize(FSubsystemCollectionBase& Collection)
 {
     Super::Initialize(Collection);
 
+    FLevelEditorModule& LevelEditorModule = FModuleManager::LoadModuleChecked<FLevelEditorModule>("LevelEditor");
+    LevelEditorModule.OnMapChanged().AddUObject(this, &UMythicaEditorSubsystem::OnMapChanged);
+
     CreateSession();
 
     LoadInstalledAssetList();
@@ -69,6 +72,20 @@ void UMythicaEditorSubsystem::Initialize(FSubsystemCollectionBase& Collection)
 void UMythicaEditorSubsystem::Deinitialize()
 {
     Super::Deinitialize();
+
+    if (FModuleManager::Get().IsModuleLoaded(TEXT("LevelEditor")))
+    {
+        FLevelEditorModule& LevelEditorModule = FModuleManager::LoadModuleChecked<FLevelEditorModule>(TEXT("LevelEditor"));
+        LevelEditorModule.OnMapChanged().RemoveAll(this);
+    }
+}
+
+void UMythicaEditorSubsystem::OnMapChanged(UWorld* InWorld, EMapChangeType InMapChangeType)
+{
+    if (InMapChangeType == EMapChangeType::TearDownWorld)
+    {
+        ClearJobs();
+    }
 }
 
 EMythicaSessionState UMythicaEditorSubsystem::GetSessionState()
@@ -958,6 +975,12 @@ void UMythicaEditorSubsystem::SetJobState(int RequestId, EMythicaJobState State)
     {
         GEditor->GetTimerManager()->ClearTimer(JobPollTimer);
     }
+}
+
+void UMythicaEditorSubsystem::ClearJobs()
+{
+    Jobs.Reset();
+    GEditor->GetTimerManager()->ClearTimer(JobPollTimer);
 }
 
 void UMythicaEditorSubsystem::PollJobStatus()

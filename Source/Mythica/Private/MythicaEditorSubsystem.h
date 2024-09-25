@@ -171,6 +171,8 @@ class UMythicaEditorSubsystem : public UEditorSubsystem
 	virtual void Initialize(FSubsystemCollectionBase& Collection);
 	virtual void Deinitialize();
 
+	void OnMapChanged(UWorld* InWorld, EMapChangeType InMapChangeType);
+
 public:
 	// Getters
 	UFUNCTION(BlueprintPure, Category = "Mythica")
@@ -265,6 +267,7 @@ private:
 	int CreateJob(const FString& JobDefId, const FMythicaInputs& Inputs, const FMythicaParameters& Params, const FMythicaMaterialParameters& MaterialParams, const FString& ImportName);
 	void SetJobState(int RequestId, EMythicaJobState State);
 	void PollJobStatus();
+	void ClearJobs();
 
 	void SetSessionState(EMythicaSessionState NewState);
 
