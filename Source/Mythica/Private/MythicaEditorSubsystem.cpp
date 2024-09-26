@@ -473,7 +473,7 @@ void UMythicaEditorSubsystem::OnDownloadAssetResponse(FHttpRequestPtr Request, F
     }
 
     // Save package to disk
-    FString PackagePath = FPaths::Combine(FPaths::ProjectIntermediateDir(), TEXT("MythicaCache"), PackageId, PackageId + ".zip");
+    FString PackagePath = FPaths::Combine(FPaths::ProjectIntermediateDir(), TEXT("MythicaCache"), TEXT("PackageCache"), PackageId, PackageId + ".zip");
 
     TArray<uint8> PackageData = Response->GetContent();
     bool PackageWritten = FFileHelper::SaveArrayToFile(PackageData, *PackagePath);
@@ -512,7 +512,7 @@ void UMythicaEditorSubsystem::OnDownloadAssetResponse(FHttpRequestPtr Request, F
             continue;
         }
 
-        FString FilePath = FPaths::Combine(FPaths::ProjectIntermediateDir(), TEXT("MythicaCache"), PackageId, File);
+        FString FilePath = FPaths::Combine(FPaths::ProjectIntermediateDir(), TEXT("MythicaCache"), TEXT("PackageCache"), PackageId, File);
         bool FileWritten = FFileHelper::SaveArrayToFile(FileData, *FilePath);
         if (!FileWritten)
         {
