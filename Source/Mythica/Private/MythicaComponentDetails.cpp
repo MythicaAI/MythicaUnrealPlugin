@@ -47,9 +47,29 @@ void FMythicaComponentDetails::CustomizeDetails(IDetailLayoutBuilder& DetailBuil
                                 return EVisibility::Collapsed;
                             }
                         })
-                        .Text_Lambda([ComponentWeak]()
+                        .Text_Lambda([]()
                         {
                             return FText::FromString("Failed to connect to Mythica service");
+                        })
+                        .ColorAndOpacity(FLinearColor::Red)
+                ]
+                + SVerticalBox::Slot()
+                .AutoHeight()
+                .Padding(0, 10, 0, 10)
+                [
+                    SNew(STextBlock)
+                        .Justification(ETextJustify::Center)
+                        .Visibility_Lambda([ComponentWeak]()
+                        {
+                            if (ComponentWeak.IsValid())
+                            {
+                                return ComponentWeak->CanRegenerateMesh() ? EVisibility::Collapsed : EVisibility::Visible;
+                            }
+                            return EVisibility::Collapsed;
+                        })
+                        .Text_Lambda([]()
+                        {
+                            return FText::FromString("Not supported in actor blueprint editor");
                         })
                         .ColorAndOpacity(FLinearColor::Red)
                 ]
@@ -74,6 +94,11 @@ void FMythicaComponentDetails::CustomizeDetails(IDetailLayoutBuilder& DetailBuil
 
                                     if (ComponentWeak.IsValid())
                                     {
+                                        if (!ComponentWeak->CanRegenerateMesh())
+                                        {
+                                            return false;
+                                        }
+
                                         EMythicaJobState State = ComponentWeak->GetJobState();
                                         return State == EMythicaJobState::Invalid ||
                                                State == EMythicaJobState::Failed ||

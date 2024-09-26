@@ -15,8 +15,9 @@ public:
     UMythicaComponent();
 
     virtual void PostLoad() override;
-    void EndPlay(const EEndPlayReason::Type EndPlayReason);
+    void OnComponentDestroyed(bool bDestroyingHierarchy);
 
+    bool CanRegenerateMesh() const;
     void RegenerateMesh();
     EMythicaJobState GetJobState() const { return State; }
 
