@@ -17,6 +17,8 @@
 #include "ObjectTools.h"
 #include "UObject/SavePackage.h"
 
+#define MYTHICA_CLEAN_TEMP_FILES 1
+
 DEFINE_LOG_CATEGORY(LogMythica);
 
 const TCHAR* ConfigFile = TEXT("PackageInfo.ini");
@@ -673,15 +675,15 @@ void UMythicaEditorSubsystem::OnJobDefinitionsResponse(FHttpRequestPtr Request, 
     OnJobDefinitionListUpdated.Broadcast();
 }
 
-bool UMythicaEditorSubsystem::PrepareInputFiles(const FMythicaInputs& Inputs, TMap<int, FString>& InputFiles)
+bool UMythicaEditorSubsystem::PrepareInputFiles(const FMythicaInputs& Inputs, TMap<int, FString>& InputFiles, FString& ExportDirectory)
 {
-    FString ExportFolder = FPaths::Combine(FPaths::ProjectIntermediateDir(), TEXT("MythicaCache"), TEXT("ExportCache"));
+    ExportDirectory = FPaths::Combine(FPaths::ProjectIntermediateDir(), TEXT("MythicaCache"), TEXT("ExportCache"));
     for (int i = 0; i < Inputs.Inputs.Num(); i++)
     {
         const FMythicaInput& Input = Inputs.Inputs[i];
         if (Input.Type == EMythicaInputType::Mesh && Input.Mesh != nullptr)
         {
-            FString FilePath = FPaths::Combine(ExportFolder, FString::Format(TEXT("InputMesh{0}.usdz"), { i }));
+            FString FilePath = FPaths::Combine(ExportDirectory, FString::Format(TEXT("InputMesh{0}.usdz"), { i }));
             bool Success = Mythica::ExportMesh(Input.Mesh, FilePath);
             if (!Success)
             {
@@ -693,7 +695,7 @@ bool UMythicaEditorSubsystem::PrepareInputFiles(const FMythicaInputs& Inputs, TM
         }
         else if (Input.Type == EMythicaInputType::World && !Input.Actors.IsEmpty())
         {
-            FString FilePath = FPaths::Combine(ExportFolder, FString::Format(TEXT("InputMesh{0}.usdz"), { i }));
+            FString FilePath = FPaths::Combine(ExportDirectory, FString::Format(TEXT("InputMesh{0}.usdz"), { i }));
             bool Success = Mythica::ExportActors(Input.Actors, FilePath);
             if (!Success)
             {
@@ -705,7 +707,7 @@ bool UMythicaEditorSubsystem::PrepareInputFiles(const FMythicaInputs& Inputs, TM
         }
         else if (Input.Type == EMythicaInputType::Spline && Input.SplineActor != nullptr)
         {
-            FString FilePath = FPaths::Combine(ExportFolder, FString::Format(TEXT("InputMesh{0}.usdz"), { i }));
+            FString FilePath = FPaths::Combine(ExportDirectory, FString::Format(TEXT("InputMesh{0}.usdz"), { i }));
             bool Success = Mythica::ExportSpline(Input.SplineActor, FilePath);
             if (!Success)
             {
@@ -825,8 +827,9 @@ int UMythicaEditorSubsystem::ExecuteJob(const FString& JobDefId, const FMythicaI
         return -1;
     }
 
+    FString ExportDirectory;
     TMap<int, FString> InputFiles;
-    bool Success = PrepareInputFiles(Inputs, InputFiles);
+    bool Success = PrepareInputFiles(Inputs, InputFiles, ExportDirectory);
     if (!Success)
     {
         UE_LOG(LogMythica, Error, TEXT("Failed to prepare job input files"));
@@ -844,6 +847,10 @@ int UMythicaEditorSubsystem::ExecuteJob(const FString& JobDefId, const FMythicaI
     else
     {
         UploadInputFiles(RequestId, InputFiles);
+        if (MYTHICA_CLEAN_TEMP_FILES)
+        {
+            IFileManager::Get().DeleteDirectory(*ExportDirectory, false, true);
+        }
     }
 
     return RequestId;
@@ -1212,6 +1219,11 @@ void UMythicaEditorSubsystem::OnMeshDownloadResponse(FHttpRequestPtr Request, FH
 
     RequestData->ImportDirectory = CreatedImportDirectory;
     SetJobState(RequestId, EMythicaJobState::Completed);
+
+    if (MYTHICA_CLEAN_TEMP_FILES)
+    {
+        IFileManager::Get().Delete(*FilePath);
+    }
 }
 
 void UMythicaEditorSubsystem::SetSessionState(EMythicaSessionState NewState)
