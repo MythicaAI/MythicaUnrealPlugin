@@ -94,7 +94,7 @@ void FMythicaComponentDetails::CustomizeDetails(IDetailLayoutBuilder& DetailBuil
 
                                     if (ComponentWeak.IsValid())
                                     {
-                                        if (!ComponentWeak->GetOwner())
+                                        if (!ComponentWeak->CanRegenerateMesh())
                                         {
                                             return false;
                                         }
