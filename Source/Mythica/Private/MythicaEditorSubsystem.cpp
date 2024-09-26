@@ -52,6 +52,20 @@ static bool CanDisplayImage(const FString& FileName)
     return ImageFormat != EImageFormat::Invalid;
 }
 
+static FString MakeUniquePath(const FString& AbsolutePath)
+{
+    FString UniquePath = AbsolutePath;
+
+    uint32 Counter = 1;
+    while (IFileManager::Get().DirectoryExists(*UniquePath))
+    {
+        UniquePath = FString::Printf(TEXT("%s_%d"), *AbsolutePath, Counter);
+        Counter++;
+    }
+
+    return UniquePath;
+}
+
 bool FMythicaAssetVersion::operator<(const FMythicaAssetVersion& Other) const
 {
     return Major < Other.Major
@@ -518,7 +532,7 @@ void UMythicaEditorSubsystem::OnDownloadAssetResponse(FHttpRequestPtr Request, F
     FString ImportPackagePath = FPaths::Combine(Settings->ImportDirectory, ObjectTools::SanitizeObjectName(Asset->Name));
     FString DirectoryRelative = FPackageName::LongPackageNameToFilename(ImportPackagePath);
     FString DirectoryAbsolute = FPaths::ConvertRelativePathToFull(DirectoryRelative);
-    FString BaseImportDirectory = Mythica::MakeUniquePath(DirectoryAbsolute);
+    FString BaseImportDirectory = MakeUniquePath(DirectoryAbsolute);
 
     // Import HDA files into Unreal
     FAssetToolsModule& AssetToolsModule = FModuleManager::GetModuleChecked<FAssetToolsModule>("AssetTools");
@@ -677,13 +691,15 @@ void UMythicaEditorSubsystem::OnJobDefinitionsResponse(FHttpRequestPtr Request, 
 
 bool UMythicaEditorSubsystem::PrepareInputFiles(const FMythicaInputs& Inputs, TMap<int, FString>& InputFiles, FString& ExportDirectory)
 {
-    ExportDirectory = FPaths::Combine(FPaths::ProjectIntermediateDir(), TEXT("MythicaCache"), TEXT("ExportCache"));
+    FString DesiredDirectory = FPaths::Combine(FPaths::ProjectIntermediateDir(), TEXT("MythicaCache"), TEXT("ExportCache"), TEXT("Export"));
+    ExportDirectory = MakeUniquePath(DesiredDirectory);
+
     for (int i = 0; i < Inputs.Inputs.Num(); i++)
     {
         const FMythicaInput& Input = Inputs.Inputs[i];
         if (Input.Type == EMythicaInputType::Mesh && Input.Mesh != nullptr)
         {
-            FString FilePath = FPaths::Combine(ExportDirectory, FString::Format(TEXT("InputMesh{0}.usdz"), { i }));
+            FString FilePath = FPaths::Combine(ExportDirectory, FString::Format(TEXT("Input{0}"), { i }), "Mesh.usdz");
             bool Success = Mythica::ExportMesh(Input.Mesh, FilePath);
             if (!Success)
             {
@@ -695,7 +711,7 @@ bool UMythicaEditorSubsystem::PrepareInputFiles(const FMythicaInputs& Inputs, TM
         }
         else if (Input.Type == EMythicaInputType::World && !Input.Actors.IsEmpty())
         {
-            FString FilePath = FPaths::Combine(ExportDirectory, FString::Format(TEXT("InputMesh{0}.usdz"), { i }));
+            FString FilePath = FPaths::Combine(ExportDirectory, FString::Format(TEXT("Input{0}"), { i }), "Mesh.usdz");
             bool Success = Mythica::ExportActors(Input.Actors, FilePath);
             if (!Success)
             {
@@ -707,7 +723,7 @@ bool UMythicaEditorSubsystem::PrepareInputFiles(const FMythicaInputs& Inputs, TM
         }
         else if (Input.Type == EMythicaInputType::Spline && Input.SplineActor != nullptr)
         {
-            FString FilePath = FPaths::Combine(ExportDirectory, FString::Format(TEXT("InputMesh{0}.usdz"), { i }));
+            FString FilePath = FPaths::Combine(ExportDirectory, FString::Format(TEXT("Input{0}"), { i }), "Mesh.usdz");
             bool Success = Mythica::ExportSpline(Input.SplineActor, FilePath);
             if (!Success)
             {
@@ -1167,7 +1183,7 @@ void UMythicaEditorSubsystem::OnMeshDownloadResponse(FHttpRequestPtr Request, FH
     FString DirectoryPackageName = FPaths::Combine(ImportDirectory, TEXT("Run"));
     FString DirectoryRelative = FPackageName::LongPackageNameToFilename(DirectoryPackageName);
     FString DirectoryAbsolute = FPaths::ConvertRelativePathToFull(DirectoryRelative);
-    FString UniqueDirectoryAbsolute = Mythica::MakeUniquePath(DirectoryAbsolute);
+    FString UniqueDirectoryAbsolute = MakeUniquePath(DirectoryAbsolute);
     FString UniqueDirectoryName = FPaths::GetBaseFilename(UniqueDirectoryAbsolute);
 
     // Save package to disk
