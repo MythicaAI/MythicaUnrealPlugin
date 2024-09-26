@@ -12,7 +12,6 @@
 #define LOCTEXT_NAMESPACE "FMythicaModule"
 
 #define PACKAGE_MANAGER_WIDGET_ASSET TEXT("/Mythica/UI/WBP_PackageManager.WBP_PackageManager")
-#define ASSET_GENERATOR_WIDGET_ASSET TEXT("/Mythica/UI/WBP_AssetGenerator.WBP_AssetGenerator")
 
 void FMythicaModule::StartupModule()
 {
@@ -62,25 +61,12 @@ void FMythicaModule::AddMenu(FMenuBuilder& MenuBuilder)
 		FSlateIcon(),
 		FUIAction(FExecuteAction::CreateRaw(this, &FMythicaModule::OpenPackageManager))
 	);
-	MenuBuilder.AddMenuEntry(
-		FText::FromString("Mythica Asset Generator"),
-		FText::FromString("Opens the Mythica Asset Generator Tool"),
-		FSlateIcon(),
-		FUIAction(FExecuteAction::CreateRaw(this, &FMythicaModule::OpenAssetGenerator))
-	);
 }
 
 void FMythicaModule::OpenPackageManager()
 {
 	UEditorUtilitySubsystem* EditorUtilitySubsystem = GEditor->GetEditorSubsystem<UEditorUtilitySubsystem>();
 	UEditorUtilityWidgetBlueprint* UtilityWidgetBlueprint = LoadObject<UEditorUtilityWidgetBlueprint>(NULL, PACKAGE_MANAGER_WIDGET_ASSET, NULL, LOAD_None, NULL);
-	EditorUtilitySubsystem->SpawnAndRegisterTab(UtilityWidgetBlueprint);
-}
-
-void FMythicaModule::OpenAssetGenerator()
-{
-	UEditorUtilitySubsystem* EditorUtilitySubsystem = GEditor->GetEditorSubsystem<UEditorUtilitySubsystem>();
-	UEditorUtilityWidgetBlueprint* UtilityWidgetBlueprint = LoadObject<UEditorUtilityWidgetBlueprint>(NULL, ASSET_GENERATOR_WIDGET_ASSET, NULL, LOAD_None, NULL);
 	EditorUtilitySubsystem->SpawnAndRegisterTab(UtilityWidgetBlueprint);
 }
 
