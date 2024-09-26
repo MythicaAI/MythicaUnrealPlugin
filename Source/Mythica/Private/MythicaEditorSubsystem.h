@@ -254,7 +254,7 @@ private:
 
     void OnJobDefinitionsResponse(FHttpRequestPtr Request, FHttpResponsePtr Response, bool bWasSuccessful);
 
-    bool PrepareInputFiles(const FMythicaInputs& Inputs, TMap<int, FString>& InputFiles);
+    bool PrepareInputFiles(const FMythicaInputs& Inputs, TMap<int, FString>& InputFiles, FString& ExportDirectory);
     void UploadInputFiles(int RequestId, const TMap<int, FString>& InputFiles);
     void OnUploadInputFilesResponse(FHttpRequestPtr Request, FHttpResponsePtr Response, bool bWasSuccessful, int RequestId, const TMap<int, FString>& InputFiles);
     void SendJobRequest(int RequestId, const TArray<FString>& InputFileIds);

@@ -17,6 +17,8 @@
 #include "ObjectTools.h"
 #include "UObject/SavePackage.h"
 
+#define MYTHICA_CLEAN_TEMP_FILES 1
+
 DEFINE_LOG_CATEGORY(LogMythica);
 
 const TCHAR* ConfigFile = TEXT("PackageInfo.ini");
@@ -48,6 +50,20 @@ static bool CanDisplayImage(const FString& FileName)
     IImageWrapperModule& ImageWrapperModule = FModuleManager::LoadModuleChecked<IImageWrapperModule>(FName("ImageWrapper"));
     EImageFormat ImageFormat = ImageWrapperModule.GetImageFormatFromExtension(*FileName);
     return ImageFormat != EImageFormat::Invalid;
+}
+
+static FString MakeUniquePath(const FString& AbsolutePath)
+{
+    FString UniquePath = AbsolutePath;
+
+    uint32 Counter = 1;
+    while (IFileManager::Get().DirectoryExists(*UniquePath))
+    {
+        UniquePath = FString::Printf(TEXT("%s_%d"), *AbsolutePath, Counter);
+        Counter++;
+    }
+
+    return UniquePath;
 }
 
 bool FMythicaAssetVersion::operator<(const FMythicaAssetVersion& Other) const
@@ -457,7 +473,7 @@ void UMythicaEditorSubsystem::OnDownloadAssetResponse(FHttpRequestPtr Request, F
     }
 
     // Save package to disk
-    FString PackagePath = FPaths::Combine(FPaths::ProjectIntermediateDir(), TEXT("MythicaCache"), PackageId, PackageId + ".zip");
+    FString PackagePath = FPaths::Combine(FPaths::ProjectIntermediateDir(), TEXT("MythicaCache"), TEXT("PackageCache"), PackageId, PackageId + ".zip");
 
     TArray<uint8> PackageData = Response->GetContent();
     bool PackageWritten = FFileHelper::SaveArrayToFile(PackageData, *PackagePath);
@@ -496,7 +512,7 @@ void UMythicaEditorSubsystem::OnDownloadAssetResponse(FHttpRequestPtr Request, F
             continue;
         }
 
-        FString FilePath = FPaths::Combine(FPaths::ProjectIntermediateDir(), TEXT("MythicaCache"), PackageId, File);
+        FString FilePath = FPaths::Combine(FPaths::ProjectIntermediateDir(), TEXT("MythicaCache"), TEXT("PackageCache"), PackageId, File);
         bool FileWritten = FFileHelper::SaveArrayToFile(FileData, *FilePath);
         if (!FileWritten)
         {
@@ -516,7 +532,7 @@ void UMythicaEditorSubsystem::OnDownloadAssetResponse(FHttpRequestPtr Request, F
     FString ImportPackagePath = FPaths::Combine(Settings->ImportDirectory, ObjectTools::SanitizeObjectName(Asset->Name));
     FString DirectoryRelative = FPackageName::LongPackageNameToFilename(ImportPackagePath);
     FString DirectoryAbsolute = FPaths::ConvertRelativePathToFull(DirectoryRelative);
-    FString BaseImportDirectory = Mythica::MakeUniquePath(DirectoryAbsolute);
+    FString BaseImportDirectory = MakeUniquePath(DirectoryAbsolute);
 
     // Import HDA files into Unreal
     FAssetToolsModule& AssetToolsModule = FModuleManager::GetModuleChecked<FAssetToolsModule>("AssetTools");
@@ -673,15 +689,17 @@ void UMythicaEditorSubsystem::OnJobDefinitionsResponse(FHttpRequestPtr Request, 
     OnJobDefinitionListUpdated.Broadcast();
 }
 
-bool UMythicaEditorSubsystem::PrepareInputFiles(const FMythicaInputs& Inputs, TMap<int, FString>& InputFiles)
+bool UMythicaEditorSubsystem::PrepareInputFiles(const FMythicaInputs& Inputs, TMap<int, FString>& InputFiles, FString& ExportDirectory)
 {
-    FString ExportFolder = FPaths::Combine(FPaths::ProjectIntermediateDir(), TEXT("MythicaCache"), TEXT("ExportCache"));
+    FString DesiredDirectory = FPaths::Combine(FPaths::ProjectIntermediateDir(), TEXT("MythicaCache"), TEXT("ExportCache"), TEXT("Export"));
+    ExportDirectory = MakeUniquePath(DesiredDirectory);
+
     for (int i = 0; i < Inputs.Inputs.Num(); i++)
     {
         const FMythicaInput& Input = Inputs.Inputs[i];
         if (Input.Type == EMythicaInputType::Mesh && Input.Mesh != nullptr)
         {
-            FString FilePath = FPaths::Combine(ExportFolder, FString::Format(TEXT("InputMesh{0}.usdz"), { i }));
+            FString FilePath = FPaths::Combine(ExportDirectory, FString::Format(TEXT("Input{0}"), { i }), "Mesh.usdz");
             bool Success = Mythica::ExportMesh(Input.Mesh, FilePath);
             if (!Success)
             {
@@ -693,7 +711,7 @@ bool UMythicaEditorSubsystem::PrepareInputFiles(const FMythicaInputs& Inputs, TM
         }
         else if (Input.Type == EMythicaInputType::World && !Input.Actors.IsEmpty())
         {
-            FString FilePath = FPaths::Combine(ExportFolder, FString::Format(TEXT("InputMesh{0}.usdz"), { i }));
+            FString FilePath = FPaths::Combine(ExportDirectory, FString::Format(TEXT("Input{0}"), { i }), "Mesh.usdz");
             bool Success = Mythica::ExportActors(Input.Actors, FilePath);
             if (!Success)
             {
@@ -705,7 +723,7 @@ bool UMythicaEditorSubsystem::PrepareInputFiles(const FMythicaInputs& Inputs, TM
         }
         else if (Input.Type == EMythicaInputType::Spline && Input.SplineActor != nullptr)
         {
-            FString FilePath = FPaths::Combine(ExportFolder, FString::Format(TEXT("InputMesh{0}.usdz"), { i }));
+            FString FilePath = FPaths::Combine(ExportDirectory, FString::Format(TEXT("Input{0}"), { i }), "Mesh.usdz");
             bool Success = Mythica::ExportSpline(Input.SplineActor, FilePath);
             if (!Success)
             {
@@ -825,8 +843,9 @@ int UMythicaEditorSubsystem::ExecuteJob(const FString& JobDefId, const FMythicaI
         return -1;
     }
 
+    FString ExportDirectory;
     TMap<int, FString> InputFiles;
-    bool Success = PrepareInputFiles(Inputs, InputFiles);
+    bool Success = PrepareInputFiles(Inputs, InputFiles, ExportDirectory);
     if (!Success)
     {
         UE_LOG(LogMythica, Error, TEXT("Failed to prepare job input files"));
@@ -844,6 +863,10 @@ int UMythicaEditorSubsystem::ExecuteJob(const FString& JobDefId, const FMythicaI
     else
     {
         UploadInputFiles(RequestId, InputFiles);
+        if (MYTHICA_CLEAN_TEMP_FILES)
+        {
+            IFileManager::Get().DeleteDirectory(*ExportDirectory, false, true);
+        }
     }
 
     return RequestId;
@@ -1160,7 +1183,7 @@ void UMythicaEditorSubsystem::OnMeshDownloadResponse(FHttpRequestPtr Request, FH
     FString DirectoryPackageName = FPaths::Combine(ImportDirectory, TEXT("Run"));
     FString DirectoryRelative = FPackageName::LongPackageNameToFilename(DirectoryPackageName);
     FString DirectoryAbsolute = FPaths::ConvertRelativePathToFull(DirectoryRelative);
-    FString UniqueDirectoryAbsolute = Mythica::MakeUniquePath(DirectoryAbsolute);
+    FString UniqueDirectoryAbsolute = MakeUniquePath(DirectoryAbsolute);
     FString UniqueDirectoryName = FPaths::GetBaseFilename(UniqueDirectoryAbsolute);
 
     // Save package to disk
@@ -1212,6 +1235,11 @@ void UMythicaEditorSubsystem::OnMeshDownloadResponse(FHttpRequestPtr Request, FH
 
     RequestData->ImportDirectory = CreatedImportDirectory;
     SetJobState(RequestId, EMythicaJobState::Completed);
+
+    if (MYTHICA_CLEAN_TEMP_FILES)
+    {
+        IFileManager::Get().Delete(*FilePath);
+    }
 }
 
 void UMythicaEditorSubsystem::SetSessionState(EMythicaSessionState NewState)

@@ -31,25 +31,10 @@ static bool ConvertUSDtoUSDZ(const FString& InFile, const FString& OutFile)
     return true;
 }
 
-FString Mythica::MakeUniquePath(const FString& AbsolutePath)
-{
-    FString UniquePath = AbsolutePath;
-
-    uint32 Counter = 1;
-    while (IFileManager::Get().DirectoryExists(*UniquePath))
-    {
-        UniquePath = FString::Printf(TEXT("%s_%d"), *AbsolutePath, Counter);
-        Counter++;
-    }
-
-    return UniquePath;
-}
-
 bool Mythica::ExportMesh(UStaticMesh* Mesh, const FString& ExportPath)
 {
     FString TempFolder = FPaths::Combine(FPaths::GetPath(ExportPath), "USDExport");
-    FString UniqueTempFolder = MakeUniquePath(TempFolder);
-    FString USDPath = FPaths::Combine(UniqueTempFolder, "Export.usd");
+    FString USDPath = FPaths::Combine(TempFolder, "Export.usd");
 
     UStaticMeshExporterUSDOptions* StaticMeshOptions = NewObject<UStaticMeshExporterUSDOptions>();
     StaticMeshOptions->StageOptions.MetersPerUnit = 1.0f;
@@ -79,8 +64,7 @@ bool Mythica::ExportMesh(UStaticMesh* Mesh, const FString& ExportPath)
 bool Mythica::ExportActors(const TArray<AActor*> Actors, const FString& ExportPath)
 {
     FString TempFolder = FPaths::Combine(FPaths::GetPath(ExportPath), "USDExport");
-    FString UniqueTempFolder = MakeUniquePath(TempFolder);
-    FString USDPath = FPaths::Combine(UniqueTempFolder, "Export.usd");
+    FString USDPath = FPaths::Combine(TempFolder, "Export.usd");
 
     // Save original selection
     TArray<AActor*> OriginalSelection;
@@ -136,8 +120,7 @@ bool Mythica::ExportActors(const TArray<AActor*> Actors, const FString& ExportPa
 bool Mythica::ExportSpline(AActor* SplineActor, const FString& ExportPath)
 {
     FString TempFolder = FPaths::Combine(FPaths::GetPath(ExportPath), "USDExport");
-    FString UniqueTempFolder = MakeUniquePath(TempFolder);
-    FString USDPath = FPaths::Combine(UniqueTempFolder, "Export.usd");
+    FString USDPath = FPaths::Combine(TempFolder, "Export.usd");
 
     USplineComponent* SplineComponent = SplineActor->FindComponentByClass<USplineComponent>();
     if (!SplineComponent)
