@@ -9,11 +9,11 @@ class FMythicaModule : public IModuleInterface
 {
 public:
 
-	/** IModuleInterface implementation */
-	virtual void StartupModule() override;
-	virtual void ShutdownModule() override;
+    /** IModuleInterface implementation */
+    virtual void StartupModule() override;
+    virtual void ShutdownModule() override;
 
 private:
-	void AddMenu(FMenuBuilder& MenuBuilder);
-	void OpenPackageManager();
+    void AddMenu(FMenuBuilder& MenuBuilder);
+    void OpenPackageManager();
 };
