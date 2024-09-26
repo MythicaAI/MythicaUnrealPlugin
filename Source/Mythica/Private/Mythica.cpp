@@ -15,61 +15,61 @@
 
 void FMythicaModule::StartupModule()
 {
-	TSharedPtr<FExtender> MenuExtender = MakeShareable(new FExtender);
-	MenuExtender->AddMenuExtension(
-		"GetContent",
-		EExtensionHook::After,
-		nullptr,
-		FMenuExtensionDelegate::CreateRaw(this, &FMythicaModule::AddMenu));
+    TSharedPtr<FExtender> MenuExtender = MakeShareable(new FExtender);
+    MenuExtender->AddMenuExtension(
+        "GetContent",
+        EExtensionHook::After,
+        nullptr,
+        FMenuExtensionDelegate::CreateRaw(this, &FMythicaModule::AddMenu));
 
-	FLevelEditorModule& LevelEditorModule = FModuleManager::LoadModuleChecked<FLevelEditorModule>("LevelEditor");
-	LevelEditorModule.GetMenuExtensibilityManager()->AddExtender(MenuExtender);
+    FLevelEditorModule& LevelEditorModule = FModuleManager::LoadModuleChecked<FLevelEditorModule>("LevelEditor");
+    LevelEditorModule.GetMenuExtensibilityManager()->AddExtender(MenuExtender);
 
-	FPropertyEditorModule& PropertyModule = FModuleManager::LoadModuleChecked<FPropertyEditorModule>("PropertyEditor");
-	PropertyModule.RegisterCustomClassLayout(
-		"MythicaComponent", 
-		FOnGetDetailCustomizationInstance::CreateStatic(&FMythicaComponentDetails::MakeInstance)
-	);
-	PropertyModule.RegisterCustomPropertyTypeLayout(
-		"MythicaParameters",
-		FOnGetPropertyTypeCustomizationInstance::CreateStatic(&FMythicaParametersDetails::MakeInstance)
-	);
-	PropertyModule.RegisterCustomPropertyTypeLayout(
-		"MythicaJobDefinitionId",
-		FOnGetPropertyTypeCustomizationInstance::CreateStatic(&FMythicaJobDefinitionIdDetails::MakeInstance)
-	);
-	PropertyModule.NotifyCustomizationModuleChanged();
+    FPropertyEditorModule& PropertyModule = FModuleManager::LoadModuleChecked<FPropertyEditorModule>("PropertyEditor");
+    PropertyModule.RegisterCustomClassLayout(
+        "MythicaComponent", 
+        FOnGetDetailCustomizationInstance::CreateStatic(&FMythicaComponentDetails::MakeInstance)
+    );
+    PropertyModule.RegisterCustomPropertyTypeLayout(
+        "MythicaParameters",
+        FOnGetPropertyTypeCustomizationInstance::CreateStatic(&FMythicaParametersDetails::MakeInstance)
+    );
+    PropertyModule.RegisterCustomPropertyTypeLayout(
+        "MythicaJobDefinitionId",
+        FOnGetPropertyTypeCustomizationInstance::CreateStatic(&FMythicaJobDefinitionIdDetails::MakeInstance)
+    );
+    PropertyModule.NotifyCustomizationModuleChanged();
 }
 
 void FMythicaModule::ShutdownModule()
 {
-	if (FModuleManager::Get().IsModuleLoaded("PropertyEditor"))
-	{
-		FPropertyEditorModule& PropertyModule = FModuleManager::GetModuleChecked<FPropertyEditorModule>("PropertyEditor");
-		PropertyModule.UnregisterCustomClassLayout("MythicaComponent");
-		PropertyModule.UnregisterCustomPropertyTypeLayout("MythicaParameters");
-		PropertyModule.UnregisterCustomPropertyTypeLayout("MythicaJobDefinitionId");
-		PropertyModule.NotifyCustomizationModuleChanged();
-	}
+    if (FModuleManager::Get().IsModuleLoaded("PropertyEditor"))
+    {
+        FPropertyEditorModule& PropertyModule = FModuleManager::GetModuleChecked<FPropertyEditorModule>("PropertyEditor");
+        PropertyModule.UnregisterCustomClassLayout("MythicaComponent");
+        PropertyModule.UnregisterCustomPropertyTypeLayout("MythicaParameters");
+        PropertyModule.UnregisterCustomPropertyTypeLayout("MythicaJobDefinitionId");
+        PropertyModule.NotifyCustomizationModuleChanged();
+    }
 }
 
 void FMythicaModule::AddMenu(FMenuBuilder& MenuBuilder)
 {
-	MenuBuilder.AddMenuEntry(
-		FText::FromString("Mythica Package Manager"),
-		FText::FromString("Opens the Mythica Package Manager"),
-		FSlateIcon(),
-		FUIAction(FExecuteAction::CreateRaw(this, &FMythicaModule::OpenPackageManager))
-	);
+    MenuBuilder.AddMenuEntry(
+        FText::FromString("Mythica Package Manager"),
+        FText::FromString("Opens the Mythica Package Manager"),
+        FSlateIcon(),
+        FUIAction(FExecuteAction::CreateRaw(this, &FMythicaModule::OpenPackageManager))
+    );
 }
 
 void FMythicaModule::OpenPackageManager()
 {
-	UEditorUtilitySubsystem* EditorUtilitySubsystem = GEditor->GetEditorSubsystem<UEditorUtilitySubsystem>();
-	UEditorUtilityWidgetBlueprint* UtilityWidgetBlueprint = LoadObject<UEditorUtilityWidgetBlueprint>(NULL, PACKAGE_MANAGER_WIDGET_ASSET, NULL, LOAD_None, NULL);
-	EditorUtilitySubsystem->SpawnAndRegisterTab(UtilityWidgetBlueprint);
+    UEditorUtilitySubsystem* EditorUtilitySubsystem = GEditor->GetEditorSubsystem<UEditorUtilitySubsystem>();
+    UEditorUtilityWidgetBlueprint* UtilityWidgetBlueprint = LoadObject<UEditorUtilityWidgetBlueprint>(NULL, PACKAGE_MANAGER_WIDGET_ASSET, NULL, LOAD_None, NULL);
+    EditorUtilitySubsystem->SpawnAndRegisterTab(UtilityWidgetBlueprint);
 }
 
 #undef LOCTEXT_NAMESPACE
-	
+    
 IMPLEMENT_MODULE(FMythicaModule, Mythica)
