@@ -11,20 +11,33 @@ void UMythicaComponent::PostLoad()
 {
     Super::PostLoad();
 
+    if (!CanRegenerateMesh())
+    {
+        return;
+    }
+
     BindWorldInputListeners();
 
     TransformUpdated.AddUObject(this, &UMythicaComponent::OnTransformUpdated);
 }
 
-void UMythicaComponent::EndPlay(const EEndPlayReason::Type EndPlayReason)
+void UMythicaComponent::OnComponentDestroyed(bool bDestroyingHierarchy)
 {
-    Super::EndPlay(EndPlayReason);
+    Super::OnComponentDestroyed(bDestroyingHierarchy);
+
+    GEditor->GetTimerManager()->ClearTimer(DelayRegenerateHandle);
 
     if (RequestId > 0)
     {
         UMythicaEditorSubsystem* MythicaEditorSubsystem = GEditor->GetEditorSubsystem<UMythicaEditorSubsystem>();
         MythicaEditorSubsystem->OnJobStateChange.RemoveDynamic(this, &UMythicaComponent::OnJobStateChanged);
     }
+}
+
+bool UMythicaComponent::CanRegenerateMesh() const
+{
+    UWorld* World = GetWorld();
+    return World && World->WorldType == EWorldType::Editor;
 }
 
 void UMythicaComponent::RegenerateMesh()
@@ -47,6 +60,11 @@ void UMythicaComponent::RegenerateMesh()
 void UMythicaComponent::PostEditChangeProperty(FPropertyChangedEvent& PropertyChangedEvent)
 {
     Super::PostEditChangeProperty(PropertyChangedEvent);
+
+    if (!CanRegenerateMesh())
+    {
+        return;
+    }
 
     if (PropertyChangedEvent.MemberProperty->GetFName() == GET_MEMBER_NAME_CHECKED(UMythicaComponent, JobDefId))
     {
