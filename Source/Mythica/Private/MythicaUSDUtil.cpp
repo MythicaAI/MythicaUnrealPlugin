@@ -143,7 +143,7 @@ bool Mythica::ExportActors(const TArray<AActor*> Actors, const FString& ExportPa
     return Success ? ConvertUSDtoUSDZ(OffsetUSDPath, ExportPath) : false;
 }
 
-bool Mythica::ExportSpline(AActor* SplineActor, const FString& ExportPath)
+bool Mythica::ExportSpline(AActor* SplineActor, const FString& ExportPath, const FVector& Origin)
 {
     FString TempFolder = FPaths::Combine(FPaths::GetPath(ExportPath), "USDExport");
     FString USDPath = FPaths::Combine(TempFolder, "Export.usd");
@@ -165,7 +165,8 @@ bool Mythica::ExportSpline(AActor* SplineActor, const FString& ExportPath)
         // Unreal: Z-up, left handed, 1cm per unit
         // USD: Y-up right handed, 1m per unit
         FVector Point = SplineComponent->GetLocationAtSplinePoint(i, ESplineCoordinateSpace::World);
-        pxr::GfVec3f UsdPoint(Point.X / 100.0f, -Point.Z / 100.0f, Point.Y / 100.0f);
+        FVector RelativePoint = Point - Origin;
+        pxr::GfVec3f UsdPoint(RelativePoint.X / 100.0f, -RelativePoint.Z / 100.0f, RelativePoint.Y / 100.0f);
         Points.push_back(UsdPoint);
     }
 

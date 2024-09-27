@@ -724,7 +724,7 @@ bool UMythicaEditorSubsystem::PrepareInputFiles(const FMythicaInputs& Inputs, TM
         else if (Input.Type == EMythicaInputType::Spline && Input.SplineActor != nullptr)
         {
             FString FilePath = FPaths::Combine(ExportDirectory, FString::Format(TEXT("Input{0}"), { i }), "Mesh.usdz");
-            bool Success = Mythica::ExportSpline(Input.SplineActor, FilePath);
+            bool Success = Mythica::ExportSpline(Input.SplineActor, FilePath, Origin);
             if (!Success)
             {
                 UE_LOG(LogMythica, Error, TEXT("Failed to export actors"));
