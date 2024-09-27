@@ -26,7 +26,10 @@ static bool ConvertUSDtoUSDZ(const FString& InFile, const FString& OutFile)
         return false;
     }
 
-    FString Command = FString::Printf(TEXT("from pxr import UsdUtils; UsdUtils.CreateNewUsdzPackage('%s','%s')"), *InFile, *OutFile);
+    FString Command;
+    Command.Append(TEXT("from mythica import usd_util\n"));
+    Command.Appendf(TEXT("usd_util.convert_usd_to_usdz('%s', '%s')\n"), *InFile, *OutFile);
+
     IPythonScriptPlugin::Get()->ExecPythonCommand(*Command);
     return true;
 }
