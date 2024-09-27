@@ -689,7 +689,7 @@ void UMythicaEditorSubsystem::OnJobDefinitionsResponse(FHttpRequestPtr Request, 
     OnJobDefinitionListUpdated.Broadcast();
 }
 
-bool UMythicaEditorSubsystem::PrepareInputFiles(const FMythicaInputs& Inputs, TMap<int, FString>& InputFiles, FString& ExportDirectory)
+bool UMythicaEditorSubsystem::PrepareInputFiles(const FMythicaInputs& Inputs, TMap<int, FString>& InputFiles, FString& ExportDirectory, const FVector& Origin)
 {
     FString DesiredDirectory = FPaths::Combine(FPaths::ProjectIntermediateDir(), TEXT("MythicaCache"), TEXT("ExportCache"), TEXT("Export"));
     ExportDirectory = MakeUniquePath(DesiredDirectory);
@@ -712,7 +712,7 @@ bool UMythicaEditorSubsystem::PrepareInputFiles(const FMythicaInputs& Inputs, TM
         else if (Input.Type == EMythicaInputType::World && !Input.Actors.IsEmpty())
         {
             FString FilePath = FPaths::Combine(ExportDirectory, FString::Format(TEXT("Input{0}"), { i }), "Mesh.usdz");
-            bool Success = Mythica::ExportActors(Input.Actors, FilePath);
+            bool Success = Mythica::ExportActors(Input.Actors, FilePath, Origin);
             if (!Success)
             {
                 UE_LOG(LogMythica, Error, TEXT("Failed to export actors"));
@@ -835,8 +835,14 @@ void UMythicaEditorSubsystem::OnUploadInputFilesResponse(FHttpRequestPtr Request
     SendJobRequest(RequestId, InputFileIds);
 }
 
-int UMythicaEditorSubsystem::ExecuteJob(const FString& JobDefId, const FMythicaInputs& Inputs, const FMythicaParameters& Params, const FMythicaMaterialParameters& MaterialParams, const FString& ImportName)
-{
+int UMythicaEditorSubsystem::ExecuteJob(
+    const FString& JobDefId, 
+    const FMythicaInputs& Inputs, 
+    const FMythicaParameters& Params, 
+    const FMythicaMaterialParameters& MaterialParams, 
+    const FString& ImportName, 
+    const FVector& Origin
+) {
     if (SessionState != EMythicaSessionState::SessionCreated)
     {
         UE_LOG(LogMythica, Error, TEXT("Unable to create job due to session not created"));
@@ -845,7 +851,7 @@ int UMythicaEditorSubsystem::ExecuteJob(const FString& JobDefId, const FMythicaI
 
     FString ExportDirectory;
     TMap<int, FString> InputFiles;
-    bool Success = PrepareInputFiles(Inputs, InputFiles, ExportDirectory);
+    bool Success = PrepareInputFiles(Inputs, InputFiles, ExportDirectory, Origin);
     if (!Success)
     {
         UE_LOG(LogMythica, Error, TEXT("Failed to prepare job input files"));

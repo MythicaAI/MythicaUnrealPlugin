@@ -49,7 +49,7 @@ void UMythicaComponent::RegenerateMesh()
     }
 
     UMythicaEditorSubsystem* MythicaEditorSubsystem = GEditor->GetEditorSubsystem<UMythicaEditorSubsystem>();
-    RequestId = MythicaEditorSubsystem->ExecuteJob(JobDefId.JobDefId, Inputs, Parameters, MaterialParameters, "GeneratedMesh");
+    RequestId = MythicaEditorSubsystem->ExecuteJob(JobDefId.JobDefId, Inputs, Parameters, MaterialParameters, "GeneratedMesh", K2_GetComponentLocation());
 
     if (RequestId > 0)
     {

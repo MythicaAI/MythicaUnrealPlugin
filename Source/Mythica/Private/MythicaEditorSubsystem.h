@@ -222,7 +222,13 @@ public:
     void UpdateJobDefinitionList();
 
     UFUNCTION(BlueprintCallable, Category = "Mythica")
-    int ExecuteJob(const FString& JobDefId, const FMythicaInputs& Inputs, const FMythicaParameters& Params, const FMythicaMaterialParameters& MaterialParams, const FString& ImportName);
+    int ExecuteJob(
+        const FString& JobDefId, 
+        const FMythicaInputs& Inputs, 
+        const FMythicaParameters& Params, 
+        const FMythicaMaterialParameters& MaterialParams, 
+        const FString& ImportName, 
+        const FVector& Origin);
 
     // Delegates
     UPROPERTY(BlueprintAssignable, Category = "Mythica")
@@ -254,7 +260,7 @@ private:
 
     void OnJobDefinitionsResponse(FHttpRequestPtr Request, FHttpResponsePtr Response, bool bWasSuccessful);
 
-    bool PrepareInputFiles(const FMythicaInputs& Inputs, TMap<int, FString>& InputFiles, FString& ExportDirectory);
+    bool PrepareInputFiles(const FMythicaInputs& Inputs, TMap<int, FString>& InputFiles, FString& ExportDirectory, const FVector& Origin);
     void UploadInputFiles(int RequestId, const TMap<int, FString>& InputFiles);
     void OnUploadInputFilesResponse(FHttpRequestPtr Request, FHttpResponsePtr Response, bool bWasSuccessful, int RequestId, const TMap<int, FString>& InputFiles);
     void SendJobRequest(int RequestId, const TArray<FString>& InputFileIds);

@@ -34,6 +34,21 @@ static bool ConvertUSDtoUSDZ(const FString& InFile, const FString& OutFile)
     return true;
 }
 
+static bool CreateOffsetScene(const FString& InFile, const FString& OutFile, const FVector& Offset)
+{
+    if (!IPythonScriptPlugin::Get()->IsPythonAvailable())
+    {
+        return false;
+    }
+
+    FString Command;
+    Command.Append(TEXT("from mythica import usd_util\n"));
+    Command.Appendf(TEXT("usd_util.create_offset_scene('%s', '%s', (%f, %f, %f))\n"), *InFile, *OutFile, Offset.X, Offset.Y, Offset.Z);
+
+    IPythonScriptPlugin::Get()->ExecPythonCommand(*Command);
+    return true;
+}
+
 bool Mythica::ExportMesh(UStaticMesh* Mesh, const FString& ExportPath)
 {
     FString TempFolder = FPaths::Combine(FPaths::GetPath(ExportPath), "USDExport");
@@ -64,7 +79,7 @@ bool Mythica::ExportMesh(UStaticMesh* Mesh, const FString& ExportPath)
     return ConvertUSDtoUSDZ(USDPath, ExportPath);
 }
 
-bool Mythica::ExportActors(const TArray<AActor*> Actors, const FString& ExportPath)
+bool Mythica::ExportActors(const TArray<AActor*> Actors, const FString& ExportPath, const FVector& Origin)
 {
     FString TempFolder = FPaths::Combine(FPaths::GetPath(ExportPath), "USDExport");
     FString USDPath = FPaths::Combine(TempFolder, "Export.usd");
@@ -117,7 +132,15 @@ bool Mythica::ExportActors(const TArray<AActor*> Actors, const FString& ExportPa
     }
     GEditor->NoteSelectionChange();
 
-    return Success ? ConvertUSDtoUSDZ(USDPath, ExportPath) : false;
+    // Modify scene to be relative to the desired origin
+    FString OffsetUSDPath = FPaths::Combine(TempFolder, "Export_Offset.usd");
+    FVector USDOrigin(Origin.X / 100.0f, Origin.Z / 100.0f, Origin.Y / 100.0f);
+    if (!CreateOffsetScene(USDPath, OffsetUSDPath, -USDOrigin))
+    {
+        return false;
+    }
+
+    return Success ? ConvertUSDtoUSDZ(OffsetUSDPath, ExportPath) : false;
 }
 
 bool Mythica::ExportSpline(AActor* SplineActor, const FString& ExportPath)
