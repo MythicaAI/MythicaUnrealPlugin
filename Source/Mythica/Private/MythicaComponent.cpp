@@ -185,7 +185,7 @@ void UMythicaComponent::OnTransformUpdated(USceneComponent* InComponent, EUpdate
 {
     if (RegenerateOnTransformChange)
     {
-        RegenerateMesh();
+        GEditor->GetTimerManager()->SetTimer(DelayRegenerateHandle, [this]() { RegenerateMesh(); }, 0.05f, false);
     }
 }
 
