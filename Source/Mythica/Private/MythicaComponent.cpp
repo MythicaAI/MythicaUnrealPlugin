@@ -251,7 +251,8 @@ void UMythicaComponent::UpdateMesh()
         {
             UStaticMeshComponent* StaticMeshComponent = NewObject<UStaticMeshComponent>(OwnerActor);
             StaticMeshComponent->SetStaticMesh(Cast<UStaticMesh>(Asset.GetAsset()));
-            StaticMeshComponent->AttachToComponent(GetAttachParent(), FAttachmentTransformRules::KeepRelativeTransform);
+            StaticMeshComponent->SetWorldLocation(K2_GetComponentLocation());
+            StaticMeshComponent->AttachToComponent(GetAttachParent(), FAttachmentTransformRules::KeepWorldTransform);
 
             OwnerActor->AddInstanceComponent(StaticMeshComponent);
             StaticMeshComponent->RegisterComponent();
