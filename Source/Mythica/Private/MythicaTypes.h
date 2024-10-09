@@ -159,7 +159,6 @@ struct FMythicaMaterialParameters
 
 namespace Mythica
 {
-    void ReadInputs(const TArray<TSharedPtr<FJsonValue>>& InputsDef, FMythicaInputs& OutInputs);
-    void ReadParameters(const TSharedPtr<FJsonObject>& ParameterDef, FMythicaParameters& OutParameters);
+    void ReadParameters(const TSharedPtr<FJsonObject>& ParamsSchema, FMythicaParameters& OutParameters, FMythicaInputs& OutInputs);
     void WriteParameters(const FMythicaParameters& Parameters, const TSharedPtr<FJsonObject>& ParameterSet);
 }

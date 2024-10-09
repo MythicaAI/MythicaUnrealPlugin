@@ -2,25 +2,35 @@
 
 #include "MythicaTypes.h"
 
-void Mythica::ReadInputs(const TArray<TSharedPtr<FJsonValue>>& InputsDef, FMythicaInputs& OutInputs)
+void Mythica::ReadParameters(const TSharedPtr<FJsonObject>& ParamsSchema, FMythicaParameters& OutParameters, FMythicaInputs& OutInputs)
 {
-    for (TSharedPtr<FJsonValue> InputValue : InputsDef)
-    {
-        FString InputLabel = InputValue->AsString();
-        OutInputs.Inputs.Add({ InputLabel });
-    }
-}
-
-void Mythica::ReadParameters(const TSharedPtr<FJsonObject>& ParameterDef, FMythicaParameters& OutParameters)
-{
-    for (auto It = ParameterDef->Values.CreateConstIterator(); It; ++It)
+    for (auto It = ParamsSchema->Values.CreateConstIterator(); It; ++It)
     {
         const FString& Name = It.Key();
         TSharedPtr<FJsonObject> ParameterObject = It.Value()->AsObject();
 
+        FString Label = ParameterObject->GetStringField(TEXT("label"));
+
+        // Handle Inputs
+        FRegexPattern Pattern(TEXT("^input(\\d+)$"));
+        FRegexMatcher Matcher(Pattern, Name);
+
+        if (Matcher.FindNext())
+        {
+            FMythicaInput Input;
+            Input.Label = Label;
+
+            int InputIndex = FCString::Atoi(*Matcher.GetCaptureGroup(1));
+            OutInputs.Inputs.SetNum(InputIndex + 1, EAllowShrinking::No);
+            OutInputs.Inputs[InputIndex] = Input;
+
+            continue;
+        }
+
+        // Handle Parameters
         FMythicaParameter Parameter;
         Parameter.Name = Name;
-        Parameter.Label = ParameterObject->GetStringField(TEXT("label"));;
+        Parameter.Label = Label;
 
         FString Type = ParameterObject->GetStringField(TEXT("type"));
         bool IsArray = ParameterObject->HasTypedField<EJson::Array>(TEXT("default"));
