@@ -674,14 +674,11 @@ void UMythicaEditorSubsystem::OnJobDefinitionsResponse(FHttpRequestPtr Request, 
         FString Description = JsonObject->GetStringField(TEXT("description"));
 
         TSharedPtr<FJsonObject> ParamsSchema = JsonObject->GetObjectField(TEXT("params_schema"));
-        TArray<TSharedPtr<FJsonValue>> InputsDef = ParamsSchema->GetArrayField(TEXT("inputs"));
-        TSharedPtr<FJsonObject> ParamsDef = ParamsSchema->GetObjectField(TEXT("params"));
+        TSharedPtr<FJsonObject> ParamsSet = ParamsSchema->GetObjectField(TEXT("params"));
 
         FMythicaInputs Inputs;
-        Mythica::ReadInputs(InputsDef, Inputs);
-
         FMythicaParameters Params;
-        Mythica::ReadParameters(ParamsDef, Params);
+        Mythica::ReadParameters(ParamsSet, Inputs, Params);
 
         JobDefinitionList.Push({ JobDefId, JobType, Name, Description, Inputs, Params });
     }
@@ -791,6 +788,12 @@ void UMythicaEditorSubsystem::UploadInputFiles(int RequestId, const TMap<int, FS
 
 void UMythicaEditorSubsystem::OnUploadInputFilesResponse(FHttpRequestPtr Request, FHttpResponsePtr Response, bool bWasSuccessful, int RequestId, const TMap<int, FString>& InputFiles)
 {
+    FMythicaJob* RequestData = Jobs.Find(RequestId);
+    if (!RequestData)
+    {
+        return;
+    }
+
     if (!bWasSuccessful || !Response.IsValid())
     {
         UE_LOG(LogMythica, Error, TEXT("Failed to upload inputs"));
@@ -832,14 +835,15 @@ void UMythicaEditorSubsystem::OnUploadInputFilesResponse(FHttpRequestPtr Request
         InputFileIds[InputIndex] = FileId;
     }
 
-    SendJobRequest(RequestId, InputFileIds);
+    RequestData->InputFileIds = InputFileIds;
+
+    SendJobRequest(RequestId);
 }
 
 int UMythicaEditorSubsystem::ExecuteJob(
     const FString& JobDefId, 
     const FMythicaInputs& Inputs, 
     const FMythicaParameters& Params, 
-    const FMythicaMaterialParameters& MaterialParams, 
     const FString& ImportName, 
     const FVector& Origin
 ) {
@@ -858,13 +862,11 @@ int UMythicaEditorSubsystem::ExecuteJob(
         return -1;
     }
 
-    int RequestId = CreateJob(JobDefId, Inputs, Params, MaterialParams, ImportName);
+    int RequestId = CreateJob(JobDefId, Inputs, Params, ImportName);
 
     if (InputFiles.IsEmpty())
     {
-        TArray<FString> InputFiledIds;
-        InputFiledIds.SetNum(Inputs.Inputs.Num());
-        SendJobRequest(RequestId, InputFiledIds);
+        SendJobRequest(RequestId);
     }
     else
     {
@@ -878,7 +880,7 @@ int UMythicaEditorSubsystem::ExecuteJob(
     return RequestId;
 }
 
-void UMythicaEditorSubsystem::SendJobRequest(int RequestId, const TArray<FString>& InputFilesArray)
+void UMythicaEditorSubsystem::SendJobRequest(int RequestId)
 {
     FMythicaJob* RequestData = Jobs.Find(RequestId);
     if (!RequestData)
@@ -887,26 +889,11 @@ void UMythicaEditorSubsystem::SendJobRequest(int RequestId, const TArray<FString
     }
 
     // Create JSON payload
-    TArray<TSharedPtr<FJsonValue>> InputsArray;
-    for (const FString& InputFile : InputFilesArray)
-    {
-        InputsArray.Add(MakeShareable(new FJsonValueString(InputFile)));
-    }
-
-    TSharedPtr<FJsonObject> MeshParamsSetObject = MakeShareable(new FJsonObject);
-    Mythica::WriteParameters(RequestData->Params, MeshParamsSetObject);
-
-    TSharedPtr<FJsonObject> MaterialParamsSetObject = MakeShareable(new FJsonObject);
-    MaterialParamsSetObject->SetStringField(TEXT("type"), TEXT("Unreal"));
-    MaterialParamsSetObject->SetStringField(TEXT("sourceAsset"), RequestData->MaterialParams.Material->GetPathName());
-
     TSharedPtr<FJsonObject> ParamsSetObject = MakeShareable(new FJsonObject);
-    ParamsSetObject->SetObjectField(TEXT("mesh_params"), MeshParamsSetObject);
-    ParamsSetObject->SetObjectField(TEXT("material_params"), MaterialParamsSetObject);
+    Mythica::WriteParameters(RequestData->Inputs, RequestData->InputFileIds, RequestData->Params, ParamsSetObject);
 
     TSharedPtr<FJsonObject> JsonObject = MakeShareable(new FJsonObject);
     JsonObject->SetStringField(TEXT("job_def_id"), RequestData->JobDefId);
-    JsonObject->SetArrayField(TEXT("input_files"), InputsArray);
     JsonObject->SetObjectField(TEXT("params"), ParamsSetObject);
 
     FString ContentJson;
@@ -973,10 +960,10 @@ void UMythicaEditorSubsystem::OnExecuteJobResponse(FHttpRequestPtr Request, FHtt
     SetJobState(RequestId, EMythicaJobState::Queued);
 }
 
-int UMythicaEditorSubsystem::CreateJob(const FString& JobDefId, const FMythicaInputs& Inputs, const FMythicaParameters& Params, const FMythicaMaterialParameters& MaterialParams, const FString& ImportName)
+int UMythicaEditorSubsystem::CreateJob(const FString& JobDefId, const FMythicaInputs& Inputs, const FMythicaParameters& Params, const FString& ImportName)
 {
     int RequestId = NextRequestId++;
-    Jobs.Add(RequestId, { JobDefId, Inputs, Params, MaterialParams, ImportName });
+    Jobs.Add(RequestId, { JobDefId, Inputs, {}, Params, ImportName });
 
     if (!JobPollTimer.IsValid())
     {

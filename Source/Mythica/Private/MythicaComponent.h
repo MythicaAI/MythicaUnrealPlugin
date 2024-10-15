@@ -52,9 +52,6 @@ public:
     FMythicaParameters Parameters;
 
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Parameters")
-    FMythicaMaterialParameters MaterialParameters;
-
-    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Parameters")
     FMythicaInputs Inputs;
 
 private:

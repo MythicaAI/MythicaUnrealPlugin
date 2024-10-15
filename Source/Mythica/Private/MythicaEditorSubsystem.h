@@ -145,10 +145,10 @@ struct FMythicaJob
     FMythicaInputs Inputs;
 
     UPROPERTY()
-    FMythicaParameters Params;
+    TArray<FString> InputFileIds;
 
     UPROPERTY()
-    FMythicaMaterialParameters MaterialParams;
+    FMythicaParameters Params;
 
     UPROPERTY()
     FString ImportName;
@@ -226,7 +226,6 @@ public:
         const FString& JobDefId, 
         const FMythicaInputs& Inputs, 
         const FMythicaParameters& Params, 
-        const FMythicaMaterialParameters& MaterialParams, 
         const FString& ImportName, 
         const FVector& Origin);
 
@@ -263,14 +262,14 @@ private:
     bool PrepareInputFiles(const FMythicaInputs& Inputs, TMap<int, FString>& InputFiles, FString& ExportDirectory, const FVector& Origin);
     void UploadInputFiles(int RequestId, const TMap<int, FString>& InputFiles);
     void OnUploadInputFilesResponse(FHttpRequestPtr Request, FHttpResponsePtr Response, bool bWasSuccessful, int RequestId, const TMap<int, FString>& InputFiles);
-    void SendJobRequest(int RequestId, const TArray<FString>& InputFileIds);
+    void SendJobRequest(int RequestId);
 
     void OnExecuteJobResponse(FHttpRequestPtr Request, FHttpResponsePtr Response, bool bWasSuccessful, int RequestId);
     void OnJobResultsResponse(FHttpRequestPtr Request, FHttpResponsePtr Response, bool bWasSuccessful, int RequestId);
     void OnMeshDownloadInfoResponse(FHttpRequestPtr Request, FHttpResponsePtr Response, bool bWasSuccessful, int RequestId);
     void OnMeshDownloadResponse(FHttpRequestPtr Request, FHttpResponsePtr Response, bool bWasSuccessful, int RequestId);
 
-    int CreateJob(const FString& JobDefId, const FMythicaInputs& Inputs, const FMythicaParameters& Params, const FMythicaMaterialParameters& MaterialParams, const FString& ImportName);
+    int CreateJob(const FString& JobDefId, const FMythicaInputs& Inputs, const FMythicaParameters& Params, const FString& ImportName);
     void SetJobState(int RequestId, EMythicaJobState State);
     void PollJobStatus();
     void ClearJobs();

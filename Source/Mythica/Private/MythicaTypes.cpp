@@ -2,29 +2,46 @@
 
 #include "MythicaTypes.h"
 
-void Mythica::ReadInputs(const TArray<TSharedPtr<FJsonValue>>& InputsDef, FMythicaInputs& OutInputs)
+void Mythica::ReadParameters(const TSharedPtr<FJsonObject>& ParamsSchema, FMythicaInputs& OutInputs, FMythicaParameters& OutParameters)
 {
-    for (TSharedPtr<FJsonValue> InputValue : InputsDef)
-    {
-        FString InputLabel = InputValue->AsString();
-        OutInputs.Inputs.Add({ InputLabel });
-    }
-}
-
-void Mythica::ReadParameters(const TSharedPtr<FJsonObject>& ParameterDef, FMythicaParameters& OutParameters)
-{
-    for (auto It = ParameterDef->Values.CreateConstIterator(); It; ++It)
+    for (auto It = ParamsSchema->Values.CreateConstIterator(); It; ++It)
     {
         const FString& Name = It.Key();
         TSharedPtr<FJsonObject> ParameterObject = It.Value()->AsObject();
 
+        bool Constant = false;
+        ParameterObject->TryGetBoolField(TEXT("constant"), Constant);
+        if (Constant)
+        {
+            continue; 
+        }
+
+        FString Label = ParameterObject->GetStringField(TEXT("label"));
+
+        // Handle Inputs
+        FRegexPattern Pattern(TEXT("^input(\\d+)$"));
+        FRegexMatcher Matcher(Pattern, Name);
+
+        if (Matcher.FindNext())
+        {
+            FMythicaInput Input;
+            Input.Label = Label;
+
+            int InputIndex = FCString::Atoi(*Matcher.GetCaptureGroup(1));
+            OutInputs.Inputs.SetNum(InputIndex + 1, EAllowShrinking::No);
+            OutInputs.Inputs[InputIndex] = Input;
+
+            continue;
+        }
+
+        // Handle Parameters
         FMythicaParameter Parameter;
         Parameter.Name = Name;
-        Parameter.Label = ParameterObject->GetStringField(TEXT("label"));;
+        Parameter.Label = Label;
 
-        FString Type = ParameterObject->GetStringField(TEXT("type"));
+        FString Type = ParameterObject->GetStringField(TEXT("param_type"));
         bool IsArray = ParameterObject->HasTypedField<EJson::Array>(TEXT("default"));
-        if (Type == "Int")
+        if (Type == "int")
         {
             TArray<int> DefaultValues;
             if (IsArray)
@@ -54,7 +71,7 @@ void Mythica::ReadParameters(const TSharedPtr<FJsonObject>& ParameterDef, FMythi
             Parameter.Type = EMythicaParameterType::Int;
             Parameter.ValueInt = FMythicaParameterInt{ DefaultValues, DefaultValues, MinValue, MaxValue };
         }
-        else if (Type == "Float")
+        else if (Type == "float")
         {
             TArray<float> DefaultValues;
             if (IsArray)
@@ -84,13 +101,13 @@ void Mythica::ReadParameters(const TSharedPtr<FJsonObject>& ParameterDef, FMythi
             Parameter.Type = EMythicaParameterType::Float;
             Parameter.ValueFloat = FMythicaParameterFloat{ DefaultValues, DefaultValues, MinValue, MaxValue };
         }
-        else if (Type == "Toggle")
+        else if (Type == "bool")
         {
             bool DefaultValue = ParameterObject->GetBoolField(TEXT("default"));
             Parameter.Type = EMythicaParameterType::Bool;
             Parameter.ValueBool = FMythicaParameterBool{ DefaultValue, DefaultValue };
         }
-        else if (Type == "String")
+        else if (Type == "string")
         {
             FString DefaultValue = ParameterObject->GetStringField(TEXT("default"));
             Parameter.Type = EMythicaParameterType::String;
@@ -105,8 +122,20 @@ void Mythica::ReadParameters(const TSharedPtr<FJsonObject>& ParameterDef, FMythi
     }
 }
 
-void Mythica::WriteParameters(const FMythicaParameters& Parameters, const TSharedPtr<FJsonObject>& OutParamsSet)
+void Mythica::WriteParameters(const FMythicaInputs& Inputs, const TArray<FString>& InputFileIds, const FMythicaParameters& Parameters, const TSharedPtr<FJsonObject>& OutParamsSet)
 {
+    for (int i = 0; i < Inputs.Inputs.Num(); ++i)
+    {
+        const FMythicaInput& Input = Inputs.Inputs[i];
+        
+        FString FileId = InputFileIds.IsValidIndex(i) ? InputFileIds[i] : FString();
+
+        TSharedPtr<FJsonObject> FileObject = MakeShareable(new FJsonObject);
+        FileObject->SetStringField(TEXT("file_id"), FileId);
+
+        OutParamsSet->SetObjectField(FString::Printf(TEXT("input%d"), i), FileObject);
+    }
+
     for (const FMythicaParameter& Param : Parameters.Parameters)
     {
         switch (Param.Type)
