@@ -32,9 +32,9 @@ void Mythica::ReadParameters(const TSharedPtr<FJsonObject>& ParamsSchema, FMythi
         Parameter.Name = Name;
         Parameter.Label = Label;
 
-        FString Type = ParameterObject->GetStringField(TEXT("type"));
+        FString Type = ParameterObject->GetStringField(TEXT("param_type"));
         bool IsArray = ParameterObject->HasTypedField<EJson::Array>(TEXT("default"));
-        if (Type == "Int")
+        if (Type == "int")
         {
             TArray<int> DefaultValues;
             if (IsArray)
@@ -64,7 +64,7 @@ void Mythica::ReadParameters(const TSharedPtr<FJsonObject>& ParamsSchema, FMythi
             Parameter.Type = EMythicaParameterType::Int;
             Parameter.ValueInt = FMythicaParameterInt{ DefaultValues, DefaultValues, MinValue, MaxValue };
         }
-        else if (Type == "Float")
+        else if (Type == "float")
         {
             TArray<float> DefaultValues;
             if (IsArray)
@@ -94,13 +94,13 @@ void Mythica::ReadParameters(const TSharedPtr<FJsonObject>& ParamsSchema, FMythi
             Parameter.Type = EMythicaParameterType::Float;
             Parameter.ValueFloat = FMythicaParameterFloat{ DefaultValues, DefaultValues, MinValue, MaxValue };
         }
-        else if (Type == "Toggle")
+        else if (Type == "bool")
         {
             bool DefaultValue = ParameterObject->GetBoolField(TEXT("default"));
             Parameter.Type = EMythicaParameterType::Bool;
             Parameter.ValueBool = FMythicaParameterBool{ DefaultValue, DefaultValue };
         }
-        else if (Type == "String")
+        else if (Type == "string")
         {
             FString DefaultValue = ParameterObject->GetStringField(TEXT("default"));
             Parameter.Type = EMythicaParameterType::String;
