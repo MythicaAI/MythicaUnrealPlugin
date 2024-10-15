@@ -9,6 +9,13 @@ void Mythica::ReadParameters(const TSharedPtr<FJsonObject>& ParamsSchema, FMythi
         const FString& Name = It.Key();
         TSharedPtr<FJsonObject> ParameterObject = It.Value()->AsObject();
 
+        bool Constant = false;
+        ParameterObject->TryGetBoolField(TEXT("constant"), Constant);
+        if (Constant)
+        {
+            continue; 
+        }
+
         FString Label = ParameterObject->GetStringField(TEXT("label"));
 
         // Handle Inputs
