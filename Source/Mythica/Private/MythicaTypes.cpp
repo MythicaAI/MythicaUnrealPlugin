@@ -2,7 +2,7 @@
 
 #include "MythicaTypes.h"
 
-void Mythica::ReadParameters(const TSharedPtr<FJsonObject>& ParamsSchema, FMythicaParameters& OutParameters, FMythicaInputs& OutInputs)
+void Mythica::ReadParameters(const TSharedPtr<FJsonObject>& ParamsSchema, FMythicaInputs& OutInputs, FMythicaParameters& OutParameters)
 {
     for (auto It = ParamsSchema->Values.CreateConstIterator(); It; ++It)
     {
@@ -115,8 +115,20 @@ void Mythica::ReadParameters(const TSharedPtr<FJsonObject>& ParamsSchema, FMythi
     }
 }
 
-void Mythica::WriteParameters(const FMythicaParameters& Parameters, const TSharedPtr<FJsonObject>& OutParamsSet)
+void Mythica::WriteParameters(const FMythicaInputs& Inputs, const TArray<FString>& InputFileIds, const FMythicaParameters& Parameters, const TSharedPtr<FJsonObject>& OutParamsSet)
 {
+    check(Inputs.Inputs.Num() == InputFileIds.Num());
+    for (int i = 0; i < Inputs.Inputs.Num(); ++i)
+    {
+        const FMythicaInput& Input = Inputs.Inputs[i];
+        const FString& FileId = InputFileIds[i];
+
+        TSharedPtr<FJsonObject> FileObject = MakeShareable(new FJsonObject);
+        FileObject->SetStringField(TEXT("file_id"), InputFileIds[i]);
+
+        OutParamsSet->SetObjectField(FString::Printf(TEXT("input%d"), i), FileObject);
+    }
+
     for (const FMythicaParameter& Param : Parameters.Parameters)
     {
         switch (Param.Type)

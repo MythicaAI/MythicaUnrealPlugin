@@ -145,6 +145,9 @@ struct FMythicaJob
     FMythicaInputs Inputs;
 
     UPROPERTY()
+    TArray<FString> InputFileIds;
+
+    UPROPERTY()
     FMythicaParameters Params;
 
     UPROPERTY()
@@ -263,7 +266,7 @@ private:
     bool PrepareInputFiles(const FMythicaInputs& Inputs, TMap<int, FString>& InputFiles, FString& ExportDirectory, const FVector& Origin);
     void UploadInputFiles(int RequestId, const TMap<int, FString>& InputFiles);
     void OnUploadInputFilesResponse(FHttpRequestPtr Request, FHttpResponsePtr Response, bool bWasSuccessful, int RequestId, const TMap<int, FString>& InputFiles);
-    void SendJobRequest(int RequestId, const TArray<FString>& InputFileIds);
+    void SendJobRequest(int RequestId);
 
     void OnExecuteJobResponse(FHttpRequestPtr Request, FHttpResponsePtr Response, bool bWasSuccessful, int RequestId);
     void OnJobResultsResponse(FHttpRequestPtr Request, FHttpResponsePtr Response, bool bWasSuccessful, int RequestId);
