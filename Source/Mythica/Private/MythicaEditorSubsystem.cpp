@@ -844,7 +844,6 @@ int UMythicaEditorSubsystem::ExecuteJob(
     const FString& JobDefId, 
     const FMythicaInputs& Inputs, 
     const FMythicaParameters& Params, 
-    const FMythicaMaterialParameters& MaterialParams, 
     const FString& ImportName, 
     const FVector& Origin
 ) {
@@ -863,7 +862,7 @@ int UMythicaEditorSubsystem::ExecuteJob(
         return -1;
     }
 
-    int RequestId = CreateJob(JobDefId, Inputs, Params, MaterialParams, ImportName);
+    int RequestId = CreateJob(JobDefId, Inputs, Params, ImportName);
 
     if (InputFiles.IsEmpty())
     {
@@ -961,10 +960,10 @@ void UMythicaEditorSubsystem::OnExecuteJobResponse(FHttpRequestPtr Request, FHtt
     SetJobState(RequestId, EMythicaJobState::Queued);
 }
 
-int UMythicaEditorSubsystem::CreateJob(const FString& JobDefId, const FMythicaInputs& Inputs, const FMythicaParameters& Params, const FMythicaMaterialParameters& MaterialParams, const FString& ImportName)
+int UMythicaEditorSubsystem::CreateJob(const FString& JobDefId, const FMythicaInputs& Inputs, const FMythicaParameters& Params, const FString& ImportName)
 {
     int RequestId = NextRequestId++;
-    Jobs.Add(RequestId, { JobDefId, Inputs, {}, Params, MaterialParams, ImportName });
+    Jobs.Add(RequestId, { JobDefId, Inputs, {}, Params, ImportName });
 
     if (!JobPollTimer.IsValid())
     {

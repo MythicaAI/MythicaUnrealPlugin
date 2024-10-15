@@ -49,7 +49,7 @@ void UMythicaComponent::RegenerateMesh()
     }
 
     UMythicaEditorSubsystem* MythicaEditorSubsystem = GEditor->GetEditorSubsystem<UMythicaEditorSubsystem>();
-    RequestId = MythicaEditorSubsystem->ExecuteJob(JobDefId.JobDefId, Inputs, Parameters, MaterialParameters, "GeneratedMesh", K2_GetComponentLocation());
+    RequestId = MythicaEditorSubsystem->ExecuteJob(JobDefId.JobDefId, Inputs, Parameters, "GeneratedMesh", K2_GetComponentLocation());
 
     if (RequestId > 0)
     {
@@ -70,8 +70,7 @@ void UMythicaComponent::PostEditChangeProperty(FPropertyChangedEvent& PropertyCh
     {
         OnJobDefIdChanged();
     }
-    else if (PropertyChangedEvent.MemberProperty->GetFName() == GET_MEMBER_NAME_CHECKED(UMythicaComponent, Parameters) 
-        || PropertyChangedEvent.MemberProperty->GetFName() == GET_MEMBER_NAME_CHECKED(UMythicaComponent, MaterialParameters))
+    else if (PropertyChangedEvent.MemberProperty->GetFName() == GET_MEMBER_NAME_CHECKED(UMythicaComponent, Parameters))
     {
         if (RegenerateOnParameterChange)
         {
@@ -126,7 +125,6 @@ void UMythicaComponent::OnJobDefIdChanged()
 
     FMythicaJobDefinition Definition = MythicaEditorSubsystem->GetJobDefinitionById(JobDefId.JobDefId);
     Parameters = Definition.Parameters;
-    MaterialParameters = FMythicaMaterialParameters();
     Inputs = Definition.Inputs;
 
     ForceRefreshDetailsViewPanel();
