@@ -124,14 +124,14 @@ void Mythica::ReadParameters(const TSharedPtr<FJsonObject>& ParamsSchema, FMythi
 
 void Mythica::WriteParameters(const FMythicaInputs& Inputs, const TArray<FString>& InputFileIds, const FMythicaParameters& Parameters, const TSharedPtr<FJsonObject>& OutParamsSet)
 {
-    check(Inputs.Inputs.Num() == InputFileIds.Num());
     for (int i = 0; i < Inputs.Inputs.Num(); ++i)
     {
         const FMythicaInput& Input = Inputs.Inputs[i];
-        const FString& FileId = InputFileIds[i];
+        
+        FString FileId = InputFileIds.IsValidIndex(i) ? InputFileIds[i] : FString();
 
         TSharedPtr<FJsonObject> FileObject = MakeShareable(new FJsonObject);
-        FileObject->SetStringField(TEXT("file_id"), InputFileIds[i]);
+        FileObject->SetStringField(TEXT("file_id"), FileId);
 
         OutParamsSet->SetObjectField(FString::Printf(TEXT("input%d"), i), FileObject);
     }

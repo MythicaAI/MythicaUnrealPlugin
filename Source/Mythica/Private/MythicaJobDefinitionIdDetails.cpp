@@ -14,7 +14,7 @@ void FMythicaJobDefinitionIdDetails::CustomizeHeader(TSharedRef<IPropertyHandle>
 {
     // Gather options
     UMythicaEditorSubsystem* MythicaEditorSubsystem = GEditor->GetEditorSubsystem<UMythicaEditorSubsystem>();
-    TArray<FMythicaJobDefinition> JobDefinitions = MythicaEditorSubsystem->GetJobDefinitionList("houdini_generate_mesh");
+    TArray<FMythicaJobDefinition> JobDefinitions = MythicaEditorSubsystem->GetJobDefinitionList("houdini::/mythica/generate_mesh");
 
     for (const FMythicaJobDefinition& JobDefinition : JobDefinitions)
     {
