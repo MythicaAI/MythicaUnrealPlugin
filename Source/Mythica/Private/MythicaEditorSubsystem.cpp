@@ -890,7 +890,9 @@ void UMythicaEditorSubsystem::SendJobRequest(int RequestId)
 
     // Create JSON payload
     TSharedPtr<FJsonObject> ParamsSetObject = MakeShareable(new FJsonObject);
-    Mythica::WriteParameters(RequestData->Inputs, RequestData->InputFileIds, RequestData->Params, ParamsSetObject);
+    TSharedPtr<FJsonObject> ParamsObject = MakeShareable(new FJsonObject);
+    Mythica::WriteParameters(RequestData->Inputs, RequestData->InputFileIds, RequestData->Params, ParamsObject);
+    ParamsSetObject->SetObjectField(TEXT("params"), ParamsObject);
 
     TSharedPtr<FJsonObject> JsonObject = MakeShareable(new FJsonObject);
     JsonObject->SetStringField(TEXT("job_def_id"), RequestData->JobDefId);
