@@ -890,7 +890,9 @@ void UMythicaEditorSubsystem::SendJobRequest(int RequestId)
 
     // Create JSON payload
     TSharedPtr<FJsonObject> ParamsSetObject = MakeShareable(new FJsonObject);
-    Mythica::WriteParameters(RequestData->Inputs, RequestData->InputFileIds, RequestData->Params, ParamsSetObject);
+    TSharedPtr<FJsonObject> ParamsObject = MakeShareable(new FJsonObject);
+    Mythica::WriteParameters(RequestData->Inputs, RequestData->InputFileIds, RequestData->Params, ParamsObject);
+    ParamsSetObject->SetObjectField(TEXT("params"), ParamsObject);
 
     TSharedPtr<FJsonObject> JsonObject = MakeShareable(new FJsonObject);
     JsonObject->SetStringField(TEXT("job_def_id"), RequestData->JobDefId);
@@ -1074,10 +1076,17 @@ void UMythicaEditorSubsystem::OnJobResultsResponse(FHttpRequestPtr Request, FHtt
     {
         TSharedPtr<FJsonObject> ResultObject = Value->AsObject();
         TSharedPtr<FJsonObject> ResultDataObject = ResultObject->GetObjectField(TEXT("result_data"));
-        
-        if (ResultDataObject->TryGetStringField(TEXT("file_id"), FileId))
+
+        FString ItemType = ResultDataObject->GetStringField(TEXT("item_type"));
+        if (ItemType == "file")
         {
-            break;
+            TSharedPtr<FJsonObject> FilesObject = ResultDataObject->GetObjectField(TEXT("files"));
+            TArray<TSharedPtr<FJsonValue>> FilesArray = FilesObject->GetArrayField(TEXT("mesh"));
+            if (FilesArray.Num() > 0)
+            {
+                FileId = FilesArray[0]->AsString();
+                break;
+            }
         }
     }
 
