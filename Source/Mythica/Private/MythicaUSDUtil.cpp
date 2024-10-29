@@ -2,6 +2,8 @@
 
 #include "MythicaUSDUtil.h"
 
+#include "AssetToolsModule.h"
+#include "AutomatedAssetImportData.h"
 #include "Components/SplineComponent.h"
 #include "Exporters/Exporter.h"
 #include "IPythonScriptPlugin.h"
@@ -192,4 +194,16 @@ bool Mythica::ExportSpline(AActor* SplineActor, const FString& ExportPath, const
     Stage.GetRootLayer().Save();
 
     return ConvertUSDtoUSDZ(USDPath, ExportPath);
+}
+
+bool Mythica::ImportMesh(const FString& FilePath, const FString& ImportDirectory)
+{
+    UAutomatedAssetImportData* ImportData = NewObject<UAutomatedAssetImportData>();
+    ImportData->bReplaceExisting = true;
+    ImportData->DestinationPath = ImportDirectory;
+    ImportData->Filenames = { FilePath };
+
+    FAssetToolsModule& AssetToolsModule = FModuleManager::GetModuleChecked<FAssetToolsModule>("AssetTools");
+    TArray<UObject*> Objects = AssetToolsModule.Get().ImportAssetsAutomated(ImportData);
+    return Objects.Num() == 1;
 }

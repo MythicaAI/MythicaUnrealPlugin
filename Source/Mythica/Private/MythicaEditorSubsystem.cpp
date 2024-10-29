@@ -1199,14 +1199,8 @@ void UMythicaEditorSubsystem::OnMeshDownloadResponse(FHttpRequestPtr Request, FH
     }
 
     // Import the mesh
-    UAutomatedAssetImportData* ImportData = NewObject<UAutomatedAssetImportData>();
-    ImportData->bReplaceExisting = true;
-    ImportData->DestinationPath = ImportDirectory;
-    ImportData->Filenames = { FilePath };
-
-    FAssetToolsModule& AssetToolsModule = FModuleManager::GetModuleChecked<FAssetToolsModule>("AssetTools");
-    TArray<UObject*> Objects = AssetToolsModule.Get().ImportAssetsAutomated(ImportData);
-    if (Objects.Num() != 1)
+    bool Success = Mythica::ImportMesh(FilePath, ImportDirectory);
+    if (!Success)
     {
         UE_LOG(LogMythica, Error, TEXT("Failed to import generated mesh"));
         SetJobState(RequestId, EMythicaJobState::Failed);
