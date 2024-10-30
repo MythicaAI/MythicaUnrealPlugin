@@ -2,6 +2,7 @@
 
 #include "MythicaUSDUtil.h"
 
+#include "AssetImportTask.h"
 #include "AssetToolsModule.h"
 #include "AutomatedAssetImportData.h"
 #include "Components/SplineComponent.h"
@@ -198,12 +199,22 @@ bool Mythica::ExportSpline(AActor* SplineActor, const FString& ExportPath, const
 
 bool Mythica::ImportMesh(const FString& FilePath, const FString& ImportDirectory)
 {
-    UAutomatedAssetImportData* ImportData = NewObject<UAutomatedAssetImportData>();
-    ImportData->bReplaceExisting = true;
-    ImportData->DestinationPath = ImportDirectory;
-    ImportData->Filenames = { FilePath };
+    UAssetImportTask* Task = NewObject<UAssetImportTask>();
+    Task->bAutomated = true;
+    Task->bReplaceExisting = true;
+    Task->DestinationPath = ImportDirectory;
+    Task->bSave = false;
+    Task->Filename = FilePath;
+    
+    TArray<UAssetImportTask*> Tasks;
+    Tasks.Add(Task);
 
     FAssetToolsModule& AssetToolsModule = FModuleManager::GetModuleChecked<FAssetToolsModule>("AssetTools");
-    TArray<UObject*> Objects = AssetToolsModule.Get().ImportAssetsAutomated(ImportData);
-    return Objects.Num() == 1;
+
+    bool PrevSilent = GIsSilent;
+    GIsSilent = true;
+    AssetToolsModule.Get().ImportAssetTasks(Tasks);
+    GIsSilent = PrevSilent;
+
+    return Task->GetObjects().Num() > 0;
 }
