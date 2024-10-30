@@ -224,7 +224,7 @@ bool Mythica::ImportMesh(const FString& FilePath, const FString& ImportDirectory
         true,  /* bCollectMetadata */
         true,  /* bCollectFromEntireSubtrees */
         false, /* bCollectOnComponents */
-        {},	   /* BlockedPrefixFilters */
+        {},    /* BlockedPrefixFilters */
         false  /* bInvertFilters */
     };
     ImportOptions->bOverrideStageOptions = false;
