@@ -202,6 +202,7 @@ bool Mythica::ImportMesh(const FString& FilePath, const FString& ImportDirectory
 {
     // Setup import options
     UUsdStageImportOptions* ImportOptions = NewObject<UUsdStageImportOptions>();
+    FGCObjectScopeGuard OptionsGuard(ImportOptions);
 
     ImportOptions->bImportActors = false;
     ImportOptions->bImportGeometry = true;
@@ -244,6 +245,8 @@ bool Mythica::ImportMesh(const FString& FilePath, const FString& ImportDirectory
 
     // Import mesh
     UAssetImportTask* Task = NewObject<UAssetImportTask>();
+    FGCObjectScopeGuard TaskGuard(Task);
+
     Task->bAutomated = true;
     Task->bReplaceExisting = true;
     Task->DestinationPath = ImportDirectory;
