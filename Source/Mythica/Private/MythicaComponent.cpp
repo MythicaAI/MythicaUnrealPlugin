@@ -30,7 +30,10 @@ void UMythicaComponent::OnComponentDestroyed(bool bDestroyingHierarchy)
     if (RequestId > 0)
     {
         UMythicaEditorSubsystem* MythicaEditorSubsystem = GEditor->GetEditorSubsystem<UMythicaEditorSubsystem>();
-        MythicaEditorSubsystem->OnJobStateChange.RemoveDynamic(this, &UMythicaComponent::OnJobStateChanged);
+        if (MythicaEditorSubsystem)
+        {
+            MythicaEditorSubsystem->OnJobStateChange.RemoveDynamic(this, &UMythicaComponent::OnJobStateChanged);
+        }
     }
 }
 
