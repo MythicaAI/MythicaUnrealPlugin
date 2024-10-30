@@ -14,6 +14,7 @@
 #include "UObject/GCObjectScopeGuard.h"
 #include "UnrealUSDWrapper.h"
 #include "USDConversionUtils.h"
+#include "USDStageImportOptions.h"
 #include "UsdWrappers/SdfLayer.h"
 #include "UsdWrappers/UsdStage.h"
 
@@ -199,11 +200,55 @@ bool Mythica::ExportSpline(AActor* SplineActor, const FString& ExportPath, const
 
 bool Mythica::ImportMesh(const FString& FilePath, const FString& ImportDirectory)
 {
+    // Setup import options
+    UUsdStageImportOptions* ImportOptions = NewObject<UUsdStageImportOptions>();
+
+    ImportOptions->bImportActors = false;
+    ImportOptions->bImportGeometry = true;
+    ImportOptions->bImportSkeletalAnimations = false;
+    ImportOptions->bImportLevelSequences = false;
+    ImportOptions->bImportMaterials = true;
+    ImportOptions->bImportGroomAssets = false;
+    ImportOptions->bImportSparseVolumeTextures = false;
+    ImportOptions->bImportOnlyUsedMaterials = false;
+
+    ImportOptions->PrimsToImport = TArray<FString>{ TEXT("/") };
+    ImportOptions->PurposesToImport = (int32)(EUsdPurpose::Default | EUsdPurpose::Proxy | EUsdPurpose::Render | EUsdPurpose::Guide);
+    ImportOptions->NaniteTriangleThreshold = INT32_MAX;
+    ImportOptions->RenderContextToImport = NAME_None;
+    ImportOptions->MaterialPurpose = *UnrealIdentifiers::MaterialPreviewPurpose;
+    ImportOptions->RootMotionHandling = EUsdRootMotionHandling::NoAdditionalRootMotion;
+    ImportOptions->SubdivisionLevel = 0;
+    ImportOptions->MetadataOptions = FUsdMetadataImportOptions{
+        true,  /* bCollectMetadata */
+        true,  /* bCollectFromEntireSubtrees */
+        false, /* bCollectOnComponents */
+        {},	   /* BlockedPrefixFilters */
+        false  /* bInvertFilters */
+    };
+    ImportOptions->bOverrideStageOptions = false;
+    ImportOptions->StageOptions.MetersPerUnit = 0.01f;
+    ImportOptions->StageOptions.UpAxis = EUsdUpAxis::ZAxis;
+    ImportOptions->bImportAtSpecificTimeCode = false;
+    ImportOptions->ImportTimeCode = 0.0f;
+
+    ImportOptions->GroomInterpolationSettings = TArray<FHairGroupsInterpolation>();
+    ImportOptions->ExistingActorPolicy = EReplaceActorPolicy::Replace;
+    ImportOptions->ExistingAssetPolicy = EReplaceAssetPolicy::Replace;
+    ImportOptions->bReuseIdenticalAssets = true;
+
+    ImportOptions->bPrimPathFolderStructure = false;
+    ImportOptions->KindsToCollapse = (int32)(EUsdDefaultKind::Component | EUsdDefaultKind::Subcomponent);
+    ImportOptions->bMergeIdenticalMaterialSlots = true;
+    ImportOptions->bInterpretLODs = true;
+
+    // Import mesh
     UAssetImportTask* Task = NewObject<UAssetImportTask>();
     Task->bAutomated = true;
     Task->bReplaceExisting = true;
     Task->DestinationPath = ImportDirectory;
     Task->bSave = false;
+    Task->Options = ImportOptions;
     Task->Filename = FilePath;
     
     TArray<UAssetImportTask*> Tasks;
