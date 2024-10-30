@@ -176,7 +176,7 @@ void UMythicaComponent::BindWorldInputListeners()
 void UMythicaComponent::OnWorldInputTransformUpdated(USceneComponent* InComponent, EUpdateTransformFlags InFlags, ETeleportType InType)
 {
     // Ignore events that fire during level load actor initialization
-    if (InComponent->GetOwner()->HasActorRegisteredAllComponents())
+    if (!GIsEditorLoadingPackage)
     {
         GEditor->GetTimerManager()->SetTimer(DelayRegenerateHandle, [this]() { RegenerateMesh(); }, 0.05f, false);
     }
@@ -184,7 +184,8 @@ void UMythicaComponent::OnWorldInputTransformUpdated(USceneComponent* InComponen
 
 void UMythicaComponent::OnTransformUpdated(USceneComponent* InComponent, EUpdateTransformFlags InFlags, ETeleportType InType)
 {
-    if (RegenerateOnTransformChange)
+    // Ignore events that fire during level load actor initialization
+    if (!GIsEditorLoadingPackage && RegenerateOnTransformChange)
     {
         GEditor->GetTimerManager()->SetTimer(DelayRegenerateHandle, [this]() { RegenerateMesh(); }, 0.05f, false);
     }
