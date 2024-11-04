@@ -15,7 +15,9 @@
 #include "UnrealUSDWrapper.h"
 #include "USDConversionUtils.h"
 #include "USDStageImportOptions.h"
+#include "USDTypesConversion.h"
 #include "UsdWrappers/SdfLayer.h"
+#include "UsdWrappers/UsdPrim.h"
 #include "UsdWrappers/UsdStage.h"
 
 #include "USDIncludesStart.h"
@@ -198,8 +200,48 @@ bool Mythica::ExportSpline(AActor* SplineActor, const FString& ExportPath, const
     return ConvertUSDtoUSDZ(USDPath, ExportPath);
 }
 
+static void GatherPrimsToImportRecursive(const UE::FUsdPrim& Prim, TArray<FString>& PrimsToImport)
+{
+    FName TypeName = Prim.GetTypeName();
+    if (TypeName == TEXT("Mesh"))
+    {
+        PrimsToImport.Add(UsdToUnreal::ConvertPath(Prim.GetPrimPath()));
+    }
+
+    TArray<UE::FUsdPrim> ChildPrims = Prim.GetChildren();
+    for (const UE::FUsdPrim& ChildPrim : ChildPrims)
+    {
+        GatherPrimsToImportRecursive(ChildPrim, PrimsToImport);
+    }
+}
+
+static bool GatherPrimsToImport(const FString& FilePath, TArray<FString>& PrimsToImport)
+{
+    UE::FUsdStage Stage = UnrealUSDWrapper::OpenStage(*FilePath, EUsdInitialLoadSet::LoadAll);
+    if (!Stage)
+    {
+        return false;
+    }
+
+    UE::FUsdPrim RootPrim = Stage.GetPseudoRoot();
+    if (!RootPrim)
+    {
+        return false;
+    }
+
+    GatherPrimsToImportRecursive(RootPrim, PrimsToImport);
+    return true;
+}
+
 bool Mythica::ImportMesh(const FString& FilePath, const FString& ImportDirectory)
 {
+    // Select subset of scene to import
+    TArray<FString> PrimsToImport;
+    if (!GatherPrimsToImport(FilePath, PrimsToImport) || PrimsToImport.IsEmpty())
+    {
+        return false;
+    }
+
     // Setup import options
     UUsdStageImportOptions* ImportOptions = NewObject<UUsdStageImportOptions>();
     FGCObjectScopeGuard OptionsGuard(ImportOptions);
@@ -213,7 +255,7 @@ bool Mythica::ImportMesh(const FString& FilePath, const FString& ImportDirectory
     ImportOptions->bImportSparseVolumeTextures = false;
     ImportOptions->bImportOnlyUsedMaterials = false;
 
-    ImportOptions->PrimsToImport = TArray<FString>{ TEXT("/") };
+    ImportOptions->PrimsToImport = PrimsToImport;
     ImportOptions->PurposesToImport = (int32)(EUsdPurpose::Default | EUsdPurpose::Proxy | EUsdPurpose::Render | EUsdPurpose::Guide);
     ImportOptions->NaniteTriangleThreshold = INT32_MAX;
     ImportOptions->RenderContextToImport = NAME_None;
