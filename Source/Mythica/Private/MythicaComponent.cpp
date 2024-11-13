@@ -7,6 +7,13 @@ UMythicaComponent::UMythicaComponent()
     PrimaryComponentTick.bCanEverTick = false;
 }
 
+void UMythicaComponent::OnComponentCreated()
+{
+    Super::OnComponentCreated();
+
+    ComponentGUID = FGuid::NewGuid();
+}
+
 void UMythicaComponent::PostLoad()
 {
     Super::PostLoad();
