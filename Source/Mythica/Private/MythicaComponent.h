@@ -20,6 +20,7 @@ public:
 
     bool CanRegenerateMesh() const;
     void RegenerateMesh();
+    FString GetImportName();
     EMythicaJobState GetJobState() const { return State; }
 
     virtual void PostEditChangeProperty(FPropertyChangedEvent& PropertyChangedEvent) override;
