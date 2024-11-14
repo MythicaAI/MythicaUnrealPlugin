@@ -5,8 +5,12 @@ if "%~1"=="" (
     exit /b 1
 )
 
-call "%~1\Engine\Build\BatchFiles\RunUAT.bat" BuildPlugin -Plugin="%CD%\Mythica.uplugin" -Package="%CD%\Build\Mythica" -nocompile -nocompileuat
+for /f "tokens=2 delims==" %%I in ('wmic os get localdatetime /value') do set dt=%%I
+set Timestamp=%dt:~0,8%_%dt:~8,6%
+set BuildDir=%CD%\Builds\Build_%Timestamp%
 
-del %CD%\Build\Mythica\Binaries\Win64\*.pdb
+call "%~1\Engine\Build\BatchFiles\RunUAT.bat" BuildPlugin -Plugin="%CD%\Mythica.uplugin" -Package="%BuildDir%\Mythica" -nocompile -nocompileuat
 
-powershell Compress-Archive -Path "%CD%\Build\Mythica" -DestinationPath "%CD%\Build\Mythica.zip"
+del "%BuildDir%\Mythica\Binaries\Win64\*.pdb"
+
+powershell Compress-Archive -Path "%BuildDir%\Mythica" -DestinationPath "%BuildDir%\Mythica.zip"
