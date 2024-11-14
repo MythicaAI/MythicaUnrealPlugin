@@ -214,6 +214,73 @@ void FMythicaParametersDetails::CustomizeChildren(TSharedRef<IPropertyHandle> St
                 DesiredWidthScalar = 3;
                 break;
             }
+            case EMythicaParameterType::Enum:
+            {
+                // Generate combo box options array
+                TSharedPtr<TArray<TSharedPtr<FMythicaParameterEnumValue>>> Options = MakeShared<TArray<TSharedPtr<FMythicaParameterEnumValue>>>();
+                ComboBoxOptions.Add(Options);
+
+                const FMythicaParameterEnum& EnumParam = Parameters->Parameters[ParamIndex].ValueEnum;
+                for (const FMythicaParameterEnumValue& EnumValue : EnumParam.Values)
+                {
+                    Options->Add(MakeShared<FMythicaParameterEnumValue>(EnumValue));
+                }
+
+                // Find the item with the current value name
+                TSharedPtr<FMythicaParameterEnumValue> CurrentItem;
+                for (const TSharedPtr<FMythicaParameterEnumValue>& Option : *Options)
+                {
+                    if (Option->Name == EnumParam.Value)
+                    {
+                        CurrentItem = Option;
+                        break;
+                    }
+                }
+
+                auto OnSelectionChanged = [this, ParamIndex](TSharedPtr<FMythicaParameterEnumValue> NewSelection, ESelectInfo::Type SelectInfo)
+                {
+                    FMythicaParameters* Parameters = GetParametersFromHandleWeak(HandleWeak);
+                    if (Parameters && NewSelection.IsValid())
+                    {
+                        Parameters->Parameters[ParamIndex].ValueEnum.Value = NewSelection->Name;
+                        HandleWeak.Pin()->NotifyPostChange(EPropertyChangeType::ValueSet);
+                    }
+                };
+
+                auto OnGenerateWidget = [](TSharedPtr<FMythicaParameterEnumValue> InItem)
+                {
+                    return SNew(STextBlock)
+                        .Text(FText::FromString(InItem->Label));
+                };
+
+                auto GetCurrentText = [this, ParamIndex]()
+                {
+                    FMythicaParameters* Parameters = GetParametersFromHandleWeak(HandleWeak);
+                    if (Parameters)
+                    {
+                        const FMythicaParameterEnum& EnumParam = Parameters->Parameters[ParamIndex].ValueEnum;
+                        for (const FMythicaParameterEnumValue& EnumValue : EnumParam.Values)
+                        {
+                            if (EnumValue.Name == EnumParam.Value)
+                            {
+                                return FText::FromString(EnumValue.Label);
+                            }
+                        }
+                    }
+                    return FText::FromString(TEXT(""));
+                };
+
+                ValueWidget = SNew(SComboBox<TSharedPtr<FMythicaParameterEnumValue>>)
+                    .OptionsSource(Options.Get())
+                    .OnSelectionChanged_Lambda(OnSelectionChanged)
+                    .OnGenerateWidget_Lambda(OnGenerateWidget)
+                    .InitiallySelectedItem(CurrentItem)
+                    [
+                        SNew(STextBlock)
+                            .Text_Lambda(GetCurrentText)
+                    ];
+                break;
+            }
         }
 
         StructBuilder.AddCustomRow(FText::FromString(Parameter.Label))

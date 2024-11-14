@@ -2,6 +2,8 @@
 
 #include "IDetailCustomization.h"
 
+struct FMythicaParameterEnumValue;
+
 class FMythicaParametersDetails : public IPropertyTypeCustomization
 {
 public:
@@ -12,6 +14,8 @@ public:
 
 private:
     TWeakPtr<IPropertyHandle> HandleWeak;
+
+    TArray<TSharedPtr<TArray<TSharedPtr<FMythicaParameterEnumValue>>>> ComboBoxOptions;
 
     bool UsingSlider = false;
 };
