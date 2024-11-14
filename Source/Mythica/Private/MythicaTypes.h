@@ -49,7 +49,8 @@ enum class EMythicaParameterType : uint8
     Int,
     Float,
     Bool,
-    String
+    String,
+    Enum
 };
 
 USTRUCT()
@@ -112,6 +113,33 @@ struct FMythicaParameterString
     FString DefaultValue;
 };
 
+USTRUCT()
+struct FMythicaParameterEnumValue
+{
+    GENERATED_BODY()
+
+    UPROPERTY()
+    FString Name;
+
+    UPROPERTY()
+    FString Label;
+};
+
+USTRUCT()
+struct FMythicaParameterEnum
+{
+    GENERATED_BODY()
+
+    UPROPERTY()
+    FString Value;
+
+    UPROPERTY()
+    FString DefaultValue;
+
+    UPROPERTY()
+    TArray<FMythicaParameterEnumValue> Values;
+};
+
 USTRUCT(BlueprintType)
 struct FMythicaParameter
 {
@@ -137,6 +165,9 @@ struct FMythicaParameter
 
     UPROPERTY()
     FMythicaParameterString ValueString;
+
+    UPROPERTY()
+    FMythicaParameterEnum ValueEnum;
 };
 
 USTRUCT(BlueprintType)

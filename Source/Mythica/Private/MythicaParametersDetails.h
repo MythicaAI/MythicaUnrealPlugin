@@ -2,6 +2,8 @@
 
 #include "IDetailCustomization.h"
 
+struct FMythicaParameterEnumValue;
+
 class FMythicaParametersDetails : public IPropertyTypeCustomization
 {
 public:
@@ -12,6 +14,10 @@ public:
 
 private:
     TWeakPtr<IPropertyHandle> HandleWeak;
+
+    // Hold references to avoid garbage collection
+    using TEnumOptions = TArray<TSharedPtr<FMythicaParameterEnumValue>>;
+    TArray<TSharedPtr<TEnumOptions>> EnumOptionSets;
 
     bool UsingSlider = false;
 };
