@@ -180,9 +180,9 @@ void UMythicaEditorSubsystem::CreateSession()
     }
 
     const UMythicaDeveloperSettings* Settings = GetDefault<UMythicaDeveloperSettings>();
-    if (Settings->ProfileId.IsEmpty())
+    if (Settings->APIKey.IsEmpty())
     {
-        UE_LOG(LogMythica, Error, TEXT("Profile ID is empty"));
+        UE_LOG(LogMythica, Error, TEXT("API key not setup"));
         SetSessionState(EMythicaSessionState::SessionFailed);
         return;
     }
@@ -193,7 +193,7 @@ void UMythicaEditorSubsystem::CreateSession()
         return;
     }
 
-    FString Url = FString::Printf(TEXT("%s/v1/sessions/direct/%s"), *Settings->ServiceURL, *Settings->ProfileId);
+    FString Url = FString::Printf(TEXT("%s/v1/sessions/key/%s"), *Settings->ServiceURL, *Settings->APIKey);
 
     TSharedRef<IHttpRequest, ESPMode::ThreadSafe> Request = FHttpModule::Get().CreateRequest();
     Request->SetURL(Url);
