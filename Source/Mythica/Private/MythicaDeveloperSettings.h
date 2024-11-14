@@ -22,5 +22,5 @@ public:
     FString ImportDirectory = TEXT("/Game/Mythica");
 
     UPROPERTY(Config, EditAnywhere, BlueprintReadOnly, Category = User)
-    FString ProfileId;
+    FString APIKey;
 };
