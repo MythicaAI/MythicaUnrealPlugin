@@ -113,6 +113,24 @@ void Mythica::ReadParameters(const TSharedPtr<FJsonObject>& ParamsSchema, FMythi
             Parameter.Type = EMythicaParameterType::String;
             Parameter.ValueString = FMythicaParameterString{ DefaultValue, DefaultValue };
         }
+        else if (Type == "enum")
+        {
+            FString DefaultValue = ParameterObject->GetStringField(TEXT("default"));
+
+            TArray<FMythicaParameterEnumValue> Values;
+
+            TArray<TSharedPtr<FJsonValue>> ValuesArray = ParameterObject->GetArrayField(TEXT("values"));
+            for (TSharedPtr<FJsonValue> Value : ValuesArray)
+            {
+                TSharedPtr<FJsonObject> ValueObject = Value->AsObject();
+                FString ValueName = ValueObject->GetStringField(TEXT("name"));
+                FString ValueLabel = ValueObject->GetStringField(TEXT("label"));
+                Values.Add({ ValueName, ValueLabel });
+            }
+
+            Parameter.Type = EMythicaParameterType::Enum;
+            Parameter.ValueEnum = FMythicaParameterEnum{ DefaultValue, DefaultValue, Values };
+        }
         else
         {
             continue;
@@ -178,6 +196,10 @@ void Mythica::WriteParameters(const FMythicaInputs& Inputs, const TArray<FString
 
             case EMythicaParameterType::String:
                 OutParamsSet->SetStringField(Param.Name, Param.ValueString.Value);
+                break;
+
+            case EMythicaParameterType::Enum:
+                OutParamsSet->SetStringField(Param.Name, Param.ValueEnum.Value);
                 break;
         }
     }
