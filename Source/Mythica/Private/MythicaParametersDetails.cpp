@@ -217,8 +217,8 @@ void FMythicaParametersDetails::CustomizeChildren(TSharedRef<IPropertyHandle> St
             case EMythicaParameterType::Enum:
             {
                 // Generate combo box options array
-                TSharedPtr<TArray<TSharedPtr<FMythicaParameterEnumValue>>> Options = MakeShared<TArray<TSharedPtr<FMythicaParameterEnumValue>>>();
-                ComboBoxOptions.Add(Options);
+                TSharedPtr<TEnumOptions> Options = MakeShared<TEnumOptions>();
+                EnumOptionSets.Add(Options);
 
                 const FMythicaParameterEnum& EnumParam = Parameters->Parameters[ParamIndex].ValueEnum;
                 for (const FMythicaParameterEnumValue& EnumValue : EnumParam.Values)

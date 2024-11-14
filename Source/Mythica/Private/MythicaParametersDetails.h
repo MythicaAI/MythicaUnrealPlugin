@@ -15,7 +15,9 @@ public:
 private:
     TWeakPtr<IPropertyHandle> HandleWeak;
 
-    TArray<TSharedPtr<TArray<TSharedPtr<FMythicaParameterEnumValue>>>> ComboBoxOptions;
+    // Hold references to avoid garbage collection
+    using TEnumOptions = TArray<TSharedPtr<FMythicaParameterEnumValue>>;
+    TArray<TSharedPtr<TEnumOptions>> EnumOptionSets;
 
     bool UsingSlider = false;
 };
