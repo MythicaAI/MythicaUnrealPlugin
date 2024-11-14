@@ -1217,24 +1217,6 @@ void UMythicaEditorSubsystem::OnMeshDownloadResponse(FHttpRequestPtr Request, FH
         return;
     }
 
-    // Save the imported assets
-    FAssetRegistryModule& AssetRegistryModule = FModuleManager::LoadModuleChecked<FAssetRegistryModule>("AssetRegistry");
-
-    TArray<FAssetData> Assets;
-    AssetRegistryModule.Get().GetAssetsByPath(*ImportDirectory, Assets, true, false);
-
-    TArray<UPackage*> Packages;
-    for (const FAssetData& Asset : Assets)
-    {
-        Packages.Add(Asset.GetPackage());
-    }
-
-    bool PrevSilent = GIsSilent;
-    GIsSilent = true;
-    UEditorLoadingAndSavingUtils::SavePackages(Packages, true);
-    FTimerHandle DummyHandle;
-    GEditor->GetTimerManager()->SetTimer(DummyHandle, [=]() { GIsSilent = PrevSilent; }, 0.1f, false); // Delay until after asset validation
-
     RequestData->ImportDirectory = ImportDirectory;
     SetJobState(RequestId, EMythicaJobState::Completed);
 
