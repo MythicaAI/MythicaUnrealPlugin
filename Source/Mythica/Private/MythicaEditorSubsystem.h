@@ -151,7 +151,7 @@ struct FMythicaJob
     FMythicaParameters Params;
 
     UPROPERTY()
-    FString ImportName;
+    FString ImportPath;
 
     UPROPERTY()
     EMythicaJobState State = EMythicaJobState::Requesting;
