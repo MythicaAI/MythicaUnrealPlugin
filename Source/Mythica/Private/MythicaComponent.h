@@ -15,10 +15,12 @@ public:
     UMythicaComponent();
 
     virtual void PostLoad() override;
-    void OnComponentDestroyed(bool bDestroyingHierarchy);
+    virtual void OnComponentCreated() override;
+    virtual void OnComponentDestroyed(bool bDestroyingHierarchy) override;
 
     bool CanRegenerateMesh() const;
     void RegenerateMesh();
+    FString GetImportName();
     EMythicaJobState GetJobState() const { return State; }
 
     virtual void PostEditChangeProperty(FPropertyChangedEvent& PropertyChangedEvent) override;
@@ -65,4 +67,7 @@ private:
 
     UPROPERTY()
     TArray<FName> MeshComponentNames;
+
+    UPROPERTY(DuplicateTransient)
+    FGuid ComponentGUID;
 };

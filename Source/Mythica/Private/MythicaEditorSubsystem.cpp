@@ -853,6 +853,13 @@ int UMythicaEditorSubsystem::ExecuteJob(
         return -1;
     }
 
+    FMythicaJobDefinition Definition = GetJobDefinitionById(JobDefId);
+    if (Definition.JobDefId != JobDefId)
+    {
+        UE_LOG(LogMythica, Error, TEXT("Unknown job definition %s"), *JobDefId);
+        return -1;
+    }
+
     FString ExportDirectory;
     TMap<int, FString> InputFiles;
     bool Success = PrepareInputFiles(Inputs, InputFiles, ExportDirectory, Origin);
@@ -862,7 +869,11 @@ int UMythicaEditorSubsystem::ExecuteJob(
         return -1;
     }
 
-    int RequestId = CreateJob(JobDefId, Inputs, Params, ImportName);
+    FString ImportFolderClean = ObjectTools::SanitizeObjectName(Definition.Name);
+    FString ImportNameClean = ObjectTools::SanitizeObjectName(ImportName);
+    FString ImportPath = FPaths::Combine(ImportFolderClean, ImportNameClean);
+
+    int RequestId = CreateJob(JobDefId, Inputs, Params, ImportPath);
 
     if (InputFiles.IsEmpty())
     {
@@ -960,10 +971,10 @@ void UMythicaEditorSubsystem::OnExecuteJobResponse(FHttpRequestPtr Request, FHtt
     SetJobState(RequestId, EMythicaJobState::Queued);
 }
 
-int UMythicaEditorSubsystem::CreateJob(const FString& JobDefId, const FMythicaInputs& Inputs, const FMythicaParameters& Params, const FString& ImportName)
+int UMythicaEditorSubsystem::CreateJob(const FString& JobDefId, const FMythicaInputs& Inputs, const FMythicaParameters& Params, const FString& ImportPath)
 {
     int RequestId = NextRequestId++;
-    Jobs.Add(RequestId, { JobDefId, Inputs, {}, Params, ImportName });
+    Jobs.Add(RequestId, { JobDefId, Inputs, {}, Params, ImportPath });
 
     if (!JobPollTimer.IsValid())
     {
@@ -1174,32 +1185,31 @@ void UMythicaEditorSubsystem::OnMeshDownloadResponse(FHttpRequestPtr Request, FH
         return;
     }
 
-    // Generate a unique import directory
     const UMythicaDeveloperSettings* Settings = GetDefault<UMythicaDeveloperSettings>();
 
-    FString JobName = FPaths::GetBaseFilename(ObjectTools::SanitizeObjectName(RequestData->ImportName));
-    FString ImportDirectory = FPaths::Combine(Settings->ImportDirectory, TEXT("GeneratedMeshes"), JobName);
+    // Import over any existing mesh for this component
+    FString ImportDirectory = FPaths::Combine(Settings->ImportDirectory, TEXT("GeneratedMeshes"), RequestData->ImportPath);
+    FString ImportDirectoryParent = FPaths::GetPath(ImportDirectory);
+    FString ImportName = FPaths::GetBaseFilename(RequestData->ImportPath);
 
-    FString DirectoryPackageName = FPaths::Combine(ImportDirectory, TEXT("Run"));
-    FString DirectoryRelative = FPackageName::LongPackageNameToFilename(DirectoryPackageName);
-    FString DirectoryAbsolute = FPaths::ConvertRelativePathToFull(DirectoryRelative);
-    FString UniqueDirectoryAbsolute = MakeUniquePath(DirectoryAbsolute);
-    FString UniqueDirectoryName = FPaths::GetBaseFilename(UniqueDirectoryAbsolute);
+    // Store unique file in cache for each import to avoid file locking issues
+    // Name of file must match the desired import folder name
+    FString CacheImportDirectory = FPaths::Combine(FPaths::ProjectIntermediateDir(), TEXT("MythicaCache"), TEXT("GenerateMeshCache"), RequestData->ImportPath);
+    FString UniqueCacheImportDirectory = MakeUniquePath(CacheImportDirectory);
+    FString CacheImportFile = FPaths::Combine(UniqueCacheImportDirectory, ImportName + ".usdz");
 
     // Save package to disk
-    FString FilePath = FPaths::Combine(FPaths::ProjectIntermediateDir(), TEXT("MythicaCache"), TEXT("GenerateMeshCache"), UniqueDirectoryName + ".usdz");
-
     TArray<uint8> PackageData = Response->GetContent();
-    bool PackageWritten = FFileHelper::SaveArrayToFile(PackageData, *FilePath);
+    bool PackageWritten = FFileHelper::SaveArrayToFile(PackageData, *CacheImportFile);
     if (!PackageWritten)
     {
-        UE_LOG(LogMythica, Error, TEXT("Failed to write mesh file %s"), *FilePath);
+        UE_LOG(LogMythica, Error, TEXT("Failed to write mesh file %s"), *CacheImportFile);
         SetJobState(RequestId, EMythicaJobState::Failed);
         return;
     }
 
     // Import the mesh
-    bool Success = Mythica::ImportMesh(FilePath, ImportDirectory);
+    bool Success = Mythica::ImportMesh(CacheImportFile, ImportDirectoryParent);
     if (!Success)
     {
         UE_LOG(LogMythica, Error, TEXT("Failed to import generated mesh"));
@@ -1207,32 +1217,12 @@ void UMythicaEditorSubsystem::OnMeshDownloadResponse(FHttpRequestPtr Request, FH
         return;
     }
 
-    // Save the imported assets
-    FAssetRegistryModule& AssetRegistryModule = FModuleManager::LoadModuleChecked<FAssetRegistryModule>("AssetRegistry");
-
-    FString CreatedImportDirectory = FPaths::Combine(ImportDirectory, UniqueDirectoryName);
-
-    TArray<FAssetData> Assets;
-    AssetRegistryModule.Get().GetAssetsByPath(*CreatedImportDirectory, Assets, true, false);
-
-    TArray<UPackage*> Packages;
-    for (const FAssetData& Asset : Assets)
-    {
-        Packages.Add(Asset.GetPackage());
-    }
-
-    bool PrevSilent = GIsSilent;
-    GIsSilent = true;
-    UEditorLoadingAndSavingUtils::SavePackages(Packages, true);
-    FTimerHandle DummyHandle;
-    GEditor->GetTimerManager()->SetTimer(DummyHandle, [=]() { GIsSilent = PrevSilent; }, 0.1f, false); // Delay until after asset validation
-
-    RequestData->ImportDirectory = CreatedImportDirectory;
+    RequestData->ImportDirectory = ImportDirectory;
     SetJobState(RequestId, EMythicaJobState::Completed);
 
     if (MYTHICA_CLEAN_TEMP_FILES)
     {
-        IFileManager::Get().Delete(*FilePath);
+        IFileManager::Get().Delete(*CacheImportFile);
     }
 }
 

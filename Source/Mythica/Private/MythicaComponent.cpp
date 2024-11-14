@@ -2,9 +2,18 @@
 
 #include "AssetRegistry/AssetRegistryModule.h"
 
+#define IMPORT_NAME_LENGTH 10
+
 UMythicaComponent::UMythicaComponent()
 {
     PrimaryComponentTick.bCanEverTick = false;
+}
+
+void UMythicaComponent::OnComponentCreated()
+{
+    Super::OnComponentCreated();
+
+    ComponentGUID = FGuid::NewGuid();
 }
 
 void UMythicaComponent::PostLoad()
@@ -52,12 +61,17 @@ void UMythicaComponent::RegenerateMesh()
     }
 
     UMythicaEditorSubsystem* MythicaEditorSubsystem = GEditor->GetEditorSubsystem<UMythicaEditorSubsystem>();
-    RequestId = MythicaEditorSubsystem->ExecuteJob(JobDefId.JobDefId, Inputs, Parameters, "GeneratedMesh", K2_GetComponentLocation());
+    RequestId = MythicaEditorSubsystem->ExecuteJob(JobDefId.JobDefId, Inputs, Parameters, GetImportName(), K2_GetComponentLocation());
 
     if (RequestId > 0)
     {
         MythicaEditorSubsystem->OnJobStateChange.AddDynamic(this, &UMythicaComponent::OnJobStateChanged);
     }
+}
+
+FString UMythicaComponent::GetImportName()
+{
+    return ComponentGUID.ToString().Left(IMPORT_NAME_LENGTH);
 }
 
 void UMythicaComponent::PostEditChangeProperty(FPropertyChangedEvent& PropertyChangedEvent)
