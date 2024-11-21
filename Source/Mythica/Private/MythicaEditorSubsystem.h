@@ -175,6 +175,7 @@ class UMythicaEditorSubsystem : public UEditorSubsystem
     virtual void Deinitialize();
 
     void OnMapChanged(UWorld* InWorld, EMapChangeType InMapChangeType);
+    void OnSettingsChanged(UObject* Settings, FPropertyChangedEvent& PropertyChangedEvent);
 
 public:
     // Getters
