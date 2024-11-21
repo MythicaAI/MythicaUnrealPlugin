@@ -82,6 +82,9 @@ void UMythicaEditorSubsystem::Initialize(FSubsystemCollectionBase& Collection)
     FLevelEditorModule& LevelEditorModule = FModuleManager::LoadModuleChecked<FLevelEditorModule>("LevelEditor");
     LevelEditorModule.OnMapChanged().AddUObject(this, &UMythicaEditorSubsystem::OnMapChanged);
 
+    UMythicaDeveloperSettings* Settings = GetMutableDefault<UMythicaDeveloperSettings>();
+    Settings->OnSettingChanged().AddUObject(this, &UMythicaEditorSubsystem::OnSettingsChanged);
+
     CreateSession();
 
     LoadInstalledAssetList();
@@ -96,6 +99,9 @@ void UMythicaEditorSubsystem::Deinitialize()
         FLevelEditorModule& LevelEditorModule = FModuleManager::LoadModuleChecked<FLevelEditorModule>(TEXT("LevelEditor"));
         LevelEditorModule.OnMapChanged().RemoveAll(this);
     }
+
+    UMythicaDeveloperSettings* Settings = GetMutableDefault<UMythicaDeveloperSettings>();
+    Settings->OnSettingChanged().RemoveAll(this);
 }
 
 void UMythicaEditorSubsystem::OnMapChanged(UWorld* InWorld, EMapChangeType InMapChangeType)
@@ -103,6 +109,14 @@ void UMythicaEditorSubsystem::OnMapChanged(UWorld* InWorld, EMapChangeType InMap
     if (InMapChangeType == EMapChangeType::TearDownWorld)
     {
         ClearJobs();
+    }
+}
+
+void UMythicaEditorSubsystem::OnSettingsChanged(UObject* Settings, FPropertyChangedEvent& PropertyChangedEvent)
+{
+    if (PropertyChangedEvent.Property->GetFName() == GET_MEMBER_NAME_CHECKED(UMythicaDeveloperSettings, APIKey))
+    {
+        CreateSession();
     }
 }
 
