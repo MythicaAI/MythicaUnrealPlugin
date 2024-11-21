@@ -21,6 +21,8 @@
 
 DEFINE_LOG_CATEGORY(LogMythica);
 
+#define JOB_TIMEOUT 60.0f
+
 const TCHAR* ConfigFile = TEXT("PackageInfo.ini");
 const TCHAR* ConfigPackageInfoSection = TEXT("PackageInfo");
 const TCHAR* ConfigPackageIdKey = TEXT("PackageId");
@@ -996,6 +998,16 @@ void UMythicaEditorSubsystem::SetJobState(int RequestId, EMythicaJobState State)
     JobData->State = State;
     OnJobStateChange.Broadcast(RequestId, State);
 
+    if (State == EMythicaJobState::Queued)
+    {
+        FTimerDelegate TimerDelegate = FTimerDelegate::CreateUObject(this, &UMythicaEditorSubsystem::OnJobTimeout, RequestId);
+        GEditor->GetTimerManager()->SetTimer(JobData->TimeoutTimer, TimerDelegate, JOB_TIMEOUT, false);
+    }
+    else if (State == EMythicaJobState::Importing || State == EMythicaJobState::Failed)
+    {
+        GEditor->GetTimerManager()->ClearTimer(JobData->TimeoutTimer);
+    }
+
     // TODO: Expire old request data
 
     if (Jobs.Num() == 0)
@@ -1042,6 +1054,18 @@ void UMythicaEditorSubsystem::PollJobStatus()
     }
 }
 
+void UMythicaEditorSubsystem::OnJobTimeout(int RequestId)
+{
+    FMythicaJob* JobData = Jobs.Find(RequestId);
+    if (!JobData)
+    {
+        return;
+    }
+
+    check(JobData->State == EMythicaJobState::Queued || JobData->State == EMythicaJobState::Processing);
+    SetJobState(RequestId, EMythicaJobState::Failed);
+}
+
 void UMythicaEditorSubsystem::OnJobResultsResponse(FHttpRequestPtr Request, FHttpResponsePtr Response, bool bWasSuccessful, int RequestId)
 {
     FMythicaJob* RequestData = Jobs.Find(RequestId);
@@ -1053,6 +1077,12 @@ void UMythicaEditorSubsystem::OnJobResultsResponse(FHttpRequestPtr Request, FHtt
     if (!bWasSuccessful || !Response.IsValid())
     {
         UE_LOG(LogMythica, Error, TEXT("Failed to get job for request %d"), RequestId);
+        return;
+    }
+    
+    // Job may already have been marked as failed by timeout
+    if (RequestData->State == EMythicaJobState::Failed)
+    {
         return;
     }
 
