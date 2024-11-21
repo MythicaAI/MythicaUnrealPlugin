@@ -157,6 +157,9 @@ struct FMythicaJob
     EMythicaJobState State = EMythicaJobState::Requesting;
 
     UPROPERTY()
+    FTimerHandle TimeoutTimer;
+
+    UPROPERTY()
     FString JobId;
 
     UPROPERTY()
@@ -272,6 +275,7 @@ private:
     int CreateJob(const FString& JobDefId, const FMythicaInputs& Inputs, const FMythicaParameters& Params, const FString& ImportName);
     void SetJobState(int RequestId, EMythicaJobState State);
     void PollJobStatus();
+    void OnJobTimeout(int RequestId);
     void ClearJobs();
 
     void SetSessionState(EMythicaSessionState NewState);
