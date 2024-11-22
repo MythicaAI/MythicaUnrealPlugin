@@ -172,7 +172,7 @@ bool Mythica::ExportSpline(AActor* SplineActor, const FString& ExportPath, const
         // USD: Y-up right handed, 1m per unit
         FVector Point = SplineComponent->GetLocationAtSplinePoint(i, ESplineCoordinateSpace::World);
         FVector RelativePoint = Point - Origin;
-        pxr::GfVec3f UsdPoint(RelativePoint.X / 100.0f, -RelativePoint.Z / 100.0f, RelativePoint.Y / 100.0f);
+        pxr::GfVec3f UsdPoint(RelativePoint.X / 100.0f, RelativePoint.Z / 100.0f, RelativePoint.Y / 100.0f);
         Points.push_back(UsdPoint);
     }
 
@@ -191,8 +191,7 @@ bool Mythica::ExportSpline(AActor* SplineActor, const FString& ExportPath, const
     Curves.CreateCurveVertexCountsAttr().Set(pxr::VtArray<int>{NumPoints});
     Curves.CreatePointsAttr().Set(Points);
 
-    Curves.CreateTypeAttr().Set(pxr::TfToken("cubic"));
-    Curves.CreateBasisAttr().Set(pxr::TfToken("bezier"));
+    Curves.CreateTypeAttr().Set(pxr::TfToken("linear"));
     Curves.CreateWrapAttr().Set(pxr::TfToken("nonperiodic"));
 
     Stage.GetRootLayer().Save();
