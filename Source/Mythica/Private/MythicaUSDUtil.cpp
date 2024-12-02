@@ -164,8 +164,8 @@ bool Mythica::ExportActors(const TArray<AActor*> Actors, const FString& ExportPa
 
     // Modify scene to be relative to the desired origin
     FString OffsetUSDPath = FPaths::Combine(TempFolder, "Export_Offset.usd");
-    FVector USDOrigin(ExportOrigin.X / 100.0f, ExportOrigin.Z / 100.0f, Origin.Y / 100.0f);
-    if (!CreateOffsetScene(USDPath, OffsetUSDPath, -ExportOrigin))
+    FVector USDOrigin(ExportOrigin.X / 100.0f, ExportOrigin.Z / 100.0f, ExportOrigin.Y / 100.0f);
+    if (!CreateOffsetScene(USDPath, OffsetUSDPath, -USDOrigin))
     {
         return false;
     }
@@ -214,7 +214,7 @@ bool Mythica::ExportSpline(AActor* SplineActor, const FString& ExportPath, const
         // Unreal: Z-up, left handed, 1cm per unit
         // USD: Y-up right handed, 1m per unit
         FVector Point = SplineComponent->GetLocationAtSplinePoint(i, ESplineCoordinateSpace::World);
-        FVector RelativePoint = Point - Origin;
+        FVector RelativePoint = Point - ExportOrigin;
         pxr::GfVec3f UsdPoint(RelativePoint.X / 100.0f, RelativePoint.Z / 100.0f, RelativePoint.Y / 100.0f);
         Points.push_back(UsdPoint);
     }
