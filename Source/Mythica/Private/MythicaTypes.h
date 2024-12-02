@@ -2,6 +2,7 @@
 
 #include "CoreMinimal.h"
 #include "Misc/TVariant.h"
+#include "MythicaUSDUtil.h"
 
 #include "MythicaTypes.generated.h"
 
@@ -23,6 +24,9 @@ struct FMythicaInput
 
     UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = "Input")
     EMythicaInputType Type = EMythicaInputType::Mesh;
+
+    UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = "Input", meta = (EditCondition = "Type == EMythicaInputType::World || Type == EMythicaInputType::Spline", EditConditionHides))
+    EMythicaExportTransformType TransformType = EMythicaExportTransformType::Relative;
 
     UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = "Input", meta = (EditCondition = "Type == EMythicaInputType::Mesh", EditConditionHides))
     UStaticMesh* Mesh = nullptr;
