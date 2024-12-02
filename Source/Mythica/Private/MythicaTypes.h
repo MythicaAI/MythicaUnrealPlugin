@@ -2,7 +2,6 @@
 
 #include "CoreMinimal.h"
 #include "Misc/TVariant.h"
-
 #include "MythicaUSDUtil.h"
 
 #include "MythicaTypes.generated.h"
