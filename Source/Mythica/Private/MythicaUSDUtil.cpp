@@ -85,10 +85,34 @@ bool Mythica::ExportMesh(UStaticMesh* Mesh, const FString& ExportPath)
     return ConvertUSDtoUSDZ(USDPath, ExportPath);
 }
 
-bool Mythica::ExportActors(const TArray<AActor*> Actors, const FString& ExportPath, const FVector& Origin)
+bool Mythica::ExportActors(const TArray<AActor*> Actors, const FString& ExportPath, const FVector& Origin, EMythicaExportTransformType TransformType)
 {
     FString TempFolder = FPaths::Combine(FPaths::GetPath(ExportPath), "USDExport");
     FString USDPath = FPaths::Combine(TempFolder, "Export.usd");
+
+    // Determine export origin
+    FVector ExportOrigin = FVector::ZeroVector;
+
+    switch (TransformType)
+    {
+        case EMythicaExportTransformType::World:
+            ExportOrigin = FVector::ZeroVector;
+            break;
+
+        case EMythicaExportTransformType::Relative:
+            ExportOrigin = Origin;
+            break;
+
+        case EMythicaExportTransformType::Centered:
+            FBox CombinedBounds(EForceInit::ForceInitToZero);
+            for (AActor* Actor : Actors)
+            {
+                CombinedBounds += Actor->GetComponentsBoundingBox(true);
+            }
+
+            ExportOrigin = CombinedBounds.GetCenter();
+            break;
+    }
 
     // Save original selection
     TArray<AActor*> OriginalSelection;
@@ -140,8 +164,8 @@ bool Mythica::ExportActors(const TArray<AActor*> Actors, const FString& ExportPa
 
     // Modify scene to be relative to the desired origin
     FString OffsetUSDPath = FPaths::Combine(TempFolder, "Export_Offset.usd");
-    FVector USDOrigin(Origin.X / 100.0f, Origin.Z / 100.0f, Origin.Y / 100.0f);
-    if (!CreateOffsetScene(USDPath, OffsetUSDPath, -USDOrigin))
+    FVector USDOrigin(ExportOrigin.X / 100.0f, ExportOrigin.Z / 100.0f, Origin.Y / 100.0f);
+    if (!CreateOffsetScene(USDPath, OffsetUSDPath, -ExportOrigin))
     {
         return false;
     }
@@ -149,7 +173,7 @@ bool Mythica::ExportActors(const TArray<AActor*> Actors, const FString& ExportPa
     return Success ? ConvertUSDtoUSDZ(OffsetUSDPath, ExportPath) : false;
 }
 
-bool Mythica::ExportSpline(AActor* SplineActor, const FString& ExportPath, const FVector& Origin)
+bool Mythica::ExportSpline(AActor* SplineActor, const FString& ExportPath, const FVector& Origin, EMythicaExportTransformType TransformType)
 {
     FString TempFolder = FPaths::Combine(FPaths::GetPath(ExportPath), "USDExport");
     FString USDPath = FPaths::Combine(TempFolder, "Export.usd");
@@ -158,6 +182,25 @@ bool Mythica::ExportSpline(AActor* SplineActor, const FString& ExportPath, const
     if (!SplineComponent)
     {
         return false;
+    }
+
+    // Determine export origin
+    FVector ExportOrigin = FVector::ZeroVector;
+
+    switch (TransformType)
+    {
+        case EMythicaExportTransformType::World:
+            ExportOrigin = FVector::ZeroVector;
+            break;
+
+        case EMythicaExportTransformType::Relative:
+            ExportOrigin = Origin;
+            break;
+
+        case EMythicaExportTransformType::Centered:
+            FBox Bounds = SplineActor->GetComponentsBoundingBox(true);
+            ExportOrigin = Bounds.GetCenter();
+            break;
     }
 
     // Gather point data
