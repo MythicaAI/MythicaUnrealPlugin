@@ -27,7 +27,8 @@ enum class EMythicaJobState : uint8
     Processing,        // Request is being processed by the server
     Importing,         // Request has finished processing and the result is being downloaded
     Completed,         // Request has been completed
-    Failed             // Request has failed
+    Failed,            // Request has failed
+    Count
 };
 
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnSessionStateChanged, EMythicaSessionState, State);

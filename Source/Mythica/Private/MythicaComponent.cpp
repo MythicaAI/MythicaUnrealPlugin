@@ -7,6 +7,11 @@
 UMythicaComponent::UMythicaComponent()
 {
     PrimaryComponentTick.bCanEverTick = false;
+
+    EstimateStateTimes[(uint8)EMythicaJobState::Requesting] = 0.1f;
+    EstimateStateTimes[(uint8)EMythicaJobState::Queued] = 0.1f;
+    EstimateStateTimes[(uint8)EMythicaJobState::Processing] = 1.0f;
+    EstimateStateTimes[(uint8)EMythicaJobState::Importing] = 0.25f;
 }
 
 void UMythicaComponent::OnComponentCreated()
@@ -81,12 +86,12 @@ bool UMythicaComponent::IsJobProcessing() const
 
 float UMythicaComponent::JobProgressPercent() const
 {
-    // Prepare estimaged durations for each job state
+    // Prepare estimated durations for each job state
     const TArray<TPair<EMythicaJobState, double>> StateEstimatedDurations = {
-        { EMythicaJobState::Requesting, 0.25f },
-        { EMythicaJobState::Queued,     0.25f },
-        { EMythicaJobState::Processing, 1.0f },
-        { EMythicaJobState::Importing,  0.25f },
+        { EMythicaJobState::Requesting, EstimateStateTimes[(uint8)EMythicaJobState::Requesting] },
+        { EMythicaJobState::Queued,     EstimateStateTimes[(uint8)EMythicaJobState::Queued] },
+        { EMythicaJobState::Processing, EstimateStateTimes[(uint8)EMythicaJobState::Processing] },
+        { EMythicaJobState::Importing,  EstimateStateTimes[(uint8)EMythicaJobState::Importing] },
     };
     static_assert((uint8)EMythicaJobState::Completed - (uint8)EMythicaJobState::Invalid == 5);
 
@@ -253,6 +258,11 @@ void UMythicaComponent::OnJobStateChanged(int InRequestId, EMythicaJobState InSt
     if (InRequestId != RequestId)
     {
         return;
+    }
+
+    if (State >= EMythicaJobState::Requesting && State <= EMythicaJobState::Importing)
+    {
+        EstimateStateTimes[(int8)State] = FPlatformTime::Seconds() - StateBeginTime;
     }
 
     State = InState;

@@ -66,6 +66,9 @@ private:
     bool QueueRegenerate = false;
     FTimerHandle DelayRegenerateHandle;
 
+    UPROPERTY()
+    double EstimateStateTimes[(uint8)EMythicaJobState::Count] = {};
+
     UPROPERTY(Transient)
     TSet<USceneComponent*> WorldInputComponents;
 
