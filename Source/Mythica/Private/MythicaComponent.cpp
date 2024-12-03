@@ -95,29 +95,21 @@ bool UMythicaComponent::IsJobProcessing() const
 
 float UMythicaComponent::JobProgressPercent() const
 {
-    // Prepare estimated durations for each job state
     double TotalEstimatedTime = 0.0f;
-    for (const FMythicaProcessingStep& Step : ProcessingSteps)
-    {
-        double EstimatedTime = StateDurations.Contains(Step.State) ? StateDurations[Step.State] : Step.EstimatedDuration;
-        TotalEstimatedTime += EstimatedTime;
-    }
-
-    // Calculate current progress precentage
     double ElapsedTime = 0.0f;
     for (const FMythicaProcessingStep& Step : ProcessingSteps)
     {
         double EstimatedTime = StateDurations.Contains(Step.State) ? StateDurations[Step.State] : Step.EstimatedDuration;
+        TotalEstimatedTime += EstimatedTime;
 
-        if (Step.State == State)
+        if (Step.State < State)
+        {
+            ElapsedTime += EstimatedTime;
+        }
+        else if (Step.State == State)
         {
             double TimeInCurrentState = FPlatformTime::Seconds() - StateBeginTime;
             ElapsedTime += FMath::Clamp(TimeInCurrentState, 0.0f, EstimatedTime);
-            break;
-        }
-        else
-        {
-            ElapsedTime += EstimatedTime;
         }
     }
 
