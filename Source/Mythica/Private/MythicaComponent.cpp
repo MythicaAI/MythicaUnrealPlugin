@@ -81,7 +81,13 @@ bool UMythicaComponent::IsJobProcessing() const
 
 float UMythicaComponent::JobProgressPercent() const
 {
-    return 0.5f;
+    const double EstimatedTime = 1.0f;
+    
+    double CurrentTime = FPlatformTime::Seconds();
+    double ElapsedTime = CurrentTime - StateBeginTime;
+    double Progress = FMath::Clamp(ElapsedTime / EstimatedTime, 0.0, 1.0);
+
+    return Progress;
 }
 
 void UMythicaComponent::PostEditChangeProperty(FPropertyChangedEvent& PropertyChangedEvent)
@@ -223,6 +229,7 @@ void UMythicaComponent::OnJobStateChanged(int InRequestId, EMythicaJobState InSt
     }
 
     State = InState;
+    StateBeginTime = FPlatformTime::Seconds();
     if (State != EMythicaJobState::Completed && State != EMythicaJobState::Failed)
     {
         return;

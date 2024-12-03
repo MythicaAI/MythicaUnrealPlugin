@@ -62,6 +62,7 @@ public:
 private:
     int RequestId = -1;
     EMythicaJobState State = EMythicaJobState::Invalid;
+    double StateBeginTime = 0.0f;
     bool QueueRegenerate = false;
     FTimerHandle DelayRegenerateHandle;
 
