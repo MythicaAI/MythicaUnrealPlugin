@@ -100,10 +100,7 @@ void FMythicaComponentDetails::CustomizeDetails(IDetailLayoutBuilder& DetailBuil
                                             return false;
                                         }
 
-                                        EMythicaJobState State = ComponentWeak->GetJobState();
-                                        return State == EMythicaJobState::Invalid ||
-                                               State == EMythicaJobState::Failed ||
-                                               State == EMythicaJobState::Completed;
+                                        return !ComponentWeak->IsJobProcessing();
                                     }
                                     return false;
                                 })
@@ -154,7 +151,7 @@ void FMythicaComponentDetails::CustomizeDetails(IDetailLayoutBuilder& DetailBuil
                                         {
                                             if (ComponentWeak.IsValid())
                                             {
-                                                return 0.5f;
+                                                return ComponentWeak->JobProgressPercent();
                                             }
                                             return 0.0f;
                                         })
@@ -162,8 +159,7 @@ void FMythicaComponentDetails::CustomizeDetails(IDetailLayoutBuilder& DetailBuil
                                         {
                                             if (ComponentWeak.IsValid())
                                             {
-                                                EMythicaJobState State = ComponentWeak->GetJobState();
-                                                if (State >= EMythicaJobState::Requesting && State <= EMythicaJobState::Importing)
+                                                if (ComponentWeak->IsJobProcessing())
                                                 {
                                                     return EVisibility::Visible;
                                                 }

@@ -21,7 +21,10 @@ public:
     bool CanRegenerateMesh() const;
     void RegenerateMesh();
     FString GetImportName();
+
     EMythicaJobState GetJobState() const { return State; }
+    bool IsJobProcessing() const;
+    float JobProgressPercent() const;
 
     virtual void PostEditChangeProperty(FPropertyChangedEvent& PropertyChangedEvent) override;
 

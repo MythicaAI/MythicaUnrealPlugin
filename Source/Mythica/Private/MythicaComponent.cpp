@@ -74,6 +74,16 @@ FString UMythicaComponent::GetImportName()
     return ComponentGUID.ToString().Left(IMPORT_NAME_LENGTH);
 }
 
+bool UMythicaComponent::IsJobProcessing() const
+{
+    return State >= EMythicaJobState::Requesting && State <= EMythicaJobState::Importing;
+}
+
+float UMythicaComponent::JobProgressPercent() const
+{
+    return 0.5f;
+}
+
 void UMythicaComponent::PostEditChangeProperty(FPropertyChangedEvent& PropertyChangedEvent)
 {
     Super::PostEditChangeProperty(PropertyChangedEvent);
