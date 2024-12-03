@@ -81,13 +81,40 @@ bool UMythicaComponent::IsJobProcessing() const
 
 float UMythicaComponent::JobProgressPercent() const
 {
-    const double EstimatedTime = 1.0f;
-    
-    double CurrentTime = FPlatformTime::Seconds();
-    double ElapsedTime = CurrentTime - StateBeginTime;
-    double Progress = FMath::Clamp(ElapsedTime / EstimatedTime, 0.0, 1.0);
+    // Prepare estimaged durations for each job state
+    const TArray<TPair<EMythicaJobState, double>> StateEstimatedDurations = {
+        { EMythicaJobState::Requesting, 0.25f },
+        { EMythicaJobState::Queued,     0.25f },
+        { EMythicaJobState::Processing, 1.0f },
+        { EMythicaJobState::Importing,  0.25f },
+    };
+    static_assert((uint8)EMythicaJobState::Completed - (uint8)EMythicaJobState::Invalid == 5);
 
-    return Progress;
+    double TotalEstimatedTime = 0.0f;
+    for (const auto& StateDuration : StateEstimatedDurations)
+    {
+        TotalEstimatedTime += StateDuration.Value;
+    }
+
+    // Calculate current progress precentage
+    double ElapsedTime = 0.0f;
+    for (const auto& StateDuration : StateEstimatedDurations)
+    {
+        if (StateDuration.Key == State)
+        {
+            double CurrentTime = FPlatformTime::Seconds();
+            double TimeInCurrentState = CurrentTime - StateBeginTime;
+            ElapsedTime += FMath::Clamp(TimeInCurrentState, 0.0f, StateDuration.Value);
+            break;
+        }
+        else
+        {
+            ElapsedTime += StateDuration.Value;
+        }
+    }
+
+    double Progress = TotalEstimatedTime > 0.0f ? ElapsedTime / TotalEstimatedTime : 0.0f;
+    return FMath::Clamp(Progress, 0.0f, 1.0f);
 }
 
 void UMythicaComponent::PostEditChangeProperty(FPropertyChangedEvent& PropertyChangedEvent)
