@@ -67,7 +67,7 @@ private:
     FTimerHandle DelayRegenerateHandle;
 
     UPROPERTY()
-    double EstimateStateTimes[(uint8)EMythicaJobState::Count] = {};
+    TMap<EMythicaJobState, double> EstimateStateTimes;
 
     UPROPERTY(Transient)
     TSet<USceneComponent*> WorldInputComponents;

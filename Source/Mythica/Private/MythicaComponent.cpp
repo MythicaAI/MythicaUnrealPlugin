@@ -4,14 +4,23 @@
 
 #define IMPORT_NAME_LENGTH 10
 
+const EMythicaJobState ProcessingSteps[] = {
+    EMythicaJobState::Requesting,
+    EMythicaJobState::Queued,
+    EMythicaJobState::Processing,
+    EMythicaJobState::Importing
+};
+static_assert((uint8)EMythicaJobState::Completed - (uint8)EMythicaJobState::Invalid == 5);
+
 UMythicaComponent::UMythicaComponent()
 {
     PrimaryComponentTick.bCanEverTick = false;
 
-    EstimateStateTimes[(uint8)EMythicaJobState::Requesting] = 0.1f;
-    EstimateStateTimes[(uint8)EMythicaJobState::Queued] = 0.1f;
-    EstimateStateTimes[(uint8)EMythicaJobState::Processing] = 1.0f;
-    EstimateStateTimes[(uint8)EMythicaJobState::Importing] = 0.25f;
+    EstimateStateTimes.Add(EMythicaJobState::Requesting, 0.01);
+    EstimateStateTimes.Add(EMythicaJobState::Queued, 0.01);
+    EstimateStateTimes.Add(EMythicaJobState::Processing, 5.0);
+    EstimateStateTimes.Add(EMythicaJobState::Importing, 0.25);
+    check(EstimateStateTimes.Num() == std::size(ProcessingSteps));
 }
 
 void UMythicaComponent::OnComponentCreated()
@@ -87,34 +96,25 @@ bool UMythicaComponent::IsJobProcessing() const
 float UMythicaComponent::JobProgressPercent() const
 {
     // Prepare estimated durations for each job state
-    const TArray<TPair<EMythicaJobState, double>> StateEstimatedDurations = {
-        { EMythicaJobState::Requesting, EstimateStateTimes[(uint8)EMythicaJobState::Requesting] },
-        { EMythicaJobState::Queued,     EstimateStateTimes[(uint8)EMythicaJobState::Queued] },
-        { EMythicaJobState::Processing, EstimateStateTimes[(uint8)EMythicaJobState::Processing] },
-        { EMythicaJobState::Importing,  EstimateStateTimes[(uint8)EMythicaJobState::Importing] },
-    };
-    static_assert((uint8)EMythicaJobState::Completed - (uint8)EMythicaJobState::Invalid == 5);
-
     double TotalEstimatedTime = 0.0f;
-    for (const auto& StateDuration : StateEstimatedDurations)
+    for (EMythicaJobState StepState : ProcessingSteps)
     {
-        TotalEstimatedTime += StateDuration.Value;
+        TotalEstimatedTime += EstimateStateTimes[StepState];
     }
 
     // Calculate current progress precentage
     double ElapsedTime = 0.0f;
-    for (const auto& StateDuration : StateEstimatedDurations)
+    for (EMythicaJobState StepState : ProcessingSteps)
     {
-        if (StateDuration.Key == State)
+        if (StepState == State)
         {
-            double CurrentTime = FPlatformTime::Seconds();
-            double TimeInCurrentState = CurrentTime - StateBeginTime;
-            ElapsedTime += FMath::Clamp(TimeInCurrentState, 0.0f, StateDuration.Value);
+            double TimeInCurrentState = FPlatformTime::Seconds() - StateBeginTime;
+            ElapsedTime += FMath::Clamp(TimeInCurrentState, 0.0f, EstimateStateTimes[StepState]);
             break;
         }
         else
         {
-            ElapsedTime += StateDuration.Value;
+            ElapsedTime += EstimateStateTimes[StepState];
         }
     }
 
@@ -260,9 +260,9 @@ void UMythicaComponent::OnJobStateChanged(int InRequestId, EMythicaJobState InSt
         return;
     }
 
-    if (State >= EMythicaJobState::Requesting && State <= EMythicaJobState::Importing)
+    if (EstimateStateTimes.Contains(State))
     {
-        EstimateStateTimes[(int8)State] = FPlatformTime::Seconds() - StateBeginTime;
+        EstimateStateTimes[State] = FPlatformTime::Seconds() - StateBeginTime;
     }
 
     State = InState;
