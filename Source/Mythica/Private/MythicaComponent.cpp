@@ -265,7 +265,7 @@ void UMythicaComponent::OnJobStateChanged(int InRequestId, EMythicaJobState InSt
         return;
     }
 
-    StateDurations[State] = FPlatformTime::Seconds() - StateBeginTime;
+    StateDurations.Add(State, FPlatformTime::Seconds() - StateBeginTime);
 
     State = InState;
     StateBeginTime = FPlatformTime::Seconds();
