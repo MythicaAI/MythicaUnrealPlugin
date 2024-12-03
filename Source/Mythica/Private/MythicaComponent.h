@@ -21,7 +21,10 @@ public:
     bool CanRegenerateMesh() const;
     void RegenerateMesh();
     FString GetImportName();
+
     EMythicaJobState GetJobState() const { return State; }
+    bool IsJobProcessing() const;
+    float JobProgressPercent() const;
 
     virtual void PostEditChangeProperty(FPropertyChangedEvent& PropertyChangedEvent) override;
 
@@ -59,8 +62,12 @@ public:
 private:
     int RequestId = -1;
     EMythicaJobState State = EMythicaJobState::Invalid;
+    double StateBeginTime = 0.0f;
     bool QueueRegenerate = false;
     FTimerHandle DelayRegenerateHandle;
+
+    UPROPERTY()
+    TMap<EMythicaJobState, double> StateDurations;
 
     UPROPERTY(Transient)
     TSet<USceneComponent*> WorldInputComponents;

@@ -4,6 +4,20 @@
 
 #define IMPORT_NAME_LENGTH 10
 
+struct FMythicaProcessingStep
+{
+    EMythicaJobState State;
+    double EstimatedDuration;
+};
+
+const FMythicaProcessingStep ProcessingSteps[] = {
+    { EMythicaJobState::Requesting, 0.1f },
+    { EMythicaJobState::Queued, 0.1f },
+    { EMythicaJobState::Processing, 5.0f },
+    { EMythicaJobState::Importing, 0.25f }
+};
+static_assert((uint8)EMythicaJobState::Completed - (uint8)EMythicaJobState::Invalid == 5);
+
 UMythicaComponent::UMythicaComponent()
 {
     PrimaryComponentTick.bCanEverTick = false;
@@ -72,6 +86,35 @@ void UMythicaComponent::RegenerateMesh()
 FString UMythicaComponent::GetImportName()
 {
     return ComponentGUID.ToString().Left(IMPORT_NAME_LENGTH);
+}
+
+bool UMythicaComponent::IsJobProcessing() const
+{
+    return State >= EMythicaJobState::Requesting && State <= EMythicaJobState::Importing;
+}
+
+float UMythicaComponent::JobProgressPercent() const
+{
+    double TotalEstimatedTime = 0.0f;
+    double ElapsedTime = 0.0f;
+    for (const FMythicaProcessingStep& Step : ProcessingSteps)
+    {
+        double EstimatedTime = StateDurations.Contains(Step.State) ? StateDurations[Step.State] : Step.EstimatedDuration;
+        TotalEstimatedTime += EstimatedTime;
+
+        if (Step.State < State)
+        {
+            ElapsedTime += EstimatedTime;
+        }
+        else if (Step.State == State)
+        {
+            double TimeInCurrentState = FPlatformTime::Seconds() - StateBeginTime;
+            ElapsedTime += FMath::Clamp(TimeInCurrentState, 0.0f, EstimatedTime);
+        }
+    }
+
+    double Progress = TotalEstimatedTime > 0.0f ? ElapsedTime / TotalEstimatedTime : 0.0f;
+    return FMath::Clamp(Progress, 0.0f, 1.0f);
 }
 
 void UMythicaComponent::PostEditChangeProperty(FPropertyChangedEvent& PropertyChangedEvent)
@@ -144,6 +187,8 @@ void UMythicaComponent::OnJobDefIdChanged()
     Parameters = Definition.Parameters;
     Inputs = Definition.Inputs;
 
+    StateDurations.Reset();
+
     ForceRefreshDetailsViewPanel();
 }
 
@@ -212,7 +257,10 @@ void UMythicaComponent::OnJobStateChanged(int InRequestId, EMythicaJobState InSt
         return;
     }
 
+    StateDurations.Add(State, FPlatformTime::Seconds() - StateBeginTime);
+
     State = InState;
+    StateBeginTime = FPlatformTime::Seconds();
     if (State != EMythicaJobState::Completed && State != EMythicaJobState::Failed)
     {
         return;

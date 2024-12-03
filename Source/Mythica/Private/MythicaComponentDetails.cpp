@@ -4,6 +4,7 @@
 #include "DetailLayoutBuilder.h"
 #include "DetailWidgetRow.h"
 #include "MythicaComponent.h"
+#include "Widgets/Notifications/SProgressBar.h"
 #include "Widgets/Text/STextBlock.h"
 
 TSharedRef<IDetailCustomization> FMythicaComponentDetails::MakeInstance()
@@ -99,10 +100,7 @@ void FMythicaComponentDetails::CustomizeDetails(IDetailLayoutBuilder& DetailBuil
                                             return false;
                                         }
 
-                                        EMythicaJobState State = ComponentWeak->GetJobState();
-                                        return State == EMythicaJobState::Invalid ||
-                                               State == EMythicaJobState::Failed ||
-                                               State == EMythicaJobState::Completed;
+                                        return !ComponentWeak->IsJobProcessing();
                                     }
                                     return false;
                                 })
@@ -120,20 +118,56 @@ void FMythicaComponentDetails::CustomizeDetails(IDetailLayoutBuilder& DetailBuil
                         .VAlign(VAlign_Center)
                         .FillWidth(0.5f)
                         [
-                            SNew(STextBlock)
-                                .Text_Lambda([ComponentWeak]()
-                                {
-                                    if (ComponentWeak.IsValid())
-                                    {
-                                        EMythicaJobState State = ComponentWeak->GetJobState();
-                                        if (State != EMythicaJobState::Invalid && State != EMythicaJobState::Completed)
+                            SNew(SVerticalBox)
+                                + SVerticalBox::Slot()
+                                .AutoHeight()
+                                .Padding(FMargin(0, 5, 0, 0))
+                                .HAlign(HAlign_Center)
+                                [
+                                    SNew(STextBlock)
+                                        .Text_Lambda([ComponentWeak]()
                                         {
-                                            FString StateString = StaticEnum<EMythicaJobState>()->GetNameStringByValue(static_cast<int64>(State));
-                                            return FText::FromString(StateString);
-                                        }
-                                    }
-                                    return FText::FromString("");
-                                })
+                                            if (ComponentWeak.IsValid())
+                                            {
+                                                EMythicaJobState State = ComponentWeak->GetJobState();
+                                                if (State != EMythicaJobState::Invalid && State != EMythicaJobState::Completed)
+                                                {
+                                                    FString StateString = StaticEnum<EMythicaJobState>()->GetNameStringByValue(static_cast<int64>(State));
+                                                    return FText::FromString(StateString);
+                                                }
+                                            }
+                                            return FText::FromString("");
+                                        })
+                                ]
+                                + SVerticalBox::Slot()
+                                .AutoHeight()
+                                .Padding(FMargin(0, 5, 0, 5))
+                                [
+                                    SNew(SBox)
+                                    .WidthOverride(200.0f)
+                                    [
+                                        SNew(SProgressBar)
+                                        .Percent_Lambda([ComponentWeak]()
+                                        {
+                                            if (ComponentWeak.IsValid())
+                                            {
+                                                return ComponentWeak->JobProgressPercent();
+                                            }
+                                            return 0.0f;
+                                        })
+                                        .Visibility_Lambda([ComponentWeak]()
+                                        {
+                                            if (ComponentWeak.IsValid())
+                                            {
+                                                if (ComponentWeak->IsJobProcessing())
+                                                {
+                                                    return EVisibility::Visible;
+                                                }
+                                            }
+                                            return EVisibility::Hidden;
+                                        })
+                                    ]
+                                ]
                         ]
                 ]
         ];
