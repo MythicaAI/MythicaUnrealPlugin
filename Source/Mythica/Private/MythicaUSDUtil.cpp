@@ -3,6 +3,7 @@
 #include "MythicaUSDUtil.h"
 
 #include "AssetImportTask.h"
+#include "AssetRegistry/AssetRegistryModule.h"
 #include "AssetToolsModule.h"
 #include "AutomatedAssetImportData.h"
 #include "Components/SplineComponent.h"
@@ -10,6 +11,7 @@
 #include "IPythonScriptPlugin.h"
 #include "LevelExporterUSDOptions.h"
 #include "Selection.h"
+#include "Serialization/ArchiveReplaceObjectRef.h"
 #include "StaticMeshExporterUSDOptions.h"
 #include "UObject/GCObjectScopeGuard.h"
 #include "UnrealUSDWrapper.h"
@@ -284,6 +286,21 @@ bool Mythica::ImportMesh(const FString& FilePath, const FString& ImportDirectory
         return false;
     }
 
+    // Gather set of existing assets
+    FAssetRegistryModule& AssetRegistryModule = FModuleManager::LoadModuleChecked<FAssetRegistryModule>("AssetRegistry");
+
+    FString FileName = FPaths::GetBaseFilename(FilePath);
+    FString CreatedImportDirectory = FPaths::Combine(ImportDirectory, FileName);
+
+    TArray<FAssetData> OriginalAssets;
+    AssetRegistryModule.Get().GetAssetsByPath(*CreatedImportDirectory, OriginalAssets, true, false);
+
+    TMap<FName, UObject*> OriginalAssetMap;
+    for (const FAssetData& Asset : OriginalAssets)
+    {
+        OriginalAssetMap.Add(Asset.PackageName, Asset.GetAsset());
+    }
+
     // Setup import options
     UUsdStageImportOptions* ImportOptions = NewObject<UUsdStageImportOptions>();
     FGCObjectScopeGuard OptionsGuard(ImportOptions);
@@ -347,6 +364,41 @@ bool Mythica::ImportMesh(const FString& FilePath, const FString& ImportDirectory
     GIsSilent = true;
     AssetToolsModule.Get().ImportAssetTasks(Tasks);
     GIsSilent = PrevSilent;
+
+    // Determine which assets were reimported
+    TArray<FAssetData> NewAssets;
+    AssetRegistryModule.Get().GetAssetsByPath(*CreatedImportDirectory, NewAssets, true, false);
+
+    TMap<UObject*, UObject*> AssetReplacementMap;
+    for (const FAssetData& Asset : NewAssets)
+    {
+        UObject* NewAssetObject = Asset.GetAsset();
+        FName NewAssetName = NewAssetObject->GetPackage()->GetFName();
+        if (OriginalAssetMap.Contains(NewAssetName))
+        {
+            UObject* OriginalAssetObject = OriginalAssetMap[NewAssetName];
+            AssetReplacementMap.Add(OriginalAssetObject, NewAssetObject);
+        }
+    }
+
+    // Repair references to the original asset in the active level
+    ULevel* CurrentLevel = GWorld->GetCurrentLevel();
+    if (CurrentLevel)
+    {
+        constexpr EArchiveReplaceObjectFlags
+            ReplaceFlags = (EArchiveReplaceObjectFlags::IgnoreOuterRef | EArchiveReplaceObjectFlags::IgnoreArchetypeRef | EArchiveReplaceObjectFlags::TrackReplacedReferences);
+        FArchiveReplaceObjectRef<UObject> ArchiveReplaceObjectRefInner(CurrentLevel, AssetReplacementMap, ReplaceFlags);
+
+        // Update render state of repaired references
+        for (const TPair<UObject*, TArray<FProperty*>>& Reference : ArchiveReplaceObjectRefInner.GetReplacedReferences())
+        {
+            UActorComponent* UpdatedComponent = Cast<UActorComponent>(Reference.Key);
+            if (UpdatedComponent)
+            {
+                UpdatedComponent->MarkRenderStateDirty();
+            }
+        }
+    }
 
     return Task->GetObjects().Num() > 0;
 }
