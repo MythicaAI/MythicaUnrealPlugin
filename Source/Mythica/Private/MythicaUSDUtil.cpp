@@ -382,19 +382,21 @@ bool Mythica::ImportMesh(const FString& FilePath, const FString& ImportDirectory
     }
 
     // Repair references to the original asset in the active level
-    ULevel* Level = GWorld->GetCurrentLevel();
-
-    constexpr EArchiveReplaceObjectFlags
-        ReplaceFlags = (EArchiveReplaceObjectFlags::IgnoreOuterRef | EArchiveReplaceObjectFlags::IgnoreArchetypeRef | EArchiveReplaceObjectFlags::TrackReplacedReferences);
-    FArchiveReplaceObjectRef<UObject> ArchiveReplaceObjectRefInner(Level, AssetReplacementMap, ReplaceFlags);
-
-    // Update render state of repaired references
-    for (const TPair<UObject*, TArray<FProperty*>>& Reference : ArchiveReplaceObjectRefInner.GetReplacedReferences())
+    ULevel* CurrentLevel = GWorld->GetCurrentLevel();
+    if (CurrentLevel)
     {
-        UActorComponent* ReplacedComponent = Cast<UActorComponent>(Reference.Key);
-        if (ReplacedComponent)
+        constexpr EArchiveReplaceObjectFlags
+            ReplaceFlags = (EArchiveReplaceObjectFlags::IgnoreOuterRef | EArchiveReplaceObjectFlags::IgnoreArchetypeRef | EArchiveReplaceObjectFlags::TrackReplacedReferences);
+        FArchiveReplaceObjectRef<UObject> ArchiveReplaceObjectRefInner(CurrentLevel, AssetReplacementMap, ReplaceFlags);
+
+        // Update render state of repaired references
+        for (const TPair<UObject*, TArray<FProperty*>>& Reference : ArchiveReplaceObjectRefInner.GetReplacedReferences())
         {
-            ReplacedComponent->MarkRenderStateDirty();
+            UActorComponent* UpdatedComponent = Cast<UActorComponent>(Reference.Key);
+            if (UpdatedComponent)
+            {
+                UpdatedComponent->MarkRenderStateDirty();
+            }
         }
     }
 
