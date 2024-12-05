@@ -2,6 +2,23 @@
 
 #include "MythicaTypes.h"
 
+const TCHAR* SystemParameters[] =
+{
+    TEXT("format")
+};
+
+bool Mythica::IsSystemParameter(const FString& Name)
+{
+    for (const TCHAR* Parameter : SystemParameters)
+    {
+        if (Name == Parameter)
+        {
+            return true;
+        }
+    }
+    return false;
+}
+
 void Mythica::ReadParameters(const TSharedPtr<FJsonObject>& ParamsSchema, FMythicaInputs& OutInputs, FMythicaParameters& OutParameters)
 {
     for (auto It = ParamsSchema->Values.CreateConstIterator(); It; ++It)
