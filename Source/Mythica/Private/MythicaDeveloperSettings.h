@@ -25,5 +25,8 @@ public:
     FString APIKey;
 
     UPROPERTY(Config, EditAnywhere, BlueprintReadOnly, Category = Tools)
+    bool UseToolWhitelist = true;
+
+    UPROPERTY(Config, EditAnywhere, BlueprintReadOnly, Category = Tools, meta = (EditCondition = "UseToolWhitelist", EditConditionHides))
     TArray<FString> JobDefIdWhitelist;
 };

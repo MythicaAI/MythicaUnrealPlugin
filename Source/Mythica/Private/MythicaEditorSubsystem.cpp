@@ -152,7 +152,7 @@ TArray<FMythicaJobDefinition> UMythicaEditorSubsystem::GetJobDefinitionList(cons
             continue;
         }
 
-        if (Settings->JobDefIdWhitelist.IsEmpty() || Settings->JobDefIdWhitelist.Contains(Definition.JobDefId))
+        if (!Settings->UseToolWhitelist || Settings->JobDefIdWhitelist.Contains(Definition.JobDefId))
         {
             Definitions.Add(Definition);
         }
