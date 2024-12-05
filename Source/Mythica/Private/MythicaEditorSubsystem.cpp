@@ -710,8 +710,13 @@ bool UMythicaEditorSubsystem::PrepareInputFiles(const FMythicaInputs& Inputs, TM
     for (int i = 0; i < Inputs.Inputs.Num(); i++)
     {
         const FMythicaInput& Input = Inputs.Inputs[i];
-        if (Input.Type == EMythicaInputType::Mesh && Input.Mesh != nullptr)
+        if (Input.Type == EMythicaInputType::Mesh)
         {
+            if (!Input.Mesh)
+            {
+                continue;
+            }
+
             FString FilePath = FPaths::Combine(ExportDirectory, FString::Format(TEXT("Input{0}"), { i }), "Mesh.usdz");
             bool Success = Mythica::ExportMesh(Input.Mesh, FilePath);
             if (!Success)
@@ -722,10 +727,17 @@ bool UMythicaEditorSubsystem::PrepareInputFiles(const FMythicaInputs& Inputs, TM
 
             InputFiles.Add(i, FilePath);
         }
-        else if (Input.Type == EMythicaInputType::World && !Input.Actors.IsEmpty())
+        else if (Input.Type == EMythicaInputType::World)
         {
+            TArray<AActor*> Actors = Input.Actors;
+            Actors.RemoveAll([](AActor* Actor) { return !Actor; });
+            if (Actors.IsEmpty())
+            {
+                continue;
+            }
+
             FString FilePath = FPaths::Combine(ExportDirectory, FString::Format(TEXT("Input{0}"), { i }), "Mesh.usdz");
-            bool Success = Mythica::ExportActors(Input.Actors, FilePath, Origin, Input.TransformType);
+            bool Success = Mythica::ExportActors(Actors, FilePath, Origin, Input.TransformType);
             if (!Success)
             {
                 UE_LOG(LogMythica, Error, TEXT("Failed to export actors"));
@@ -734,8 +746,13 @@ bool UMythicaEditorSubsystem::PrepareInputFiles(const FMythicaInputs& Inputs, TM
 
             InputFiles.Add(i, FilePath);
         }
-        else if (Input.Type == EMythicaInputType::Spline && Input.SplineActor != nullptr)
+        else if (Input.Type == EMythicaInputType::Spline)
         {
+            if (!Input.SplineActor)
+            {
+                continue;
+            }
+
             FString FilePath = FPaths::Combine(ExportDirectory, FString::Format(TEXT("Input{0}"), { i }), "Mesh.usdz");
             bool Success = Mythica::ExportSpline(Input.SplineActor, FilePath, Origin, Input.TransformType);
             if (!Success)
