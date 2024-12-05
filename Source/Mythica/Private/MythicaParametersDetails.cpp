@@ -52,6 +52,10 @@ void FMythicaParametersDetails::CustomizeChildren(TSharedRef<IPropertyHandle> St
     for (int32 ParamIndex = 0; ParamIndex < Parameters->Parameters.Num(); ++ParamIndex)
     {
         const FMythicaParameter& Parameter = Parameters->Parameters[ParamIndex];
+        if (Mythica::IsSystemParameter(Parameter.Name))
+        {
+            continue;
+        }
 
         TSharedRef<SWidget> ValueWidget = SNullWidget::NullWidget;
         int DesiredWidthScalar = 1;

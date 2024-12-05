@@ -194,6 +194,8 @@ struct FMythicaMaterialParameters
 
 namespace Mythica
 {
+    bool IsSystemParameter(const FString& Name);
+
     void ReadParameters(const TSharedPtr<FJsonObject>& ParamsSchema, FMythicaInputs& OutInputs, FMythicaParameters& OutParameters);
     void WriteParameters(const FMythicaInputs& Inputs, const TArray<FString>& InputFileIds, const FMythicaParameters& Parameters, const TSharedPtr<FJsonObject>& ParameterSet);
 }
