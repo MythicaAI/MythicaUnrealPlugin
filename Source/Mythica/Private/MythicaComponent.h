@@ -6,6 +6,21 @@
 #include "MythicaTypes.h"
 #include "MythicaComponent.generated.h"
 
+USTRUCT(BlueprintType)
+struct FMythicaComponentSettings
+{
+    GENERATED_BODY()
+
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Mythica")
+    bool RegenerateOnParameterChange = true;
+
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Mythica")
+    bool RegenerateOnInputChange = true;
+
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Mythica")
+    bool RegenerateOnTransformChange = false;
+};
+
 UCLASS( ClassGroup=(Custom), meta=(BlueprintSpawnableComponent) )
 class UMythicaComponent : public USceneComponent
 {
@@ -45,13 +60,7 @@ public:
     FMythicaJobDefinitionId JobDefId;
 
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Mythica")
-    bool RegenerateOnParameterChange = true;
-    
-    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Mythica")
-    bool RegenerateOnInputChange = true;
-
-    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Mythica")
-    bool RegenerateOnTransformChange = false;
+    FMythicaComponentSettings Settings;
 
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Parameters")
     FMythicaParameters Parameters;

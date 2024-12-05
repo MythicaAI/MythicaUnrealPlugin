@@ -132,7 +132,7 @@ void UMythicaComponent::PostEditChangeProperty(FPropertyChangedEvent& PropertyCh
     }
     else if (PropertyChangedEvent.MemberProperty->GetFName() == GET_MEMBER_NAME_CHECKED(UMythicaComponent, Parameters))
     {
-        if (RegenerateOnParameterChange)
+        if (Settings.RegenerateOnParameterChange)
         {
             if (PropertyChangedEvent.ChangeType == EPropertyChangeType::Interactive)
             {
@@ -146,13 +146,13 @@ void UMythicaComponent::PostEditChangeProperty(FPropertyChangedEvent& PropertyCh
     }
     else if (PropertyChangedEvent.MemberProperty->GetFName() == GET_MEMBER_NAME_CHECKED(UMythicaComponent, Inputs))
     {
-        if (RegenerateOnInputChange)
+        if (Settings.RegenerateOnInputChange)
         {
             BindWorldInputListeners();
             RegenerateMesh();
         }
     }
-    else if (PropertyChangedEvent.MemberProperty->GetFName() == GET_MEMBER_NAME_CHECKED(UMythicaComponent, RegenerateOnInputChange))
+    else if (PropertyChangedEvent.Property->GetFName() == GET_MEMBER_NAME_CHECKED(FMythicaComponentSettings, RegenerateOnInputChange))
     {
         BindWorldInputListeners();
     }
@@ -203,7 +203,7 @@ void UMythicaComponent::BindWorldInputListeners()
     }
     WorldInputComponents.Reset();
 
-    if (!RegenerateOnInputChange)
+    if (!Settings.RegenerateOnInputChange)
     {
         return;
     }
@@ -244,7 +244,7 @@ void UMythicaComponent::OnWorldInputTransformUpdated(USceneComponent* InComponen
 void UMythicaComponent::OnTransformUpdated(USceneComponent* InComponent, EUpdateTransformFlags InFlags, ETeleportType InType)
 {
     // Ignore events that fire during level load actor initialization
-    if (!GIsEditorLoadingPackage && RegenerateOnTransformChange)
+    if (!GIsEditorLoadingPackage && Settings.RegenerateOnTransformChange)
     {
         GEditor->GetTimerManager()->SetTimer(DelayRegenerateHandle, [this]() { RegenerateMesh(); }, 0.05f, false);
     }
