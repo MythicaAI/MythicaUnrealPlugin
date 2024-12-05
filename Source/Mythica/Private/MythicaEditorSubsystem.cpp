@@ -142,10 +142,17 @@ TArray<FMythicaAsset> UMythicaEditorSubsystem::GetAssetList()
 
 TArray<FMythicaJobDefinition> UMythicaEditorSubsystem::GetJobDefinitionList(const FString& JobType)
 {
+    UMythicaDeveloperSettings* Settings = GetMutableDefault<UMythicaDeveloperSettings>();
+
     TArray<FMythicaJobDefinition> Definitions;
     for (const FMythicaJobDefinition& Definition : JobDefinitionList)
     {
-        if (Definition.JobType == JobType)
+        if (Definition.JobType != JobType)
+        {
+            continue;
+        }
+
+        if (Settings->JobDefIdWhitelist.IsEmpty() || Settings->JobDefIdWhitelist.Contains(Definition.JobDefId))
         {
             Definitions.Add(Definition);
         }

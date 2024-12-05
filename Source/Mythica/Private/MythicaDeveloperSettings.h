@@ -23,4 +23,7 @@ public:
 
     UPROPERTY(Config, EditAnywhere, BlueprintReadOnly, Category = User)
     FString APIKey;
+
+    UPROPERTY(Config, EditAnywhere, BlueprintReadOnly, Category = Tools)
+    TArray<FString> JobDefIdWhitelist;
 };
