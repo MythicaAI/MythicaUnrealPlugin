@@ -159,6 +159,11 @@ void FMythicaComponentDetails::CustomizeDetails(IDetailLayoutBuilder& DetailBuil
                                                     return false;
                                                 }
 
+                                                if (ComponentWeak->JobDefId.JobDefId.IsEmpty())
+                                                {
+                                                    return false;
+                                                }
+
                                                 return !ComponentWeak->IsJobProcessing();
                                             }
                                             return false;
@@ -232,5 +237,5 @@ FString FMythicaComponentDetails::GetSelectedOption(TWeakObjectPtr<class UMythic
         }
     }
 
-    return FString(TEXT(""));
+    return FString(TEXT("Select a tool..."));
 }
