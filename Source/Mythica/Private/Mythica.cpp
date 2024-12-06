@@ -6,7 +6,6 @@
 #include "EditorUtilityWidgetBlueprint.h"
 #include "LevelEditor.h"
 #include "MythicaComponentDetails.h"
-#include "MythicaJobDefinitionIdDetails.h"
 #include "MythicaParametersDetails.h"
 
 #define LOCTEXT_NAMESPACE "FMythicaModule"
