@@ -34,10 +34,6 @@ void FMythicaModule::StartupModule()
         "MythicaParameters",
         FOnGetPropertyTypeCustomizationInstance::CreateStatic(&FMythicaParametersDetails::MakeInstance)
     );
-    PropertyModule.RegisterCustomPropertyTypeLayout(
-        "MythicaJobDefinitionId",
-        FOnGetPropertyTypeCustomizationInstance::CreateStatic(&FMythicaJobDefinitionIdDetails::MakeInstance)
-    );
     PropertyModule.NotifyCustomizationModuleChanged();
 }
 
@@ -48,7 +44,6 @@ void FMythicaModule::ShutdownModule()
         FPropertyEditorModule& PropertyModule = FModuleManager::GetModuleChecked<FPropertyEditorModule>("PropertyEditor");
         PropertyModule.UnregisterCustomClassLayout("MythicaComponent");
         PropertyModule.UnregisterCustomPropertyTypeLayout("MythicaParameters");
-        PropertyModule.UnregisterCustomPropertyTypeLayout("MythicaJobDefinitionId");
         PropertyModule.NotifyCustomizationModuleChanged();
     }
 }

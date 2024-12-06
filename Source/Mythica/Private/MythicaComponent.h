@@ -56,7 +56,7 @@ private:
     void UpdateMesh();
 
 public:
-    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Mythica")
+    UPROPERTY()
     FMythicaJobDefinitionId JobDefId;
 
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Mythica")

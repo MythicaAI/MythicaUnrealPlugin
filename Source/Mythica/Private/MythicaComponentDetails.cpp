@@ -4,6 +4,7 @@
 #include "DetailLayoutBuilder.h"
 #include "DetailWidgetRow.h"
 #include "MythicaComponent.h"
+#include "SSearchableComboBox.h"
 #include "Widgets/Notifications/SProgressBar.h"
 #include "Widgets/Text/STextBlock.h"
 
@@ -24,6 +25,17 @@ void FMythicaComponentDetails::CustomizeDetails(IDetailLayoutBuilder& DetailBuil
     UMythicaComponent* Component = Cast<UMythicaComponent>(ObjectsBeingCustomized[0].Get());
     TWeakObjectPtr<class UMythicaComponent> ComponentWeak = Component;
 
+    // Gather options
+    UMythicaEditorSubsystem* MythicaEditorSubsystem = GEditor->GetEditorSubsystem<UMythicaEditorSubsystem>();
+    TArray<FMythicaJobDefinition> JobDefinitions = MythicaEditorSubsystem->GetJobDefinitionList("houdini::/mythica/generate_mesh");
+
+    for (const FMythicaJobDefinition& JobDefinition : JobDefinitions)
+    {
+        Options.Add(MakeShared<FString>(JobDefinition.Name));
+        JobDefIds.Add(JobDefinition.JobDefId);
+    }
+
+    // Create widget
     IDetailCategoryBuilder& MyCategory = DetailBuilder.EditCategory("Mythica", FText::FromString("Mythica"), ECategoryPriority::Important);
 
     MyCategory.AddCustomRow(FText::FromString("RegenerateMeshRow"))
@@ -161,6 +173,59 @@ void FMythicaComponentDetails::CustomizeDetails(IDetailLayoutBuilder& DetailBuil
                                         })
                                 ]
                         ]
+                        + SHorizontalBox::Slot()
+                        .HAlign(HAlign_Center)
+                        .VAlign(VAlign_Center)
+                        [
+                            SNew(SSearchableComboBox)
+                                .OptionsSource(&Options)
+                                .OnSelectionChanged_Lambda([this, ComponentWeak](TSharedPtr<FString> NewValue, ESelectInfo::Type SelectInfo)
+                                {
+                                    int32 SelectedIndex = Options.IndexOfByKey(NewValue);
+                                    if (Options.IsValidIndex(SelectedIndex))
+                                    {
+                                        OnSelectionChanged(JobDefIds[SelectedIndex], ComponentWeak);
+                                    }
+                                })
+                                .OnGenerateWidget_Lambda([](TSharedPtr<FString> InOption)
+                                {
+                                    return SNew(STextBlock).Text(FText::FromString(*InOption));
+                                })
+                                .Content()
+                                [
+                                    SNew(STextBlock)
+                                        .Text_Lambda([this, ComponentWeak]() -> FText
+                                        {
+                                            return FText::FromString(GetSelectedOption(ComponentWeak));
+                                        })
+                                ]
+                        ]
                 ]
         ];
+}
+
+void FMythicaComponentDetails::OnSelectionChanged(const FString& NewValue, TWeakObjectPtr<class UMythicaComponent> ComponentWeak)
+{
+    if (ComponentWeak.IsValid())
+    {
+        ComponentWeak->JobDefId.JobDefId = NewValue;
+
+        FPropertyChangedEvent PropertyChangedEvent(
+            FindFieldChecked<FProperty>(UMythicaComponent::StaticClass(), GET_MEMBER_NAME_CHECKED(UMythicaComponent, JobDefId)));
+        ComponentWeak->PostEditChangeProperty(PropertyChangedEvent);
+    }
+}
+
+FString FMythicaComponentDetails::GetSelectedOption(TWeakObjectPtr<class UMythicaComponent> ComponentWeak) const
+{
+    if (ComponentWeak.IsValid())
+    {
+        int32 SelectedIndex = JobDefIds.IndexOfByKey(ComponentWeak->JobDefId.JobDefId);
+        if (JobDefIds.IsValidIndex(SelectedIndex))
+        {
+            return *Options[SelectedIndex];
+        }
+    }
+
+    return FString(TEXT(""));
 }
