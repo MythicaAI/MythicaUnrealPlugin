@@ -8,6 +8,8 @@
 #include "Widgets/Notifications/SProgressBar.h"
 #include "Widgets/Text/STextBlock.h"
 
+const float ProgressBarHeight = 3.0f;
+
 TSharedRef<IDetailCustomization> FMythicaComponentDetails::MakeInstance()
 {
     return MakeShareable(new FMythicaComponentDetails);
@@ -90,7 +92,7 @@ void FMythicaComponentDetails::CustomizeDetails(IDetailLayoutBuilder& DetailBuil
                 .AutoHeight()
                 [
                     SNew(SBox)
-                        .HeightOverride(3.0f)
+                        .HeightOverride(ProgressBarHeight)
                         [
                             SNew(SProgressBar)
                                 .Percent_Lambda([ComponentWeak]()
@@ -116,7 +118,7 @@ void FMythicaComponentDetails::CustomizeDetails(IDetailLayoutBuilder& DetailBuil
                 ]
                 + SVerticalBox::Slot()
                 .AutoHeight()
-                .Padding(FMargin(0, 5, 0, 5))
+                .Padding(FMargin(0, 5, 0, 5 + ProgressBarHeight))
                 [
                     SNew(SHorizontalBox)
                         + SHorizontalBox::Slot()
