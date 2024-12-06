@@ -174,30 +174,35 @@ void FMythicaComponentDetails::CustomizeDetails(IDetailLayoutBuilder& DetailBuil
                                 ]
                         ]
                         + SHorizontalBox::Slot()
-                        .HAlign(HAlign_Center)
+                        .HAlign(HAlign_Fill)
                         .VAlign(VAlign_Center)
+                        .FillWidth(1.0f)
+                        .Padding(FMargin(10.0f, 0.0f))
                         [
-                            SNew(SSearchableComboBox)
-                                .OptionsSource(&Options)
-                                .OnSelectionChanged_Lambda([this, ComponentWeak](TSharedPtr<FString> NewValue, ESelectInfo::Type SelectInfo)
-                                {
-                                    int32 SelectedIndex = Options.IndexOfByKey(NewValue);
-                                    if (Options.IsValidIndex(SelectedIndex))
-                                    {
-                                        OnSelectionChanged(JobDefIds[SelectedIndex], ComponentWeak);
-                                    }
-                                })
-                                .OnGenerateWidget_Lambda([](TSharedPtr<FString> InOption)
-                                {
-                                    return SNew(STextBlock).Text(FText::FromString(*InOption));
-                                })
-                                .Content()
+                            SNew(SBox)
                                 [
-                                    SNew(STextBlock)
-                                        .Text_Lambda([this, ComponentWeak]() -> FText
+                                    SNew(SSearchableComboBox)
+                                        .OptionsSource(&Options)
+                                        .OnSelectionChanged_Lambda([this, ComponentWeak](TSharedPtr<FString> NewValue, ESelectInfo::Type SelectInfo)
                                         {
-                                            return FText::FromString(GetSelectedOption(ComponentWeak));
+                                            int32 SelectedIndex = Options.IndexOfByKey(NewValue);
+                                            if (Options.IsValidIndex(SelectedIndex))
+                                            {
+                                                OnSelectionChanged(JobDefIds[SelectedIndex], ComponentWeak);
+                                            }
                                         })
+                                        .OnGenerateWidget_Lambda([](TSharedPtr<FString> InOption)
+                                        {
+                                            return SNew(STextBlock).Text(FText::FromString(*InOption));
+                                        })
+                                        .Content()
+                                        [
+                                            SNew(STextBlock)
+                                                .Text_Lambda([this, ComponentWeak]() -> FText
+                                                {
+                                                    return FText::FromString(GetSelectedOption(ComponentWeak));
+                                                })
+                                        ]
                                 ]
                         ]
                 ]
