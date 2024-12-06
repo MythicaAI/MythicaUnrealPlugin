@@ -82,24 +82,24 @@ void FMythicaComponentDetails::CustomizeDetails(IDetailLayoutBuilder& DetailBuil
                         [
                             SNew(SProgressBar)
                                 .Percent_Lambda([ComponentWeak]()
+                                {
+                                    if (ComponentWeak.IsValid())
                                     {
-                                        if (ComponentWeak.IsValid())
-                                        {
-                                            return ComponentWeak->JobProgressPercent();
-                                        }
-                                        return 0.0f;
-                                    })
+                                        return ComponentWeak->JobProgressPercent();
+                                    }
+                                    return 0.0f;
+                                })
                                 .Visibility_Lambda([ComponentWeak]()
+                                {
+                                    if (ComponentWeak.IsValid())
                                     {
-                                        if (ComponentWeak.IsValid())
+                                        if (ComponentWeak->IsJobProcessing())
                                         {
-                                            if (ComponentWeak->IsJobProcessing())
-                                            {
-                                                return EVisibility::Visible;
-                                            }
+                                            return EVisibility::Visible;
                                         }
-                                        return EVisibility::Hidden;
-                                    })
+                                    }
+                                    return EVisibility::Hidden;
+                                })
                         ]
                 ]
                 + SVerticalBox::Slot()
@@ -110,62 +110,54 @@ void FMythicaComponentDetails::CustomizeDetails(IDetailLayoutBuilder& DetailBuil
                         + SHorizontalBox::Slot()
                         .HAlign(HAlign_Center)
                         .VAlign(VAlign_Center)
-                        .FillWidth(0.5f)
+                        .AutoWidth()
                         [
-                            SNew(SButton)
-                                .Text(FText::FromString("Generate"))
-                                .IsEnabled_Lambda([ComponentWeak]()
-                                {
-                                    UMythicaEditorSubsystem* MythicaEditorSubsystem = GEditor->GetEditorSubsystem<UMythicaEditorSubsystem>();
-                                    if (MythicaEditorSubsystem->GetSessionState() != EMythicaSessionState::SessionCreated)
-                                    {
-                                        return false;
-                                    }
-
-                                    if (ComponentWeak.IsValid())
-                                    {
-                                        if (!ComponentWeak->CanRegenerateMesh())
-                                        {
-                                            return false;
-                                        }
-
-                                        return !ComponentWeak->IsJobProcessing();
-                                    }
-                                    return false;
-                                })
-                                .OnClicked_Lambda([ComponentWeak]()
-                                {
-                                    if (ComponentWeak.IsValid())
-                                    {
-                                        ComponentWeak->RegenerateMesh();
-                                    }
-                                    return FReply::Handled();
-                                })
-                        ]
-                        + SHorizontalBox::Slot()
-                        .HAlign(HAlign_Center)
-                        .VAlign(VAlign_Center)
-                        .FillWidth(0.5f)
-                        [
-                            SNew(SVerticalBox)
-                                + SVerticalBox::Slot()
-                                .AutoHeight()
-                                .Padding(FMargin(0, 5, 0, 0))
-                                .HAlign(HAlign_Center)
+                            SNew(SBox)
+                                .WidthOverride(150.0f)
                                 [
-                                    SNew(STextBlock)
+                                    SNew(SButton)
+                                        .HAlign(HAlign_Center)
+                                        .VAlign(VAlign_Center)
                                         .Text_Lambda([ComponentWeak]()
                                         {
                                             if (ComponentWeak.IsValid())
                                             {
-                                                EMythicaJobState State = ComponentWeak->GetJobState();
-                                                if (State != EMythicaJobState::Invalid && State != EMythicaJobState::Completed)
+                                                if (ComponentWeak->IsJobProcessing())
                                                 {
+                                                    EMythicaJobState State = ComponentWeak->GetJobState();
                                                     FString StateString = StaticEnum<EMythicaJobState>()->GetNameStringByValue(static_cast<int64>(State));
+                                                    StateString.Append("...");
                                                     return FText::FromString(StateString);
                                                 }
                                             }
-                                            return FText::FromString("");
+                                            return FText::FromString("Generate");
+                                        })
+                                        .IsEnabled_Lambda([ComponentWeak]()
+                                        {
+                                            UMythicaEditorSubsystem* MythicaEditorSubsystem = GEditor->GetEditorSubsystem<UMythicaEditorSubsystem>();
+                                            if (MythicaEditorSubsystem->GetSessionState() != EMythicaSessionState::SessionCreated)
+                                            {
+                                                return false;
+                                            }
+
+                                            if (ComponentWeak.IsValid())
+                                            {
+                                                if (!ComponentWeak->CanRegenerateMesh())
+                                                {
+                                                    return false;
+                                                }
+
+                                                return !ComponentWeak->IsJobProcessing();
+                                            }
+                                            return false;
+                                        })
+                                        .OnClicked_Lambda([ComponentWeak]()
+                                        {
+                                            if (ComponentWeak.IsValid())
+                                            {
+                                                ComponentWeak->RegenerateMesh();
+                                            }
+                                            return FReply::Handled();
                                         })
                                 ]
                         ]
