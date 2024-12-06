@@ -84,7 +84,7 @@ void FMythicaComponentDetails::CustomizeDetails(IDetailLayoutBuilder& DetailBuil
                         .FillWidth(0.5f)
                         [
                             SNew(SButton)
-                                .Text(FText::FromString("Regenerate Mesh"))
+                                .Text(FText::FromString("Generate"))
                                 .IsEnabled_Lambda([ComponentWeak]()
                                 {
                                     UMythicaEditorSubsystem* MythicaEditorSubsystem = GEditor->GetEditorSubsystem<UMythicaEditorSubsystem>();
