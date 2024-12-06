@@ -77,6 +77,35 @@ void FMythicaComponentDetails::CustomizeDetails(IDetailLayoutBuilder& DetailBuil
                 + SVerticalBox::Slot()
                 .AutoHeight()
                 [
+                    SNew(SBox)
+                        .HeightOverride(3.0f)
+                        [
+                            SNew(SProgressBar)
+                                .Percent_Lambda([ComponentWeak]()
+                                    {
+                                        if (ComponentWeak.IsValid())
+                                        {
+                                            return ComponentWeak->JobProgressPercent();
+                                        }
+                                        return 0.0f;
+                                    })
+                                .Visibility_Lambda([ComponentWeak]()
+                                    {
+                                        if (ComponentWeak.IsValid())
+                                        {
+                                            if (ComponentWeak->IsJobProcessing())
+                                            {
+                                                return EVisibility::Visible;
+                                            }
+                                        }
+                                        return EVisibility::Hidden;
+                                    })
+                        ]
+                ]
+                + SVerticalBox::Slot()
+                .AutoHeight()
+                .Padding(FMargin(0, 5, 0, 5))
+                [
                     SNew(SHorizontalBox)
                         + SHorizontalBox::Slot()
                         .HAlign(HAlign_Center)
@@ -138,35 +167,6 @@ void FMythicaComponentDetails::CustomizeDetails(IDetailLayoutBuilder& DetailBuil
                                             }
                                             return FText::FromString("");
                                         })
-                                ]
-                                + SVerticalBox::Slot()
-                                .AutoHeight()
-                                .Padding(FMargin(0, 5, 0, 5))
-                                [
-                                    SNew(SBox)
-                                    .WidthOverride(200.0f)
-                                    [
-                                        SNew(SProgressBar)
-                                        .Percent_Lambda([ComponentWeak]()
-                                        {
-                                            if (ComponentWeak.IsValid())
-                                            {
-                                                return ComponentWeak->JobProgressPercent();
-                                            }
-                                            return 0.0f;
-                                        })
-                                        .Visibility_Lambda([ComponentWeak]()
-                                        {
-                                            if (ComponentWeak.IsValid())
-                                            {
-                                                if (ComponentWeak->IsJobProcessing())
-                                                {
-                                                    return EVisibility::Visible;
-                                                }
-                                            }
-                                            return EVisibility::Hidden;
-                                        })
-                                    ]
                                 ]
                         ]
                 ]
