@@ -215,7 +215,7 @@ void FMythicaComponentDetails::CustomizeDetails(IDetailLayoutBuilder& DetailBuil
                 ]
                 + SVerticalBox::Slot()
                 .AutoHeight()
-                .Padding(FMargin(0.0f, 5.0f))
+                .Padding(FMargin(0.0f, 0.0f, 0.0f, 5.0f))
                 [
                     SNew(STextBlock)
                         .Justification(ETextJustify::Center)
