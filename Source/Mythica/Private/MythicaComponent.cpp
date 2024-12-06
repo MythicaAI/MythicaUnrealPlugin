@@ -187,6 +187,7 @@ void UMythicaComponent::OnJobDefIdChanged()
     Parameters = Definition.Parameters;
     Inputs = Definition.Inputs;
 
+    State = EMythicaJobState::Invalid;
     StateDurations.Reset();
 
     ForceRefreshDetailsViewPanel();
