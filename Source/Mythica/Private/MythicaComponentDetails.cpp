@@ -213,6 +213,31 @@ void FMythicaComponentDetails::CustomizeDetails(IDetailLayoutBuilder& DetailBuil
                                 ]
                         ]
                 ]
+                + SVerticalBox::Slot()
+                .AutoHeight()
+                .Padding(FMargin(0.0f, 0.0f, 0.0f, 5.0f))
+                [
+                    SNew(STextBlock)
+                        .Justification(ETextJustify::Center)
+                        .Visibility_Lambda([ComponentWeak]()
+                        {
+                            if (ComponentWeak.IsValid())
+                            {
+                                EMythicaJobState State = ComponentWeak->GetJobState();
+                                if (State == EMythicaJobState::Failed)
+                                {
+                                    return EVisibility::Visible;
+                                }
+                            }
+
+                            return EVisibility::Collapsed;
+                        })
+                        .Text_Lambda([]()
+                        {
+                            return FText::FromString("Job Failed: Unknown error");
+                        })
+                        .ColorAndOpacity(FLinearColor::Red)
+                ]
         ];
 }
 
