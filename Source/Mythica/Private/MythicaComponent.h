@@ -54,6 +54,7 @@ private:
     void OnJobStateChanged(int InRequestId, EMythicaJobState InState);
 
     void UpdateMesh();
+    void UpdatePlaceholderMesh();
 
 public:
     UPROPERTY()
@@ -80,6 +81,9 @@ private:
 
     UPROPERTY(Transient)
     TSet<USceneComponent*> WorldInputComponents;
+
+    UPROPERTY(Transient)
+    UStaticMeshComponent* PlaceholderMeshComponent = nullptr;
 
     UPROPERTY()
     TArray<FName> MeshComponentNames;

@@ -28,11 +28,15 @@ void UMythicaComponent::OnComponentCreated()
     Super::OnComponentCreated();
 
     ComponentGUID = FGuid::NewGuid();
+
+    UpdatePlaceholderMesh();
 }
 
 void UMythicaComponent::PostLoad()
 {
     Super::PostLoad();
+
+    UpdatePlaceholderMesh();
 
     if (!CanRegenerateMesh())
     {
@@ -324,5 +328,30 @@ void UMythicaComponent::UpdateMesh()
 
             MeshComponentNames.Add(StaticMeshComponent->GetFName());
         }
+    }
+
+    UpdatePlaceholderMesh();
+}
+
+void UMythicaComponent::UpdatePlaceholderMesh()
+{
+    if (MeshComponentNames.IsEmpty() && !PlaceholderMeshComponent)
+    {
+        const FString CubePath = TEXT("StaticMesh'/Engine/BasicShapes/Cube.Cube'");
+        UStaticMesh* Mesh = Cast<UStaticMesh>(StaticLoadObject(UStaticMesh::StaticClass(), NULL, *CubePath));
+
+        PlaceholderMeshComponent = NewObject<UStaticMeshComponent>(
+            this, UStaticMeshComponent::StaticClass(), NAME_None, RF_Transactional);
+
+        PlaceholderMeshComponent->SetStaticMesh(Mesh);
+        PlaceholderMeshComponent->AttachToComponent(this, FAttachmentTransformRules::KeepRelativeTransform);
+        PlaceholderMeshComponent->RegisterComponent();
+    }
+    else if (!MeshComponentNames.IsEmpty() && PlaceholderMeshComponent)
+    {
+        PlaceholderMeshComponent->DetachFromComponent(FDetachmentTransformRules::KeepRelativeTransform);
+        PlaceholderMeshComponent->UnregisterComponent();
+        PlaceholderMeshComponent->DestroyComponent();
+        PlaceholderMeshComponent = nullptr;
     }
 }
