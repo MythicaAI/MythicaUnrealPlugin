@@ -4,6 +4,8 @@
 
 #define IMPORT_NAME_LENGTH 10
 
+#define PLACEHOLDER_MESH_ASSET TEXT("/Mythica/Placeholder/SM_Placeholder.SM_Placeholder")
+
 struct FMythicaProcessingStep
 {
     EMythicaJobState State;
@@ -346,8 +348,7 @@ void UMythicaComponent::UpdatePlaceholderMesh()
 {
     if (MeshComponentNames.IsEmpty() && !PlaceholderMeshComponent)
     {
-        const FString CubePath = TEXT("StaticMesh'/Engine/BasicShapes/Cube.Cube'");
-        UStaticMesh* Mesh = Cast<UStaticMesh>(StaticLoadObject(UStaticMesh::StaticClass(), NULL, *CubePath));
+        UStaticMesh* Mesh = Cast<UStaticMesh>(StaticLoadObject(UStaticMesh::StaticClass(), NULL, PLACEHOLDER_MESH_ASSET));
 
         PlaceholderMeshComponent = NewObject<UStaticMeshComponent>(
             this, UStaticMeshComponent::StaticClass(), NAME_None, RF_Transactional);
