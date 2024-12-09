@@ -28,15 +28,11 @@ void UMythicaComponent::OnComponentCreated()
     Super::OnComponentCreated();
 
     ComponentGUID = FGuid::NewGuid();
-
-    UpdatePlaceholderMesh();
 }
 
 void UMythicaComponent::PostLoad()
 {
     Super::PostLoad();
-
-    UpdatePlaceholderMesh();
 
     if (!CanRegenerateMesh())
     {
@@ -46,6 +42,13 @@ void UMythicaComponent::PostLoad()
     BindWorldInputListeners();
 
     TransformUpdated.AddUObject(this, &UMythicaComponent::OnTransformUpdated);
+}
+
+void UMythicaComponent::OnRegister()
+{
+    Super::OnRegister();
+
+    UpdatePlaceholderMesh();
 }
 
 void UMythicaComponent::OnComponentDestroyed(bool bDestroyingHierarchy)
@@ -61,6 +64,12 @@ void UMythicaComponent::OnComponentDestroyed(bool bDestroyingHierarchy)
         {
             MythicaEditorSubsystem->OnJobStateChange.RemoveDynamic(this, &UMythicaComponent::OnJobStateChanged);
         }
+    }
+
+    if (PlaceholderMeshComponent)
+    {
+        PlaceholderMeshComponent->DestroyComponent();
+        PlaceholderMeshComponent = nullptr;
     }
 }
 

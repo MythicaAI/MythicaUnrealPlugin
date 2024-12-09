@@ -32,6 +32,7 @@ public:
     virtual void PostLoad() override;
     virtual void OnComponentCreated() override;
     virtual void OnComponentDestroyed(bool bDestroyingHierarchy) override;
+    virtual void OnRegister() override;
 
     bool CanRegenerateMesh() const;
     void RegenerateMesh();
