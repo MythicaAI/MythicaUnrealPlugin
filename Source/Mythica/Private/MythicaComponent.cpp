@@ -353,6 +353,7 @@ void UMythicaComponent::UpdatePlaceholderMesh()
             this, UStaticMeshComponent::StaticClass(), NAME_None, RF_Transactional);
 
         PlaceholderMeshComponent->SetStaticMesh(Mesh);
+        PlaceholderMeshComponent->SetHiddenInGame(true);
         PlaceholderMeshComponent->AttachToComponent(this, FAttachmentTransformRules::KeepRelativeTransform);
         PlaceholderMeshComponent->RegisterComponent();
     }
