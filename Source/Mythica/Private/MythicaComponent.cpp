@@ -4,6 +4,8 @@
 
 #define IMPORT_NAME_LENGTH 10
 
+#define PLACEHOLDER_MESH_ASSET TEXT("/Mythica/Placeholder/SM_Placeholder.SM_Placeholder")
+
 struct FMythicaProcessingStep
 {
     EMythicaJobState State;
@@ -44,6 +46,13 @@ void UMythicaComponent::PostLoad()
     TransformUpdated.AddUObject(this, &UMythicaComponent::OnTransformUpdated);
 }
 
+void UMythicaComponent::OnRegister()
+{
+    Super::OnRegister();
+
+    UpdatePlaceholderMesh();
+}
+
 void UMythicaComponent::OnComponentDestroyed(bool bDestroyingHierarchy)
 {
     Super::OnComponentDestroyed(bDestroyingHierarchy);
@@ -57,6 +66,12 @@ void UMythicaComponent::OnComponentDestroyed(bool bDestroyingHierarchy)
         {
             MythicaEditorSubsystem->OnJobStateChange.RemoveDynamic(this, &UMythicaComponent::OnJobStateChanged);
         }
+    }
+
+    if (PlaceholderMeshComponent)
+    {
+        PlaceholderMeshComponent->DestroyComponent();
+        PlaceholderMeshComponent = nullptr;
     }
 }
 
@@ -324,5 +339,30 @@ void UMythicaComponent::UpdateMesh()
 
             MeshComponentNames.Add(StaticMeshComponent->GetFName());
         }
+    }
+
+    UpdatePlaceholderMesh();
+}
+
+void UMythicaComponent::UpdatePlaceholderMesh()
+{
+    if (MeshComponentNames.IsEmpty() && !PlaceholderMeshComponent)
+    {
+        UStaticMesh* Mesh = Cast<UStaticMesh>(StaticLoadObject(UStaticMesh::StaticClass(), NULL, PLACEHOLDER_MESH_ASSET));
+
+        PlaceholderMeshComponent = NewObject<UStaticMeshComponent>(
+            this, UStaticMeshComponent::StaticClass(), NAME_None, RF_Transactional);
+
+        PlaceholderMeshComponent->SetStaticMesh(Mesh);
+        PlaceholderMeshComponent->SetHiddenInGame(true);
+        PlaceholderMeshComponent->AttachToComponent(this, FAttachmentTransformRules::KeepRelativeTransform);
+        PlaceholderMeshComponent->RegisterComponent();
+    }
+    else if (!MeshComponentNames.IsEmpty() && PlaceholderMeshComponent)
+    {
+        PlaceholderMeshComponent->DetachFromComponent(FDetachmentTransformRules::KeepRelativeTransform);
+        PlaceholderMeshComponent->UnregisterComponent();
+        PlaceholderMeshComponent->DestroyComponent();
+        PlaceholderMeshComponent = nullptr;
     }
 }

@@ -32,6 +32,7 @@ public:
     virtual void PostLoad() override;
     virtual void OnComponentCreated() override;
     virtual void OnComponentDestroyed(bool bDestroyingHierarchy) override;
+    virtual void OnRegister() override;
 
     bool CanRegenerateMesh() const;
     void RegenerateMesh();
@@ -54,6 +55,7 @@ private:
     void OnJobStateChanged(int InRequestId, EMythicaJobState InState);
 
     void UpdateMesh();
+    void UpdatePlaceholderMesh();
 
 public:
     UPROPERTY()
@@ -80,6 +82,9 @@ private:
 
     UPROPERTY(Transient)
     TSet<USceneComponent*> WorldInputComponents;
+
+    UPROPERTY(Transient)
+    UStaticMeshComponent* PlaceholderMeshComponent = nullptr;
 
     UPROPERTY()
     TArray<FName> MeshComponentNames;
