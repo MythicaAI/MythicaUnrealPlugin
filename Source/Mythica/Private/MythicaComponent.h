@@ -39,6 +39,7 @@ public:
     FString GetImportName();
 
     EMythicaJobState GetJobState() const { return State; }
+    FText GetJobMessage() const { return Message; }
     bool IsJobProcessing() const;
     float JobProgressPercent() const;
 

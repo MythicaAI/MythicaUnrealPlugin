@@ -232,9 +232,14 @@ void FMythicaComponentDetails::CustomizeDetails(IDetailLayoutBuilder& DetailBuil
 
                             return EVisibility::Collapsed;
                         })
-                        .Text_Lambda([]()
+                        .Text_Lambda([ComponentWeak]()
                         {
-                            return FText::FromString("Job Failed: Unknown error");
+                            FText Error = FText::FromString("Unknown error");
+                            if (ComponentWeak.IsValid() && !ComponentWeak->GetJobMessage().IsEmpty())
+                            {
+                                Error = ComponentWeak->GetJobMessage();
+                            }
+                            return FText::Format(FText::FromString("Job Failed: {0}"), Error);
                         })
                         .ColorAndOpacity(FLinearColor::Red)
                 ]
