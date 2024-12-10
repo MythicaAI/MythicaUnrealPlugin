@@ -80,7 +80,7 @@ private:
     bool QueueRegenerate = false;
     FTimerHandle DelayRegenerateHandle;
 
-    UPROPERTY()
+    UPROPERTY(VisibleAnywhere, meta = (EditCondition = "false", EditConditionHides))
     TMap<EMythicaJobState, double> StateDurations;
 
     UPROPERTY(Transient)
@@ -89,9 +89,9 @@ private:
     UPROPERTY(Transient)
     UStaticMeshComponent* PlaceholderMeshComponent = nullptr;
 
-    UPROPERTY()
+    UPROPERTY(VisibleAnywhere, meta = (EditCondition = "false", EditConditionHides))
     TArray<FName> MeshComponentNames;
 
-    UPROPERTY(DuplicateTransient)
+    UPROPERTY(VisibleAnywhere, meta = (EditCondition = "false", EditConditionHides))
     FGuid ComponentGUID;
 };
