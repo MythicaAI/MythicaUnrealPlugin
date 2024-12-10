@@ -134,16 +134,17 @@ void UMythicaComponent::PostEditChangeProperty(FPropertyChangedEvent& PropertyCh
 {
     Super::PostEditChangeProperty(PropertyChangedEvent);
 
+    if (PropertyChangedEvent.MemberProperty->GetFName() == GET_MEMBER_NAME_CHECKED(UMythicaComponent, JobDefId))
+    {
+        OnJobDefIdChanged();
+    }
+
     if (!CanRegenerateMesh())
     {
         return;
     }
 
-    if (PropertyChangedEvent.MemberProperty->GetFName() == GET_MEMBER_NAME_CHECKED(UMythicaComponent, JobDefId))
-    {
-        OnJobDefIdChanged();
-    }
-    else if (PropertyChangedEvent.MemberProperty->GetFName() == GET_MEMBER_NAME_CHECKED(UMythicaComponent, Parameters))
+    if (PropertyChangedEvent.MemberProperty->GetFName() == GET_MEMBER_NAME_CHECKED(UMythicaComponent, Parameters))
     {
         if (Settings.RegenerateOnParameterChange)
         {
@@ -179,7 +180,9 @@ static void ForceRefreshDetailsViewPanel()
         "LevelEditorSelectionDetails",
         "LevelEditorSelectionDetails2",
         "LevelEditorSelectionDetails3",
-        "LevelEditorSelectionDetails4" 
+        "LevelEditorSelectionDetails4",
+        "BlueprintDefaults",
+        "BlueprintInspector"
     };
 
     for (const FName DetailsPanelName : DetailsTabIdentifiers)
