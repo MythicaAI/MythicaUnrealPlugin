@@ -4,6 +4,7 @@
 #include "DetailLayoutBuilder.h"
 #include "DetailWidgetRow.h"
 #include "MythicaComponent.h"
+#include "MythicaDeveloperSettings.h"
 #include "SSearchableComboBox.h"
 #include "Widgets/Notifications/SProgressBar.h"
 #include "Widgets/Text/STextBlock.h"
@@ -44,30 +45,6 @@ void FMythicaComponentDetails::CustomizeDetails(IDetailLayoutBuilder& DetailBuil
         .WholeRowContent()
         [
             SNew(SVerticalBox)
-                + SVerticalBox::Slot()
-                .AutoHeight()
-                .Padding(0, 10, 0, 10)
-                [
-                    SNew(STextBlock)
-                        .Justification(ETextJustify::Center)
-                        .Visibility_Lambda([]()
-                        {
-                            UMythicaEditorSubsystem* MythicaEditorSubsystem = GEditor->GetEditorSubsystem<UMythicaEditorSubsystem>();
-                            if (MythicaEditorSubsystem->GetSessionState() != EMythicaSessionState::SessionCreated)
-                            {
-                                return EVisibility::Visible;
-                            }
-                            else
-                            {
-                                return EVisibility::Collapsed;
-                            }
-                        })
-                        .Text_Lambda([]()
-                        {
-                            return FText::FromString("Failed to connect to Mythica service");
-                        })
-                        .ColorAndOpacity(FLinearColor::Red)
-                ]
                 + SVerticalBox::Slot()
                 .AutoHeight()
                 [
@@ -193,6 +170,38 @@ void FMythicaComponentDetails::CustomizeDetails(IDetailLayoutBuilder& DetailBuil
                                 ]
                         ]
                 ]
+                + SVerticalBox::Slot()
+                .AutoHeight()
+                .Padding(FMargin(0.0f, 0.0f, 0.0f, 5.0f))
+                [
+                    SNew(STextBlock)
+                        .Justification(ETextJustify::Center)
+                        .Visibility_Lambda([]()
+                        {
+                            UMythicaEditorSubsystem* MythicaEditorSubsystem = GEditor->GetEditorSubsystem<UMythicaEditorSubsystem>();
+                            if (MythicaEditorSubsystem->GetSessionState() != EMythicaSessionState::SessionCreated)
+                            {
+                                return EVisibility::Visible;
+                            }
+                            else
+                            {
+                                return EVisibility::Collapsed;
+                            }
+                        })
+                        .Text_Lambda([]()
+                        {
+                            const UMythicaDeveloperSettings* Settings = GetDefault<UMythicaDeveloperSettings>();
+                            if (Settings->APIKey.IsEmpty())
+                            {
+                                return FText::FromString("Missing API Key");
+                            }
+                            else
+                            {
+                                return FText::FromString("Failed to connect to Mythica service");
+                            }
+                        })
+                        .ColorAndOpacity(FLinearColor::Red)
+                ] 
                 + SVerticalBox::Slot()
                 .AutoHeight()
                 .Padding(FMargin(0.0f, 0.0f, 0.0f, 5.0f))
