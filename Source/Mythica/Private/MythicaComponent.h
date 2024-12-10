@@ -59,7 +59,7 @@ private:
     void UpdatePlaceholderMesh();
 
 public:
-    UPROPERTY()
+    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Mythica", meta = (EditCondition = "false", EditConditionHides))
     FMythicaJobDefinitionId JobDefId;
 
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Mythica")
