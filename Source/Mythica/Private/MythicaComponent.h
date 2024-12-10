@@ -30,7 +30,6 @@ public:
     UMythicaComponent();
 
     virtual void PostLoad() override;
-    virtual void OnComponentCreated() override;
     virtual void OnComponentDestroyed(bool bDestroyingHierarchy) override;
     virtual void OnRegister() override;
 
@@ -59,7 +58,7 @@ private:
     void UpdatePlaceholderMesh();
 
 public:
-    UPROPERTY()
+    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Mythica", meta = (EditCondition = "false", EditConditionHides))
     FMythicaJobDefinitionId JobDefId;
 
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Mythica")
@@ -80,7 +79,7 @@ private:
     bool QueueRegenerate = false;
     FTimerHandle DelayRegenerateHandle;
 
-    UPROPERTY()
+    UPROPERTY(VisibleAnywhere, meta = (EditCondition = "false", EditConditionHides))
     TMap<EMythicaJobState, double> StateDurations;
 
     UPROPERTY(Transient)
@@ -89,9 +88,9 @@ private:
     UPROPERTY(Transient)
     UStaticMeshComponent* PlaceholderMeshComponent = nullptr;
 
-    UPROPERTY()
+    UPROPERTY(VisibleAnywhere, meta = (EditCondition = "false", EditConditionHides))
     TArray<FName> MeshComponentNames;
 
-    UPROPERTY(DuplicateTransient)
+    UPROPERTY(VisibleAnywhere, DuplicateTransient, meta = (EditCondition = "false", EditConditionHides))
     FGuid ComponentGUID;
 };

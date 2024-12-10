@@ -62,16 +62,16 @@ struct FMythicaParameterInt
 {
     GENERATED_BODY()
 
-    UPROPERTY()
+    UPROPERTY(VisibleAnywhere)
     TArray<int> Values;
 
-    UPROPERTY()
+    UPROPERTY(VisibleAnywhere)
     TArray<int> DefaultValues;
 
-    UPROPERTY()
+    UPROPERTY(VisibleAnywhere)
     TOptional<int> MinValue;
 
-    UPROPERTY()
+    UPROPERTY(VisibleAnywhere)
     TOptional<int> MaxValue;
 };
 
@@ -80,16 +80,16 @@ struct FMythicaParameterFloat
 {
     GENERATED_BODY()
 
-    UPROPERTY()
+    UPROPERTY(VisibleAnywhere)
     TArray<float> Values;
 
-    UPROPERTY()
+    UPROPERTY(VisibleAnywhere)
     TArray<float> DefaultValues;
 
-    UPROPERTY()
+    UPROPERTY(VisibleAnywhere)
     TOptional<float> MinValue;
 
-    UPROPERTY()
+    UPROPERTY(VisibleAnywhere)
     TOptional<float> MaxValue;
 };
 
@@ -98,10 +98,10 @@ struct FMythicaParameterBool
 {
     GENERATED_BODY()
 
-    UPROPERTY()
+    UPROPERTY(VisibleAnywhere)
     bool Value = false;
 
-    UPROPERTY()
+    UPROPERTY(VisibleAnywhere)
     bool DefaultValue = false;
 };
 
@@ -110,10 +110,10 @@ struct FMythicaParameterString
 {
     GENERATED_BODY()
 
-    UPROPERTY()
+    UPROPERTY(VisibleAnywhere)
     FString Value;
 
-    UPROPERTY()
+    UPROPERTY(VisibleAnywhere)
     FString DefaultValue;
 };
 
@@ -122,10 +122,10 @@ struct FMythicaParameterEnumValue
 {
     GENERATED_BODY()
 
-    UPROPERTY()
+    UPROPERTY(VisibleAnywhere)
     FString Name;
 
-    UPROPERTY()
+    UPROPERTY(VisibleAnywhere)
     FString Label;
 };
 
@@ -134,13 +134,13 @@ struct FMythicaParameterEnum
 {
     GENERATED_BODY()
 
-    UPROPERTY()
+    UPROPERTY(VisibleAnywhere)
     FString Value;
 
-    UPROPERTY()
+    UPROPERTY(VisibleAnywhere)
     FString DefaultValue;
 
-    UPROPERTY()
+    UPROPERTY(VisibleAnywhere)
     TArray<FMythicaParameterEnumValue> Values;
 };
 
@@ -149,28 +149,28 @@ struct FMythicaParameter
 {
     GENERATED_BODY()
 
-    UPROPERTY()
+    UPROPERTY(VisibleAnywhere)
     FString Name;
 
-    UPROPERTY()
+    UPROPERTY(VisibleAnywhere)
     FString Label;
 
-    UPROPERTY()
+    UPROPERTY(VisibleAnywhere)
     EMythicaParameterType Type = EMythicaParameterType::Int;
 
-    UPROPERTY()
+    UPROPERTY(VisibleAnywhere)
     FMythicaParameterInt ValueInt;
 
-    UPROPERTY()
+    UPROPERTY(VisibleAnywhere)
     FMythicaParameterFloat ValueFloat;
 
-    UPROPERTY()
+    UPROPERTY(VisibleAnywhere)
     FMythicaParameterBool ValueBool;
 
-    UPROPERTY()
+    UPROPERTY(VisibleAnywhere)
     FMythicaParameterString ValueString;
 
-    UPROPERTY()
+    UPROPERTY(VisibleAnywhere)
     FMythicaParameterEnum ValueEnum;
 };
 
@@ -179,7 +179,7 @@ struct FMythicaParameters
 {
     GENERATED_BODY()
 
-    UPROPERTY(BlueprintReadOnly, Category = "Parameter")
+    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Parameter")
     TArray<FMythicaParameter> Parameters;
 };
 
