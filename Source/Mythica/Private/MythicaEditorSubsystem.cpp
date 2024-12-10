@@ -1101,7 +1101,7 @@ void UMythicaEditorSubsystem::OnJobTimeout(int RequestId)
     }
 
     check(JobData->State == EMythicaJobState::Queued || JobData->State == EMythicaJobState::Processing);
-    SetJobState(RequestId, EMythicaJobState::Failed, FText::FromString("Job timed out"));
+    SetJobState(RequestId, EMythicaJobState::Failed, FText::FromString("Timed out"));
 }
 
 void UMythicaEditorSubsystem::OnJobResultsResponse(FHttpRequestPtr Request, FHttpResponsePtr Response, bool bWasSuccessful, int RequestId)
@@ -1170,7 +1170,7 @@ void UMythicaEditorSubsystem::OnJobResultsResponse(FHttpRequestPtr Request, FHtt
     if (FileId.IsEmpty())
     {
         UE_LOG(LogMythica, Error, TEXT("Job failed %d"), RequestId);
-        SetJobState(RequestId, EMythicaJobState::Failed, FText::FromString("Job failed to produce result mesh"));
+        SetJobState(RequestId, EMythicaJobState::Failed, FText::FromString("Failed to produce result mesh"));
         return;
 
     }
