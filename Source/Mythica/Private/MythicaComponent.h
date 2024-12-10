@@ -30,7 +30,6 @@ public:
     UMythicaComponent();
 
     virtual void PostLoad() override;
-    virtual void OnComponentCreated() override;
     virtual void OnComponentDestroyed(bool bDestroyingHierarchy) override;
     virtual void OnRegister() override;
 
@@ -92,6 +91,6 @@ private:
     UPROPERTY(VisibleAnywhere, meta = (EditCondition = "false", EditConditionHides))
     TArray<FName> MeshComponentNames;
 
-    UPROPERTY(VisibleAnywhere, meta = (EditCondition = "false", EditConditionHides))
+    UPROPERTY(VisibleAnywhere, DuplicateTransient, meta = (EditCondition = "false", EditConditionHides))
     FGuid ComponentGUID;
 };

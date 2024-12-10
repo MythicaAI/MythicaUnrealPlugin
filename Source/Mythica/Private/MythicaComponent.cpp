@@ -25,13 +25,6 @@ UMythicaComponent::UMythicaComponent()
     PrimaryComponentTick.bCanEverTick = false;
 }
 
-void UMythicaComponent::OnComponentCreated()
-{
-    Super::OnComponentCreated();
-
-    ComponentGUID = FGuid::NewGuid();
-}
-
 void UMythicaComponent::PostLoad()
 {
     Super::PostLoad();
@@ -87,6 +80,11 @@ void UMythicaComponent::RegenerateMesh()
     {
         QueueRegenerate = true;
         return;
+    }
+
+    if (!ComponentGUID.IsValid())
+    {
+        ComponentGUID = FGuid::NewGuid();
     }
 
     UMythicaEditorSubsystem* MythicaEditorSubsystem = GEditor->GetEditorSubsystem<UMythicaEditorSubsystem>();
