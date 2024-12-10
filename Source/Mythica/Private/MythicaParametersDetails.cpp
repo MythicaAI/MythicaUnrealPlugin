@@ -6,6 +6,8 @@
 #include "Widgets/Text/SMultiLineEditableText.h"
 #include "Widgets/Input/SNumericEntryBox.h"
 
+#include <functional>
+
 static FMythicaParameters* GetParametersFromHandle(IPropertyHandle& Handle)
 {
     TArray<UObject*> Objects;
@@ -59,6 +61,8 @@ void FMythicaParametersDetails::CustomizeChildren(TSharedRef<IPropertyHandle> St
 
         TSharedRef<SWidget> ValueWidget = SNullWidget::NullWidget;
         int DesiredWidthScalar = 1;
+        std::function<EVisibility()> ResetToDefaultVisible;
+        std::function<FReply()> OnResetToDefault;
 
         switch (Parameter.Type)
         {
@@ -112,6 +116,40 @@ void FMythicaParametersDetails::CustomizeChildren(TSharedRef<IPropertyHandle> St
 
                 ValueWidget = HorizontalBox;
                 DesiredWidthScalar = Parameter.ValueFloat.Values.Num();
+
+                ResetToDefaultVisible = [this, ParamIndex]()
+                {
+                    FMythicaParameters* Parameters = GetParametersFromHandleWeak(HandleWeak);
+                    if (Parameters)
+                    {
+                        const FMythicaParameterFloat& FloatParam = Parameters->Parameters[ParamIndex].ValueFloat;
+                        for (int i = 0; i < FloatParam.Values.Num(); ++i)
+                        {
+                            if (FloatParam.Values[i] != FloatParam.DefaultValues[i])
+                            {
+                                return EVisibility::Visible;
+                            }
+                        }
+                    }
+
+                    return EVisibility::Collapsed;
+                };
+
+                OnResetToDefault = [this, ParamIndex]()
+                {
+                    FMythicaParameters* Parameters = GetParametersFromHandleWeak(HandleWeak);
+                    if (Parameters)
+                    {
+                        FMythicaParameterFloat& FloatParam = Parameters->Parameters[ParamIndex].ValueFloat;
+                        for (int i = 0; i < FloatParam.Values.Num(); ++i)
+                        {
+                            FloatParam.Values[i] = FloatParam.DefaultValues[i];
+                        }
+                        HandleWeak.Pin()->NotifyPostChange(EPropertyChangeType::ValueSet);
+                    }
+
+                    return FReply::Handled();
+                };
                 break;
             }
             case EMythicaParameterType::Int:
@@ -164,6 +202,40 @@ void FMythicaParametersDetails::CustomizeChildren(TSharedRef<IPropertyHandle> St
 
                 ValueWidget = HorizontalBox;
                 DesiredWidthScalar = Parameter.ValueInt.Values.Num();
+
+                ResetToDefaultVisible = [this, ParamIndex]()
+                {
+                    FMythicaParameters* Parameters = GetParametersFromHandleWeak(HandleWeak);
+                    if (Parameters)
+                    {
+                        const FMythicaParameterInt& IntParam = Parameters->Parameters[ParamIndex].ValueInt;
+                        for (int i = 0; i < IntParam.Values.Num(); ++i)
+                        {
+                            if (IntParam.Values[i] != IntParam.DefaultValues[i])
+                            {
+                                return EVisibility::Visible;
+                            }
+                        }
+                    }
+
+                    return EVisibility::Collapsed;
+                };
+
+                OnResetToDefault = [this, ParamIndex]()
+                {
+                    FMythicaParameters* Parameters = GetParametersFromHandleWeak(HandleWeak);
+                    if (Parameters)
+                    {
+                        FMythicaParameterInt& IntParam = Parameters->Parameters[ParamIndex].ValueInt;
+                        for (int i = 0; i < IntParam.Values.Num(); ++i)
+                        {
+                            IntParam.Values[i] = IntParam.DefaultValues[i];
+                        }
+                        HandleWeak.Pin()->NotifyPostChange(EPropertyChangeType::ValueSet);
+                    }
+
+                    return FReply::Handled();
+                };
                 break;
             }
             case EMythicaParameterType::Bool:
@@ -191,6 +263,34 @@ void FMythicaParametersDetails::CustomizeChildren(TSharedRef<IPropertyHandle> St
                 ValueWidget = SNew(SCheckBox)
                     .IsChecked_Lambda(IsChecked)
                     .OnCheckStateChanged_Lambda(OnCheckStateChanged);
+
+                ResetToDefaultVisible = [this, ParamIndex]()
+                {
+                    FMythicaParameters* Parameters = GetParametersFromHandleWeak(HandleWeak);
+                    if (Parameters)
+                    {
+                        const FMythicaParameterBool& BoolParam = Parameters->Parameters[ParamIndex].ValueBool;
+                        if (BoolParam.Value != BoolParam.DefaultValue)
+                        {
+                            return EVisibility::Visible;
+                        }
+                    }
+
+                    return EVisibility::Collapsed;
+                };
+
+                OnResetToDefault = [this, ParamIndex]()
+                {
+                    FMythicaParameters* Parameters = GetParametersFromHandleWeak(HandleWeak);
+                    if (Parameters)
+                    {
+                        FMythicaParameterBool& BoolParam = Parameters->Parameters[ParamIndex].ValueBool;
+                        BoolParam.Value = BoolParam.DefaultValue;
+                        HandleWeak.Pin()->NotifyPostChange(EPropertyChangeType::ValueSet);
+                    }
+
+                    return FReply::Handled();
+                };
                 break;
             }
             case EMythicaParameterType::String:
@@ -216,6 +316,34 @@ void FMythicaParametersDetails::CustomizeChildren(TSharedRef<IPropertyHandle> St
                     .OnTextCommitted_Lambda(OnTextCommitted)
                     .AutoWrapText(true);
                 DesiredWidthScalar = 3;
+
+                ResetToDefaultVisible = [this, ParamIndex]()
+                {
+                    FMythicaParameters* Parameters = GetParametersFromHandleWeak(HandleWeak);
+                    if (Parameters)
+                    {
+                        const FMythicaParameterString& StringParam = Parameters->Parameters[ParamIndex].ValueString;
+                        if (StringParam.Value != StringParam.DefaultValue)
+                        {
+                            return EVisibility::Visible;
+                        }
+                    }
+
+                    return EVisibility::Collapsed;
+                };
+
+                OnResetToDefault = [this, ParamIndex]()
+                {
+                    FMythicaParameters* Parameters = GetParametersFromHandleWeak(HandleWeak);
+                    if (Parameters)
+                    {
+                        FMythicaParameterString& StringParam = Parameters->Parameters[ParamIndex].ValueString;
+                        StringParam.Value = StringParam.DefaultValue;
+                        HandleWeak.Pin()->NotifyPostChange(EPropertyChangeType::ValueSet);
+                    }
+
+                    return FReply::Handled();
+                };
                 break;
             }
             case EMythicaParameterType::Enum:
@@ -283,6 +411,34 @@ void FMythicaParametersDetails::CustomizeChildren(TSharedRef<IPropertyHandle> St
                         SNew(STextBlock)
                             .Text_Lambda(GetCurrentText)
                     ];
+
+                ResetToDefaultVisible = [this, ParamIndex]()
+                {
+                    FMythicaParameters* Parameters = GetParametersFromHandleWeak(HandleWeak);
+                    if (Parameters)
+                    {
+                        const FMythicaParameterEnum& EnumParam = Parameters->Parameters[ParamIndex].ValueEnum;
+                        if (EnumParam.Value != EnumParam.DefaultValue)
+                        {
+                            return EVisibility::Visible;
+                        }
+                    }
+
+                    return EVisibility::Collapsed;
+                };
+
+                OnResetToDefault = [this, ParamIndex]()
+                {
+                    FMythicaParameters* Parameters = GetParametersFromHandleWeak(HandleWeak);
+                    if (Parameters)
+                    {
+                        FMythicaParameterEnum& EnumParam = Parameters->Parameters[ParamIndex].ValueEnum;
+                        EnumParam.Value = EnumParam.DefaultValue;
+                        HandleWeak.Pin()->NotifyPostChange(EPropertyChangeType::ValueSet);
+                    }
+
+                    return FReply::Handled();
+                };
                 break;
             }
         }
@@ -297,6 +453,18 @@ void FMythicaParametersDetails::CustomizeChildren(TSharedRef<IPropertyHandle> St
             .MinDesiredWidth(DesiredWidthScalar * 128)
             [
                 ValueWidget
+            ].
+            ExtensionContent()
+            [
+                SNew(SButton)
+                    .ButtonStyle(FAppStyle::Get(), "NoBorder")
+                    .ContentPadding(0)
+                    .Visibility_Lambda(ResetToDefaultVisible)
+                    .OnClicked_Lambda(OnResetToDefault)
+                    [
+                        SNew(SImage)
+                            .Image(FAppStyle::Get().GetBrush("PropertyWindow.DiffersFromDefault"))
+                    ]
             ];
     }
 }
