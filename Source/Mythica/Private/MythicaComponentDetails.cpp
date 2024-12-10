@@ -9,6 +9,8 @@
 #include "Widgets/Notifications/SProgressBar.h"
 #include "Widgets/Text/STextBlock.h"
 
+#define LOCTEXT_NAMESPACE "Mythica"
+
 const float ProgressBarHeight = 3.0f;
 
 TSharedRef<IDetailCustomization> FMythicaComponentDetails::MakeInstance()
@@ -239,6 +241,9 @@ void FMythicaComponentDetails::OnSelectionChanged(const FString& NewValue, TWeak
 {
     if (ComponentWeak.IsValid())
     {
+        const FScopedTransaction Transaction(LOCTEXT("MythicaSelectTool", "Select Tool"));
+        ComponentWeak->Modify();
+
         ComponentWeak->JobDefId.JobDefId = NewValue;
 
         FPropertyChangedEvent PropertyChangedEvent(
