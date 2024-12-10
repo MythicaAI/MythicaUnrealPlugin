@@ -266,7 +266,7 @@ void UMythicaComponent::OnTransformUpdated(USceneComponent* InComponent, EUpdate
     }
 }
 
-void UMythicaComponent::OnJobStateChanged(int InRequestId, EMythicaJobState InState)
+void UMythicaComponent::OnJobStateChanged(int InRequestId, EMythicaJobState InState, FText InMessage)
 {
     if (InRequestId != RequestId)
     {
@@ -276,6 +276,7 @@ void UMythicaComponent::OnJobStateChanged(int InRequestId, EMythicaJobState InSt
     StateDurations.Add(State, FPlatformTime::Seconds() - StateBeginTime);
 
     State = InState;
+    Message = InMessage;
     StateBeginTime = FPlatformTime::Seconds();
     if (State != EMythicaJobState::Completed && State != EMythicaJobState::Failed)
     {

@@ -837,7 +837,7 @@ void UMythicaEditorSubsystem::OnUploadInputFilesResponse(FHttpRequestPtr Request
     if (!bWasSuccessful || !Response.IsValid())
     {
         UE_LOG(LogMythica, Error, TEXT("Failed to upload inputs"));
-        SetJobState(RequestId, EMythicaJobState::Failed);
+        SetJobState(RequestId, EMythicaJobState::Failed, FText::FromString("Failed to upload input data 1"));
         return;
     }
 
@@ -848,7 +848,7 @@ void UMythicaEditorSubsystem::OnUploadInputFilesResponse(FHttpRequestPtr Request
     if (!FJsonSerializer::Deserialize(Reader, JsonObject) || !JsonObject.IsValid())
     {
         UE_LOG(LogMythica, Error, TEXT("Failed to parse upload inputs JSON string"));
-        SetJobState(RequestId, EMythicaJobState::Failed);
+        SetJobState(RequestId, EMythicaJobState::Failed, FText::FromString("Failed to upload input data 2"));
         return;
     }
 
@@ -856,7 +856,7 @@ void UMythicaEditorSubsystem::OnUploadInputFilesResponse(FHttpRequestPtr Request
     if (Files.Num() != InputFiles.Num())
     {
         UE_LOG(LogMythica, Error, TEXT("Unexpected number of uploaded files"));
-        SetJobState(RequestId, EMythicaJobState::Failed);
+        SetJobState(RequestId, EMythicaJobState::Failed, FText::FromString("Failed to upload input data 3"));
         return;
     }
 
@@ -984,7 +984,7 @@ void UMythicaEditorSubsystem::OnExecuteJobResponse(FHttpRequestPtr Request, FHtt
     if (!bWasSuccessful || !Response.IsValid())
     {
         UE_LOG(LogMythica, Error, TEXT("Failed to request job"));
-        SetJobState(RequestId, EMythicaJobState::Failed);
+        SetJobState(RequestId, EMythicaJobState::Failed, FText::FromString("Failed to request job 1"));
         return;
     }
 
@@ -995,7 +995,7 @@ void UMythicaEditorSubsystem::OnExecuteJobResponse(FHttpRequestPtr Request, FHtt
     if (!FJsonSerializer::Deserialize(Reader, JsonObject) || !JsonObject.IsValid())
     {
         UE_LOG(LogMythica, Error, TEXT("Failed to parse create job JSON string"));
-        SetJobState(RequestId, EMythicaJobState::Failed);
+        SetJobState(RequestId, EMythicaJobState::Failed, FText::FromString("Failed to request job 2"));
         return;
     }
 
@@ -1003,7 +1003,7 @@ void UMythicaEditorSubsystem::OnExecuteJobResponse(FHttpRequestPtr Request, FHtt
     if (!JsonObject->TryGetStringField(TEXT("job_id"), JobId))
     {
         UE_LOG(LogMythica, Error, TEXT("Failed to get JobId from JSON string"));
-        SetJobState(RequestId, EMythicaJobState::Failed);
+        SetJobState(RequestId, EMythicaJobState::Failed, FText::FromString("Failed to request job 3"));
         return;
     }
 
@@ -1025,7 +1025,7 @@ int UMythicaEditorSubsystem::CreateJob(const FString& JobDefId, const FMythicaIn
     return RequestId;
 }
 
-void UMythicaEditorSubsystem::SetJobState(int RequestId, EMythicaJobState State)
+void UMythicaEditorSubsystem::SetJobState(int RequestId, EMythicaJobState State, FText Message)
 {
     FMythicaJob* JobData = Jobs.Find(RequestId);
     if (!JobData || JobData->State == State)
@@ -1034,7 +1034,7 @@ void UMythicaEditorSubsystem::SetJobState(int RequestId, EMythicaJobState State)
     }
 
     JobData->State = State;
-    OnJobStateChange.Broadcast(RequestId, State);
+    OnJobStateChange.Broadcast(RequestId, State, Message);
 
     if (State == EMythicaJobState::Queued)
     {
@@ -1101,7 +1101,7 @@ void UMythicaEditorSubsystem::OnJobTimeout(int RequestId)
     }
 
     check(JobData->State == EMythicaJobState::Queued || JobData->State == EMythicaJobState::Processing);
-    SetJobState(RequestId, EMythicaJobState::Failed);
+    SetJobState(RequestId, EMythicaJobState::Failed, FText::FromString("Job timed out"));
 }
 
 void UMythicaEditorSubsystem::OnJobResultsResponse(FHttpRequestPtr Request, FHttpResponsePtr Response, bool bWasSuccessful, int RequestId)
@@ -1170,7 +1170,7 @@ void UMythicaEditorSubsystem::OnJobResultsResponse(FHttpRequestPtr Request, FHtt
     if (FileId.IsEmpty())
     {
         UE_LOG(LogMythica, Error, TEXT("Job failed %d"), RequestId);
-        SetJobState(RequestId, EMythicaJobState::Failed);
+        SetJobState(RequestId, EMythicaJobState::Failed, FText::FromString("Job failed to produce result mesh"));
         return;
 
     }
@@ -1200,7 +1200,7 @@ void UMythicaEditorSubsystem::OnMeshDownloadInfoResponse(FHttpRequestPtr Request
     if (!bWasSuccessful || !Response.IsValid())
     {
         UE_LOG(LogMythica, Error, TEXT("Failed to get mesh download info"));
-        SetJobState(RequestId, EMythicaJobState::Failed);
+        SetJobState(RequestId, EMythicaJobState::Failed, FText::FromString("Failed to download result mesh 1"));
         return;
     }
 
@@ -1211,7 +1211,7 @@ void UMythicaEditorSubsystem::OnMeshDownloadInfoResponse(FHttpRequestPtr Request
     if (!FJsonSerializer::Deserialize(Reader, JsonObject) || !JsonObject.IsValid())
     {
         UE_LOG(LogMythica, Error, TEXT("Failed to parse mesh download info JSON string"));
-        SetJobState(RequestId, EMythicaJobState::Failed);
+        SetJobState(RequestId, EMythicaJobState::Failed, FText::FromString("Failed to download result mesh 2"));
         return;
     }
 
@@ -1220,7 +1220,7 @@ void UMythicaEditorSubsystem::OnMeshDownloadInfoResponse(FHttpRequestPtr Request
     if (DownloadURL.IsEmpty())
     {
         UE_LOG(LogMythica, Error, TEXT("Failed to get download URL for mesh"));
-        SetJobState(RequestId, EMythicaJobState::Failed);
+        SetJobState(RequestId, EMythicaJobState::Failed, FText::FromString("Failed to download result mesh 3"));
         return;
     }
 
@@ -1249,7 +1249,7 @@ void UMythicaEditorSubsystem::OnMeshDownloadResponse(FHttpRequestPtr Request, FH
     if (!bWasSuccessful || !Response.IsValid())
     {
         UE_LOG(LogMythica, Error, TEXT("Failed to download asset"));
-        SetJobState(RequestId, EMythicaJobState::Failed);
+        SetJobState(RequestId, EMythicaJobState::Failed, FText::FromString("Failed to download result mesh 4"));
         return;
     }
 
@@ -1272,7 +1272,7 @@ void UMythicaEditorSubsystem::OnMeshDownloadResponse(FHttpRequestPtr Request, FH
     if (!PackageWritten)
     {
         UE_LOG(LogMythica, Error, TEXT("Failed to write mesh file %s"), *CacheImportFile);
-        SetJobState(RequestId, EMythicaJobState::Failed);
+        SetJobState(RequestId, EMythicaJobState::Failed, FText::FromString("Failed to import result mesh 1"));
         return;
     }
 
@@ -1281,7 +1281,7 @@ void UMythicaEditorSubsystem::OnMeshDownloadResponse(FHttpRequestPtr Request, FH
     if (!Success)
     {
         UE_LOG(LogMythica, Error, TEXT("Failed to import generated mesh"));
-        SetJobState(RequestId, EMythicaJobState::Failed);
+        SetJobState(RequestId, EMythicaJobState::Failed, FText::FromString("Failed to import result mesh 2"));
         return;
     }
 
