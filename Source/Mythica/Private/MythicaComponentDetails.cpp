@@ -70,26 +70,6 @@ void FMythicaComponentDetails::CustomizeDetails(IDetailLayoutBuilder& DetailBuil
                 ]
                 + SVerticalBox::Slot()
                 .AutoHeight()
-                .Padding(0, 10, 0, 10)
-                [
-                    SNew(STextBlock)
-                        .Justification(ETextJustify::Center)
-                        .Visibility_Lambda([ComponentWeak]()
-                        {
-                            if (ComponentWeak.IsValid())
-                            {
-                                return ComponentWeak->CanRegenerateMesh() ? EVisibility::Collapsed : EVisibility::Visible;
-                            }
-                            return EVisibility::Collapsed;
-                        })
-                        .Text_Lambda([]()
-                        {
-                            return FText::FromString("Not supported in actor blueprint editor");
-                        })
-                        .ColorAndOpacity(FLinearColor::Red)
-                ]
-                + SVerticalBox::Slot()
-                .AutoHeight()
                 [
                     SNew(SBox)
                         .HeightOverride(ProgressBarHeight)
