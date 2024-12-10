@@ -36,7 +36,7 @@ DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnThumbnailLoaded, const FString&, 
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnAssetInstalled, const FString&, PackageId);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnAssetUninstalled, const FString&, PackageId);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnJobDefinitionListUpdated);
-DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FOnJobStateChanged, int, RequestId, EMythicaJobState, State);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_ThreeParams(FOnJobStateChanged, int, RequestId, EMythicaJobState, State, FText, Message);
 
 USTRUCT(BlueprintType)
 struct FMythicaStats
@@ -274,7 +274,7 @@ private:
     void OnMeshDownloadResponse(FHttpRequestPtr Request, FHttpResponsePtr Response, bool bWasSuccessful, int RequestId);
 
     int CreateJob(const FString& JobDefId, const FMythicaInputs& Inputs, const FMythicaParameters& Params, const FString& ImportName);
-    void SetJobState(int RequestId, EMythicaJobState State);
+    void SetJobState(int RequestId, EMythicaJobState State, FText Message = FText::GetEmpty());
     void PollJobStatus();
     void OnJobTimeout(int RequestId);
     void ClearJobs();

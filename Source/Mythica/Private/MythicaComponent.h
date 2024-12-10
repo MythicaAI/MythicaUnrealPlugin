@@ -39,6 +39,7 @@ public:
     FString GetImportName();
 
     EMythicaJobState GetJobState() const { return State; }
+    FText GetJobMessage() const { return Message; }
     bool IsJobProcessing() const;
     float JobProgressPercent() const;
 
@@ -52,7 +53,7 @@ private:
     void OnTransformUpdated(USceneComponent* InComponent, EUpdateTransformFlags InFlags, ETeleportType InType);
 
     UFUNCTION()
-    void OnJobStateChanged(int InRequestId, EMythicaJobState InState);
+    void OnJobStateChanged(int InRequestId, EMythicaJobState InState, FText InMessage);
 
     void UpdateMesh();
     void UpdatePlaceholderMesh();
@@ -73,7 +74,9 @@ public:
 private:
     int RequestId = -1;
     EMythicaJobState State = EMythicaJobState::Invalid;
+    FText Message;
     double StateBeginTime = 0.0f;
+
     bool QueueRegenerate = false;
     FTimerHandle DelayRegenerateHandle;
 
