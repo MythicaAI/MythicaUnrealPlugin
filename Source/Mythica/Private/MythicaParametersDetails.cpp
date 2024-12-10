@@ -145,6 +145,7 @@ void FMythicaParametersDetails::CustomizeChildren(TSharedRef<IPropertyHandle> St
                         {
                             FloatParam.Values[i] = FloatParam.DefaultValues[i];
                         }
+                        HandleWeak.Pin()->NotifyPostChange(EPropertyChangeType::ValueSet);
                     }
 
                     return FReply::Handled();
@@ -230,6 +231,7 @@ void FMythicaParametersDetails::CustomizeChildren(TSharedRef<IPropertyHandle> St
                         {
                             IntParam.Values[i] = IntParam.DefaultValues[i];
                         }
+                        HandleWeak.Pin()->NotifyPostChange(EPropertyChangeType::ValueSet);
                     }
 
                     return FReply::Handled();
@@ -284,6 +286,7 @@ void FMythicaParametersDetails::CustomizeChildren(TSharedRef<IPropertyHandle> St
                     {
                         FMythicaParameterBool& BoolParam = Parameters->Parameters[ParamIndex].ValueBool;
                         BoolParam.Value = BoolParam.DefaultValue;
+                        HandleWeak.Pin()->NotifyPostChange(EPropertyChangeType::ValueSet);
                     }
 
                     return FReply::Handled();
@@ -336,6 +339,7 @@ void FMythicaParametersDetails::CustomizeChildren(TSharedRef<IPropertyHandle> St
                     {
                         FMythicaParameterString& StringParam = Parameters->Parameters[ParamIndex].ValueString;
                         StringParam.Value = StringParam.DefaultValue;
+                        HandleWeak.Pin()->NotifyPostChange(EPropertyChangeType::ValueSet);
                     }
 
                     return FReply::Handled();
@@ -430,6 +434,7 @@ void FMythicaParametersDetails::CustomizeChildren(TSharedRef<IPropertyHandle> St
                     {
                         FMythicaParameterEnum& EnumParam = Parameters->Parameters[ParamIndex].ValueEnum;
                         EnumParam.Value = EnumParam.DefaultValue;
+                        HandleWeak.Pin()->NotifyPostChange(EPropertyChangeType::ValueSet);
                     }
 
                     return FReply::Handled();
