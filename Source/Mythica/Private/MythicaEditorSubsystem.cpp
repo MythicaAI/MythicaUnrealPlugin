@@ -553,7 +553,7 @@ void UMythicaEditorSubsystem::OnDownloadAssetResponse(FHttpRequestPtr Request, F
     // Get unique import directory
     const UMythicaDeveloperSettings* Settings = GetDefault<UMythicaDeveloperSettings>();
 
-    FString ImportPackagePath = FPaths::Combine(Settings->ImportDirectory, ObjectTools::SanitizeObjectName(Asset->Name));
+    FString ImportPackagePath = FPaths::Combine(Settings->PackageImportDirectory, ObjectTools::SanitizeObjectName(Asset->Name));
     FString DirectoryRelative = FPackageName::LongPackageNameToFilename(ImportPackagePath);
     FString DirectoryAbsolute = FPaths::ConvertRelativePathToFull(DirectoryRelative);
     FString BaseImportDirectory = MakeUniquePath(DirectoryAbsolute);
@@ -1281,7 +1281,7 @@ void UMythicaEditorSubsystem::OnMeshDownloadResponse(FHttpRequestPtr Request, FH
     const UMythicaDeveloperSettings* Settings = GetDefault<UMythicaDeveloperSettings>();
 
     // Import over any existing mesh for this component
-    FString ImportDirectory = FPaths::Combine(Settings->ImportDirectory, TEXT("GeneratedMeshes"), RequestData->ImportPath);
+    FString ImportDirectory = FPaths::Combine(Settings->GeneratedAssetImportDirectory, RequestData->ImportPath);
     FString ImportDirectoryParent = FPaths::GetPath(ImportDirectory);
     FString ImportName = FPaths::GetBaseFilename(RequestData->ImportPath);
 
@@ -1329,7 +1329,7 @@ void UMythicaEditorSubsystem::LoadInstalledAssetList()
 {
     const UMythicaDeveloperSettings* Settings = GetDefault<UMythicaDeveloperSettings>();
 
-    FString ImportFolderRelative = FPackageName::LongPackageNameToFilename(Settings->ImportDirectory);
+    FString ImportFolderRelative = FPackageName::LongPackageNameToFilename(Settings->PackageImportDirectory);
     FString ImportFolderAbsolute = FPaths::ConvertRelativePathToFull(ImportFolderRelative);
     FString MatchPattern = ImportFolderAbsolute + "/*";
 

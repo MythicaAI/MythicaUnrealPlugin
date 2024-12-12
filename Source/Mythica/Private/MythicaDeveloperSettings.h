@@ -19,8 +19,11 @@ public:
     FString ImagesURL = TEXT("https://api.mythica.ai/images");
 
     UPROPERTY(Config, EditAnywhere, BlueprintReadOnly, Category = Server)
-    FString ImportDirectory = TEXT("/Game/Mythica");
-
+    FString PackageImportDirectory = TEXT("/Game/Mythica/Packages");
+    
+    UPROPERTY(Config, EditAnywhere, BlueprintReadOnly, Category = Server)
+    FString GeneratedAssetImportDirectory = TEXT("/Game/Mythica/Generated");
+ 
     UPROPERTY(Config, EditAnywhere, BlueprintReadOnly, Category = User)
     FString APIKey;
 
