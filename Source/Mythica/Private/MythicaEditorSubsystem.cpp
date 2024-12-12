@@ -13,6 +13,7 @@
 #include "Interfaces/IPluginManager.h"
 #include "LevelEditor.h"
 #include "MythicaDeveloperSettings.h"
+#include "MythicaInputSelectionVolume.h"
 #include "MythicaUSDUtil.h"
 #include "ObjectTools.h"
 #include "UObject/SavePackage.h"
@@ -764,7 +765,31 @@ bool UMythicaEditorSubsystem::PrepareInputFiles(const FMythicaInputs& Inputs, TM
             bool Success = Mythica::ExportSpline(Input.SplineActor, FilePath, Origin, Input.TransformType);
             if (!Success)
             {
-                UE_LOG(LogMythica, Error, TEXT("Failed to export actors"));
+                UE_LOG(LogMythica, Error, TEXT("Failed to export spline"));
+                return false;
+            }
+
+            InputFiles.Add(i, FilePath);
+        }
+        else if (Input.Type == EMythicaInputType::Volume)
+        {
+            if (!Input.VolumeActor)
+            {
+                continue;
+            }
+
+            TArray<AActor*> Actors;
+            Input.VolumeActor->GetActors(Actors);
+            if (Actors.IsEmpty())
+            {
+                continue;
+            }
+
+            FString FilePath = FPaths::Combine(ExportDirectory, FString::Format(TEXT("Input{0}"), { i }), "Mesh.usdz");
+            bool Success = Mythica::ExportActors(Actors, FilePath, Origin, Input.TransformType);
+            if (!Success)
+            {
+                UE_LOG(LogMythica, Error, TEXT("Failed to export volume actors"));
                 return false;
             }
 
