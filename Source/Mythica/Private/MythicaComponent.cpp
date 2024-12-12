@@ -307,21 +307,29 @@ void UMythicaComponent::UpdateMesh()
 {
     AActor* OwnerActor = GetOwner();
 
-    // Remove existing meshes
-    for (FName Name : MeshComponentNames)
+    // Clear existing meshes but save cache for re-use
+    TArray<UStaticMeshComponent*> ExistingMeshCache;
+
+    for (UActorComponent* Component : OwnerActor->GetComponents())
     {
-        for (UActorComponent* Component : OwnerActor->GetComponents())
+        UStaticMeshComponent* MeshComponent = Cast<UStaticMeshComponent>(Component);
+        if (!MeshComponent)
+        {
+            continue;
+        }
+
+        for (FName Name : MeshComponentNames)
         {
             if (Component->GetFName() == Name)
             {
-                Component->DestroyComponent();
+                ExistingMeshCache.Add(MeshComponent);
                 break;
             }
         }
     }
-    MeshComponentNames.Reset();
+    MeshComponentNames.Empty();
 
-    // Spawn new meshes
+    // Scan the directory for desired meshes
     UMythicaEditorSubsystem* MythicaEditorSubsystem = GEditor->GetEditorSubsystem<UMythicaEditorSubsystem>();
     FString ImportDirectory = MythicaEditorSubsystem->GetImportDirectory(RequestId);
 
@@ -332,18 +340,46 @@ void UMythicaComponent::UpdateMesh()
 
     for (FAssetData Asset : Assets)
     {
-        if (Asset.IsInstanceOf(UStaticMesh::StaticClass()))
+        if (!Asset.IsInstanceOf(UStaticMesh::StaticClass()))
         {
-            UStaticMeshComponent* StaticMeshComponent = NewObject<UStaticMeshComponent>(OwnerActor);
-            StaticMeshComponent->SetStaticMesh(Cast<UStaticMesh>(Asset.GetAsset()));
-            StaticMeshComponent->SetWorldLocation(K2_GetComponentLocation());
-            StaticMeshComponent->AttachToComponent(GetAttachParent(), FAttachmentTransformRules::KeepWorldTransform);
-
-            OwnerActor->AddInstanceComponent(StaticMeshComponent);
-            StaticMeshComponent->RegisterComponent();
-
-            MeshComponentNames.Add(StaticMeshComponent->GetFName());
+            continue;
         }
+
+        FName AssetName = FName(*Asset.AssetName.ToString());
+        UStaticMeshComponent* MeshComponent = nullptr;
+
+        // Try to re-use an existing mesh component
+        for (int32 i = 0; i < ExistingMeshCache.Num(); i++)
+        {
+            UStaticMesh* Mesh = ExistingMeshCache[i]->GetStaticMesh();
+            if (Mesh && Mesh->GetPathName() == AssetName)
+            {
+                MeshComponent = ExistingMeshCache[i];
+                ExistingMeshCache.RemoveAt(i);
+                break;
+            }
+        }
+        
+        // Otherwise spawn a new one
+        if (!MeshComponent)
+        {
+            MeshComponent = NewObject<UStaticMeshComponent>(OwnerActor);
+            MeshComponent->SetStaticMesh(Cast<UStaticMesh>(Asset.GetAsset()));
+            MeshComponent->SetWorldLocation(K2_GetComponentLocation());
+            MeshComponent->AttachToComponent(GetAttachParent(), FAttachmentTransformRules::KeepWorldTransform);
+
+            OwnerActor->AddInstanceComponent(MeshComponent);
+            MeshComponent->RegisterComponent();
+
+        }
+
+        MeshComponentNames.Add(MeshComponent->GetFName());
+    }
+    
+    // Destroy any meshes that were not re-used
+    for (UStaticMeshComponent* MeshComponent : ExistingMeshCache)
+    {
+        MeshComponent->DestroyComponent();
     }
 
     UpdatePlaceholderMesh();
