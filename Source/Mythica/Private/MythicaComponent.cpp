@@ -327,7 +327,7 @@ void UMythicaComponent::UpdateMesh()
             }
         }
     }
-    MeshComponentNames.Empty();
+    MeshComponentNames.Reset();
 
     // Scan the directory for desired meshes
     UMythicaEditorSubsystem* MythicaEditorSubsystem = GEditor->GetEditorSubsystem<UMythicaEditorSubsystem>();
