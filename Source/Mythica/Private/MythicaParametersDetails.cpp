@@ -377,9 +377,12 @@ void FMythicaParametersDetails::CustomizeChildren(TSharedRef<IPropertyHandle> St
 
                 auto OnTextCommitted = [this, ParamIndex](const FText& InText, ETextCommit::Type InCommitType)
                 {
-                    FMythicaParameters* Parameters = GetParametersFromHandleWeak(HandleWeak);
+                    UObject* Object = nullptr;
+                    FMythicaParameters* Parameters = GetParametersFromHandleWeak(HandleWeak, &Object);
                     if (Parameters)
                     {
+                        const FScopedTransaction Transaction(LOCTEXT("MythicaChangeParameter", "Parameter Value Changed"));
+                        Object->Modify();
                         Parameters->Parameters[ParamIndex].ValueString.Value = InText.ToString();
                         HandleWeak.Pin()->NotifyPostChange(EPropertyChangeType::ValueSet);
                     }
@@ -408,9 +411,13 @@ void FMythicaParametersDetails::CustomizeChildren(TSharedRef<IPropertyHandle> St
 
                 OnResetToDefault = [this, ParamIndex]()
                 {
-                    FMythicaParameters* Parameters = GetParametersFromHandleWeak(HandleWeak);
+                    UObject* Object = nullptr;
+                    FMythicaParameters* Parameters = GetParametersFromHandleWeak(HandleWeak, &Object);
                     if (Parameters)
                     {
+                        const FScopedTransaction Transaction(LOCTEXT("MythicaChangeParameter", "Parameter Value Reset"));
+                        Object->Modify();
+
                         FMythicaParameterString& StringParam = Parameters->Parameters[ParamIndex].ValueString;
                         StringParam.Value = StringParam.DefaultValue;
                         HandleWeak.Pin()->NotifyPostChange(EPropertyChangeType::ValueSet);
