@@ -211,7 +211,7 @@ void FMythicaParametersDetails::CustomizeChildren(TSharedRef<IPropertyHandle> St
                             if (Value != NewValue)
                             {
                                 Object->Modify();
-                                Parameters->Parameters[ParamIndex].ValueInt.Values[ComponentIndex] = NewValue;
+                                Value = NewValue;
                                 HandleWeak.Pin()->NotifyPostChange(UsingSlider ? EPropertyChangeType::Interactive : EPropertyChangeType::ValueSet);
                             }
                         }
@@ -228,7 +228,7 @@ void FMythicaParametersDetails::CustomizeChildren(TSharedRef<IPropertyHandle> St
                             {
                                 const FScopedTransaction Transaction(LOCTEXT("MythicaChangeParameter", "Parameter Value Changed"));
                                 Object->Modify();
-                                Parameters->Parameters[ParamIndex].ValueInt.Values[ComponentIndex] = NewValue;
+                                Value = NewValue;
                                 HandleWeak.Pin()->NotifyPostChange(UsingSlider ? EPropertyChangeType::Interactive : EPropertyChangeType::ValueSet);
                             }
                         }
