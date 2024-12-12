@@ -319,9 +319,12 @@ void FMythicaParametersDetails::CustomizeChildren(TSharedRef<IPropertyHandle> St
                     if (NewState == ECheckBoxState::Undetermined)
                         return;
 
-                    FMythicaParameters* Parameters = GetParametersFromHandleWeak(HandleWeak);
+                    UObject* Object = nullptr;
+                    FMythicaParameters* Parameters = GetParametersFromHandleWeak(HandleWeak, &Object);
                     if (Parameters)
                     {
+                        const FScopedTransaction Transaction(LOCTEXT("MythicaChangeParameter", "Parameter Value Changed"));
+                        Object->Modify();
                         Parameters->Parameters[ParamIndex].ValueBool.Value = (NewState == ECheckBoxState::Checked);
                         HandleWeak.Pin()->NotifyPostChange(EPropertyChangeType::ValueSet);
                     }
@@ -348,9 +351,13 @@ void FMythicaParametersDetails::CustomizeChildren(TSharedRef<IPropertyHandle> St
 
                 OnResetToDefault = [this, ParamIndex]()
                 {
-                    FMythicaParameters* Parameters = GetParametersFromHandleWeak(HandleWeak);
+                    UObject* Object = nullptr;
+                    FMythicaParameters* Parameters = GetParametersFromHandleWeak(HandleWeak, &Object);
                     if (Parameters)
                     {
+                        const FScopedTransaction Transaction(LOCTEXT("MythicaChangeParameter", "Parameter Value Reset"));
+                        Object->Modify();
+
                         FMythicaParameterBool& BoolParam = Parameters->Parameters[ParamIndex].ValueBool;
                         BoolParam.Value = BoolParam.DefaultValue;
                         HandleWeak.Pin()->NotifyPostChange(EPropertyChangeType::ValueSet);
