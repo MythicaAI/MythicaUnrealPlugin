@@ -8,7 +8,9 @@
 
 #include <functional>
 
-static FMythicaParameters* GetParametersFromHandle(IPropertyHandle& Handle)
+#define LOCTEXT_NAMESPACE "Mythica"
+
+static FMythicaParameters* GetParametersFromHandle(IPropertyHandle& Handle, UObject** OutObject = nullptr)
 {
     TArray<UObject*> Objects;
     Handle.GetOuterObjects(Objects);
@@ -17,10 +19,15 @@ static FMythicaParameters* GetParametersFromHandle(IPropertyHandle& Handle)
         return nullptr;
     }
 
+    if (OutObject)
+    {
+        *OutObject = Objects[0];
+    }
+
     return (FMythicaParameters*)Handle.GetValueBaseAddress((uint8*)Objects[0]);
 }
 
-static FMythicaParameters* GetParametersFromHandleWeak(TWeakPtr<IPropertyHandle> HandleWeak)
+static FMythicaParameters* GetParametersFromHandleWeak(TWeakPtr<IPropertyHandle> HandleWeak, UObject** OutObject = nullptr)
 {
     if (!HandleWeak.IsValid())
         return nullptr;
@@ -29,7 +36,7 @@ static FMythicaParameters* GetParametersFromHandleWeak(TWeakPtr<IPropertyHandle>
     if (!Handle)
         return nullptr;
 
-    return GetParametersFromHandle(*Handle);
+    return GetParametersFromHandle(*Handle, OutObject);
 }
 
 TSharedRef<IPropertyTypeCustomization> FMythicaParametersDetails::MakeInstance()
@@ -80,22 +87,47 @@ void FMythicaParametersDetails::CustomizeChildren(TSharedRef<IPropertyHandle> St
 
                     auto OnValueChanged = [this, ParamIndex, ComponentIndex](float NewValue)
                     {
-                        FMythicaParameters* Parameters = GetParametersFromHandleWeak(HandleWeak);
+                        UObject* Object = nullptr;
+                        FMythicaParameters* Parameters = GetParametersFromHandleWeak(HandleWeak, &Object);
                         if (Parameters)
                         {
-                            Parameters->Parameters[ParamIndex].ValueFloat.Values[ComponentIndex] = NewValue;
-                            HandleWeak.Pin()->NotifyPostChange(UsingSlider ? EPropertyChangeType::Interactive : EPropertyChangeType::ValueSet);
+                            float& Value = Parameters->Parameters[ParamIndex].ValueFloat.Values[ComponentIndex];
+                            if (Value != NewValue)
+                            {
+                                Object->Modify();
+                                Value = NewValue;
+                                HandleWeak.Pin()->NotifyPostChange(UsingSlider ? EPropertyChangeType::Interactive : EPropertyChangeType::ValueSet);
+                            }
+                        }
+                    };
+
+                    auto OnValueCommitted = [this, ParamIndex, ComponentIndex](float NewValue, ETextCommit::Type)
+                    {
+                        UObject* Object = nullptr;
+                        FMythicaParameters* Parameters = GetParametersFromHandleWeak(HandleWeak, &Object);
+                        if (Parameters)
+                        {
+                            float& Value = Parameters->Parameters[ParamIndex].ValueFloat.Values[ComponentIndex];
+                            if (Value != NewValue)
+                            {
+                                const FScopedTransaction Transaction(LOCTEXT("MythicaChangeParameter", "Parameter Value Changed"));
+                                Object->Modify();
+                                Value = NewValue;
+                                HandleWeak.Pin()->NotifyPostChange(UsingSlider ? EPropertyChangeType::Interactive : EPropertyChangeType::ValueSet);
+                            }
                         }
                     };
 
                     auto OnBeginSliderMovement = [this]() 
                     {
                         UsingSlider = true;
+                        GEditor->BeginTransaction(TEXT("Mythica"), LOCTEXT("MythicaChangeParameter", "Parameter Value Changed"), nullptr);
                     };
 
                     auto OnEndSliderMovement = [this](float NewValue)
                     {
                         UsingSlider = false;
+                        GEditor->EndTransaction();
                     };
 
                     HorizontalBox->AddSlot()
@@ -104,6 +136,7 @@ void FMythicaParametersDetails::CustomizeChildren(TSharedRef<IPropertyHandle> St
                             SNew(SNumericEntryBox<float>)
                                 .Value_Lambda(Value)
                                 .OnValueChanged_Lambda(OnValueChanged)
+                                .OnValueCommitted_Lambda(OnValueCommitted)
                                 .OnBeginSliderMovement_Lambda(OnBeginSliderMovement)
                                 .OnEndSliderMovement_Lambda(OnEndSliderMovement)
                                 .AllowSpin(true)
@@ -137,9 +170,13 @@ void FMythicaParametersDetails::CustomizeChildren(TSharedRef<IPropertyHandle> St
 
                 OnResetToDefault = [this, ParamIndex]()
                 {
-                    FMythicaParameters* Parameters = GetParametersFromHandleWeak(HandleWeak);
+                    UObject* Object = nullptr;
+                    FMythicaParameters* Parameters = GetParametersFromHandleWeak(HandleWeak, &Object);
                     if (Parameters)
                     {
+                        const FScopedTransaction Transaction(LOCTEXT("MythicaChangeParameter", "Parameter Value Reset"));
+                        Object->Modify();
+
                         FMythicaParameterFloat& FloatParam = Parameters->Parameters[ParamIndex].ValueFloat;
                         for (int i = 0; i < FloatParam.Values.Num(); ++i)
                         {
@@ -166,22 +203,47 @@ void FMythicaParametersDetails::CustomizeChildren(TSharedRef<IPropertyHandle> St
 
                     auto OnValueChanged = [this, ParamIndex, ComponentIndex](int NewValue)
                     {
-                        FMythicaParameters* Parameters = GetParametersFromHandleWeak(HandleWeak);
+                        UObject* Object = nullptr;
+                        FMythicaParameters* Parameters = GetParametersFromHandleWeak(HandleWeak, &Object);
                         if (Parameters)
                         {
-                            Parameters->Parameters[ParamIndex].ValueInt.Values[ComponentIndex] = NewValue;
-                            HandleWeak.Pin()->NotifyPostChange(UsingSlider ? EPropertyChangeType::Interactive : EPropertyChangeType::ValueSet);
+                            int& Value = Parameters->Parameters[ParamIndex].ValueInt.Values[ComponentIndex];
+                            if (Value != NewValue)
+                            {
+                                Object->Modify();
+                                Value = NewValue;
+                                HandleWeak.Pin()->NotifyPostChange(UsingSlider ? EPropertyChangeType::Interactive : EPropertyChangeType::ValueSet);
+                            }
+                        }
+                    };
+
+                    auto OnValueCommitted = [this, ParamIndex, ComponentIndex](int NewValue, ETextCommit::Type)
+                    {
+                        UObject* Object = nullptr;
+                        FMythicaParameters* Parameters = GetParametersFromHandleWeak(HandleWeak, &Object);
+                        if (Parameters)
+                        {
+                            int& Value = Parameters->Parameters[ParamIndex].ValueInt.Values[ComponentIndex];
+                            if (Value != NewValue)
+                            {
+                                const FScopedTransaction Transaction(LOCTEXT("MythicaChangeParameter", "Parameter Value Changed"));
+                                Object->Modify();
+                                Value = NewValue;
+                                HandleWeak.Pin()->NotifyPostChange(UsingSlider ? EPropertyChangeType::Interactive : EPropertyChangeType::ValueSet);
+                            }
                         }
                     };
 
                     auto OnBeginSliderMovement = [this]()
                     {
                         UsingSlider = true;
+                        GEditor->BeginTransaction(TEXT("Mythica"), LOCTEXT("MythicaChangeParameter", "Parameter Value Changed"), nullptr);
                     };
 
                     auto OnEndSliderMovement = [this](int NewValue)
                     {
                         UsingSlider = false;
+                        GEditor->EndTransaction();
                     };
 
                     HorizontalBox->AddSlot()
@@ -190,6 +252,7 @@ void FMythicaParametersDetails::CustomizeChildren(TSharedRef<IPropertyHandle> St
                             SNew(SNumericEntryBox<int>)
                                 .Value_Lambda(Value)
                                 .OnValueChanged_Lambda(OnValueChanged)
+                                .OnValueCommitted_Lambda(OnValueCommitted)
                                 .OnBeginSliderMovement_Lambda(OnBeginSliderMovement)
                                 .OnEndSliderMovement_Lambda(OnEndSliderMovement)
                                 .AllowSpin(true)
@@ -223,9 +286,13 @@ void FMythicaParametersDetails::CustomizeChildren(TSharedRef<IPropertyHandle> St
 
                 OnResetToDefault = [this, ParamIndex]()
                 {
-                    FMythicaParameters* Parameters = GetParametersFromHandleWeak(HandleWeak);
+                    UObject* Object = nullptr;
+                    FMythicaParameters* Parameters = GetParametersFromHandleWeak(HandleWeak, &Object);
                     if (Parameters)
                     {
+                        const FScopedTransaction Transaction(LOCTEXT("MythicaChangeParameter", "Parameter Value Reset"));
+                        Object->Modify();
+
                         FMythicaParameterInt& IntParam = Parameters->Parameters[ParamIndex].ValueInt;
                         for (int i = 0; i < IntParam.Values.Num(); ++i)
                         {
@@ -252,9 +319,12 @@ void FMythicaParametersDetails::CustomizeChildren(TSharedRef<IPropertyHandle> St
                     if (NewState == ECheckBoxState::Undetermined)
                         return;
 
-                    FMythicaParameters* Parameters = GetParametersFromHandleWeak(HandleWeak);
+                    UObject* Object = nullptr;
+                    FMythicaParameters* Parameters = GetParametersFromHandleWeak(HandleWeak, &Object);
                     if (Parameters)
                     {
+                        const FScopedTransaction Transaction(LOCTEXT("MythicaChangeParameter", "Parameter Value Changed"));
+                        Object->Modify();
                         Parameters->Parameters[ParamIndex].ValueBool.Value = (NewState == ECheckBoxState::Checked);
                         HandleWeak.Pin()->NotifyPostChange(EPropertyChangeType::ValueSet);
                     }
@@ -281,9 +351,13 @@ void FMythicaParametersDetails::CustomizeChildren(TSharedRef<IPropertyHandle> St
 
                 OnResetToDefault = [this, ParamIndex]()
                 {
-                    FMythicaParameters* Parameters = GetParametersFromHandleWeak(HandleWeak);
+                    UObject* Object = nullptr;
+                    FMythicaParameters* Parameters = GetParametersFromHandleWeak(HandleWeak, &Object);
                     if (Parameters)
                     {
+                        const FScopedTransaction Transaction(LOCTEXT("MythicaChangeParameter", "Parameter Value Reset"));
+                        Object->Modify();
+
                         FMythicaParameterBool& BoolParam = Parameters->Parameters[ParamIndex].ValueBool;
                         BoolParam.Value = BoolParam.DefaultValue;
                         HandleWeak.Pin()->NotifyPostChange(EPropertyChangeType::ValueSet);
@@ -303,9 +377,12 @@ void FMythicaParametersDetails::CustomizeChildren(TSharedRef<IPropertyHandle> St
 
                 auto OnTextCommitted = [this, ParamIndex](const FText& InText, ETextCommit::Type InCommitType)
                 {
-                    FMythicaParameters* Parameters = GetParametersFromHandleWeak(HandleWeak);
+                    UObject* Object = nullptr;
+                    FMythicaParameters* Parameters = GetParametersFromHandleWeak(HandleWeak, &Object);
                     if (Parameters)
                     {
+                        const FScopedTransaction Transaction(LOCTEXT("MythicaChangeParameter", "Parameter Value Changed"));
+                        Object->Modify();
                         Parameters->Parameters[ParamIndex].ValueString.Value = InText.ToString();
                         HandleWeak.Pin()->NotifyPostChange(EPropertyChangeType::ValueSet);
                     }
@@ -334,9 +411,13 @@ void FMythicaParametersDetails::CustomizeChildren(TSharedRef<IPropertyHandle> St
 
                 OnResetToDefault = [this, ParamIndex]()
                 {
-                    FMythicaParameters* Parameters = GetParametersFromHandleWeak(HandleWeak);
+                    UObject* Object = nullptr;
+                    FMythicaParameters* Parameters = GetParametersFromHandleWeak(HandleWeak, &Object);
                     if (Parameters)
                     {
+                        const FScopedTransaction Transaction(LOCTEXT("MythicaChangeParameter", "Parameter Value Reset"));
+                        Object->Modify();
+
                         FMythicaParameterString& StringParam = Parameters->Parameters[ParamIndex].ValueString;
                         StringParam.Value = StringParam.DefaultValue;
                         HandleWeak.Pin()->NotifyPostChange(EPropertyChangeType::ValueSet);
@@ -371,9 +452,12 @@ void FMythicaParametersDetails::CustomizeChildren(TSharedRef<IPropertyHandle> St
 
                 auto OnSelectionChanged = [this, ParamIndex](TSharedPtr<FMythicaParameterEnumValue> NewSelection, ESelectInfo::Type SelectInfo)
                 {
-                    FMythicaParameters* Parameters = GetParametersFromHandleWeak(HandleWeak);
+                    UObject* Object = nullptr;
+                    FMythicaParameters* Parameters = GetParametersFromHandleWeak(HandleWeak, &Object);
                     if (Parameters && NewSelection.IsValid())
                     {
+                        const FScopedTransaction Transaction(LOCTEXT("MythicaChangeParameter", "Parameter Value Changed"));
+                        Object->Modify();
                         Parameters->Parameters[ParamIndex].ValueEnum.Value = NewSelection->Name;
                         HandleWeak.Pin()->NotifyPostChange(EPropertyChangeType::ValueSet);
                     }
@@ -429,9 +513,13 @@ void FMythicaParametersDetails::CustomizeChildren(TSharedRef<IPropertyHandle> St
 
                 OnResetToDefault = [this, ParamIndex]()
                 {
-                    FMythicaParameters* Parameters = GetParametersFromHandleWeak(HandleWeak);
+                    UObject* Object = nullptr;
+                    FMythicaParameters* Parameters = GetParametersFromHandleWeak(HandleWeak, &Object);
                     if (Parameters)
                     {
+                        const FScopedTransaction Transaction(LOCTEXT("MythicaChangeParameter", "Parameter Value Reset"));
+                        Object->Modify();
+
                         FMythicaParameterEnum& EnumParam = Parameters->Parameters[ParamIndex].ValueEnum;
                         EnumParam.Value = EnumParam.DefaultValue;
                         HandleWeak.Pin()->NotifyPostChange(EPropertyChangeType::ValueSet);
