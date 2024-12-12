@@ -67,7 +67,7 @@ public:
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Parameters")
     FMythicaParameters Parameters;
 
-    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Parameters")
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Parameters", meta = (EditCondition = "DisplayInputs", EditConditionHides, HideEditConditionToggle))
     FMythicaInputs Inputs;
 
 private:
@@ -78,6 +78,9 @@ private:
 
     bool QueueRegenerate = false;
     FTimerHandle DelayRegenerateHandle;
+
+    UPROPERTY(Transient)
+    bool DisplayInputs = false;
 
     UPROPERTY(VisibleAnywhere, Category = "Mythica", meta = (EditCondition = "false", EditConditionHides))
     TMap<EMythicaJobState, double> StateDurations;

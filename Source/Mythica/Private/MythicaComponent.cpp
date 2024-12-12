@@ -43,6 +43,8 @@ void UMythicaComponent::OnRegister()
 {
     Super::OnRegister();
 
+    DisplayInputs = !Inputs.Inputs.IsEmpty();
+
     UpdatePlaceholderMesh();
 }
 
@@ -202,6 +204,7 @@ void UMythicaComponent::OnJobDefIdChanged()
     FMythicaJobDefinition Definition = MythicaEditorSubsystem->GetJobDefinitionById(JobDefId.JobDefId);
     Parameters = Definition.Parameters;
     Inputs = Definition.Inputs;
+    DisplayInputs = !Inputs.Inputs.IsEmpty();
 
     State = EMythicaJobState::Invalid;
     StateDurations.Reset();
