@@ -6,12 +6,15 @@
 
 #include "MythicaTypes.generated.h"
 
+class AMythicaInputSelectionVolume;
+
 UENUM(BlueprintType)
 enum class EMythicaInputType : uint8
 {
     Mesh    UMETA(DisplayName = "Static Mesh"),
     World   UMETA(DisplayName = "World Actors"),
-    Spline  UMETA(DisplayName = "World Spline")
+    Spline  UMETA(DisplayName = "World Spline"),
+    Volume  UMETA(DisplayName = "Volume")
 };
 
 USTRUCT(BlueprintType)
@@ -25,7 +28,7 @@ struct FMythicaInput
     UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = "Input")
     EMythicaInputType Type = EMythicaInputType::Mesh;
 
-    UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = "Input", meta = (EditCondition = "Type == EMythicaInputType::World || Type == EMythicaInputType::Spline", EditConditionHides))
+    UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = "Input", meta = (EditCondition = "Type != EMythicaInputType::Mesh", EditConditionHides))
     EMythicaExportTransformType TransformType = EMythicaExportTransformType::Relative;
 
     UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = "Input", meta = (EditCondition = "Type == EMythicaInputType::Mesh", EditConditionHides))
@@ -36,6 +39,9 @@ struct FMythicaInput
 
     UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = "Input", meta = (EditCondition = "Type == EMythicaInputType::Spline", EditConditionHides))
     AActor* SplineActor = nullptr;
+
+    UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = "Input", meta = (EditCondition = "Type == EMythicaInputType::Volume", EditConditionHides))
+    AMythicaInputSelectionVolume* VolumeActor = nullptr;
 };
 
 USTRUCT(BlueprintType)
