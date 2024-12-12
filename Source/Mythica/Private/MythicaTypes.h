@@ -9,9 +9,9 @@
 UENUM(BlueprintType)
 enum class EMythicaInputType : uint8
 {
-    Mesh,
-    World,
-    Spline
+    Mesh    UMETA(DisplayName = "Static Mesh"),
+    World   UMETA(DisplayName = "World Actors"),
+    Spline  UMETA(DisplayName = "World Spline")
 };
 
 USTRUCT(BlueprintType)
