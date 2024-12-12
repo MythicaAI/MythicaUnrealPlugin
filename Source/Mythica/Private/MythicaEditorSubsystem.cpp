@@ -780,6 +780,10 @@ bool UMythicaEditorSubsystem::PrepareInputFiles(const FMythicaInputs& Inputs, TM
 
             TArray<AActor*> Actors;
             Input.VolumeActor->GetActors(Actors);
+            if (Actors.IsEmpty())
+            {
+                continue;
+            }
 
             FString FilePath = FPaths::Combine(ExportDirectory, FString::Format(TEXT("Input{0}"), { i }), "Mesh.usdz");
             bool Success = Mythica::ExportActors(Actors, FilePath, Origin, Input.TransformType);

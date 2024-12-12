@@ -7,8 +7,8 @@
 UCLASS()
 class MYTHICA_API AMythicaInputSelectionVolume : public AVolume
 {
-	GENERATED_BODY()
+    GENERATED_BODY()
 public:
 
-	void GetActors(TArray<AActor*>& Actors) const;
+    void GetActors(TArray<AActor*>& Actors) const;
 };
