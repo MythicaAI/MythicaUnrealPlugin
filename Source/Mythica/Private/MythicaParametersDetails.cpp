@@ -452,9 +452,12 @@ void FMythicaParametersDetails::CustomizeChildren(TSharedRef<IPropertyHandle> St
 
                 auto OnSelectionChanged = [this, ParamIndex](TSharedPtr<FMythicaParameterEnumValue> NewSelection, ESelectInfo::Type SelectInfo)
                 {
-                    FMythicaParameters* Parameters = GetParametersFromHandleWeak(HandleWeak);
+                    UObject* Object = nullptr;
+                    FMythicaParameters* Parameters = GetParametersFromHandleWeak(HandleWeak, &Object);
                     if (Parameters && NewSelection.IsValid())
                     {
+                        const FScopedTransaction Transaction(LOCTEXT("MythicaChangeParameter", "Parameter Value Changed"));
+                        Object->Modify();
                         Parameters->Parameters[ParamIndex].ValueEnum.Value = NewSelection->Name;
                         HandleWeak.Pin()->NotifyPostChange(EPropertyChangeType::ValueSet);
                     }
@@ -510,9 +513,13 @@ void FMythicaParametersDetails::CustomizeChildren(TSharedRef<IPropertyHandle> St
 
                 OnResetToDefault = [this, ParamIndex]()
                 {
-                    FMythicaParameters* Parameters = GetParametersFromHandleWeak(HandleWeak);
+                    UObject* Object = nullptr;
+                    FMythicaParameters* Parameters = GetParametersFromHandleWeak(HandleWeak, &Object);
                     if (Parameters)
                     {
+                        const FScopedTransaction Transaction(LOCTEXT("MythicaChangeParameter", "Parameter Value Reset"));
+                        Object->Modify();
+
                         FMythicaParameterEnum& EnumParam = Parameters->Parameters[ParamIndex].ValueEnum;
                         EnumParam.Value = EnumParam.DefaultValue;
                         HandleWeak.Pin()->NotifyPostChange(EPropertyChangeType::ValueSet);
