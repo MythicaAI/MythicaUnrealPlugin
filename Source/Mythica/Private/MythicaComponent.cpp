@@ -345,14 +345,14 @@ void UMythicaComponent::UpdateMesh()
             continue;
         }
 
-        FName AssetName = FName(*Asset.AssetName.ToString());
+        FString ObjectPath = Asset.GetObjectPathString();
         UStaticMeshComponent* MeshComponent = nullptr;
 
         // Try to re-use an existing mesh component
         for (int32 i = 0; i < ExistingMeshCache.Num(); i++)
         {
             UStaticMesh* Mesh = ExistingMeshCache[i]->GetStaticMesh();
-            if (Mesh && Mesh->GetPathName() == AssetName)
+            if (Mesh && Mesh->GetPathName() == ObjectPath)
             {
                 MeshComponent = ExistingMeshCache[i];
                 ExistingMeshCache.RemoveAt(i);
