@@ -198,7 +198,6 @@ void Mythica::WriteParameters(const TArray<FString>& InputFileIds, const FMythic
                 break;
 
             case EMythicaParameterType::File:
-
                 FString FileId = InputFileIds.IsValidIndex(i) ? InputFileIds[i] : FString();
 
                 TSharedPtr<FJsonObject> FileObject = MakeShareable(new FJsonObject);
