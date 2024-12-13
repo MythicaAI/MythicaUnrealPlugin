@@ -710,14 +710,19 @@ void UMythicaEditorSubsystem::OnJobDefinitionsResponse(FHttpRequestPtr Request, 
     OnJobDefinitionListUpdated.Broadcast();
 }
 
-bool UMythicaEditorSubsystem::PrepareInputFiles(const FMythicaInputs& Inputs, TMap<int, FString>& InputFiles, FString& ExportDirectory, const FVector& Origin)
+bool UMythicaEditorSubsystem::PrepareInputFiles(const FMythicaParameters& Params, TMap<int, FString>& InputFiles, FString& ExportDirectory, const FVector& Origin)
 {
     FString DesiredDirectory = FPaths::Combine(FPaths::ProjectIntermediateDir(), TEXT("MythicaCache"), TEXT("ExportCache"), TEXT("Export"));
     ExportDirectory = MakeUniquePath(DesiredDirectory);
 
-    for (int i = 0; i < Inputs.Inputs.Num(); i++)
+    for (int i = 0; i < Params.Parameters.Num(); i++)
     {
-        const FMythicaInput& Input = Inputs.Inputs[i];
+        if (Params.Parameters[i].Type != EMythicaParameterType::File)
+        {
+            continue;
+        }
+        
+        const FMythicaParameterFile& Input = Params.Parameters[i].ValueFile;
         if (Input.Type == EMythicaInputType::Mesh)
         {
             if (!Input.Mesh)
@@ -927,7 +932,7 @@ int UMythicaEditorSubsystem::ExecuteJob(
 
     FString ExportDirectory;
     TMap<int, FString> InputFiles;
-    bool Success = PrepareInputFiles(Inputs, InputFiles, ExportDirectory, Origin);
+    bool Success = PrepareInputFiles(Params, InputFiles, ExportDirectory, Origin);
     if (!Success)
     {
         UE_LOG(LogMythica, Error, TEXT("Failed to prepare job input files"));

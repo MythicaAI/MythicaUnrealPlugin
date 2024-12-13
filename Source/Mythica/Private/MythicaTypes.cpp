@@ -35,20 +35,6 @@ void Mythica::ReadParameters(const TSharedPtr<FJsonObject>& ParamsSchema, FMythi
 
         FString Label = ParameterObject->GetStringField(TEXT("label"));
 
-        // Handle Inputs
-        FRegexPattern Pattern(TEXT("^input(\\d+)$"));
-        FRegexMatcher Matcher(Pattern, Name);
-
-        if (Matcher.FindNext())
-        {
-            FMythicaInput Input;
-            Input.Label = Label;
-
-            int InputIndex = FCString::Atoi(*Matcher.GetCaptureGroup(1));
-            OutInputs.Inputs.SetNum(InputIndex + 1, EAllowShrinking::No);
-            OutInputs.Inputs[InputIndex] = Input;
-        }
-
         // Handle Parameters
         FMythicaParameter Parameter;
         Parameter.Name = Name;
@@ -162,20 +148,9 @@ void Mythica::ReadParameters(const TSharedPtr<FJsonObject>& ParamsSchema, FMythi
 
 void Mythica::WriteParameters(const FMythicaInputs& Inputs, const TArray<FString>& InputFileIds, const FMythicaParameters& Parameters, const TSharedPtr<FJsonObject>& OutParamsSet)
 {
-    for (int i = 0; i < Inputs.Inputs.Num(); ++i)
+    for (int i = 0; i < Parameters.Parameters.Num(); ++i)
     {
-        const FMythicaInput& Input = Inputs.Inputs[i];
-        
-        FString FileId = InputFileIds.IsValidIndex(i) ? InputFileIds[i] : FString();
-
-        TSharedPtr<FJsonObject> FileObject = MakeShareable(new FJsonObject);
-        FileObject->SetStringField(TEXT("file_id"), FileId);
-
-        OutParamsSet->SetObjectField(FString::Printf(TEXT("input%d"), i), FileObject);
-    }
-
-    for (const FMythicaParameter& Param : Parameters.Parameters)
-    {
+        const FMythicaParameter& Param = Parameters.Parameters[i];
         switch (Param.Type)
         {
             case EMythicaParameterType::Int:
@@ -223,7 +198,13 @@ void Mythica::WriteParameters(const FMythicaInputs& Inputs, const TArray<FString
                 break;
 
             case EMythicaParameterType::File:
-                OutParamsSet->SetStringField(Param.Name, "file_xxxxxxxxxx");
+
+                FString FileId = InputFileIds.IsValidIndex(i) ? InputFileIds[i] : FString();
+
+                TSharedPtr<FJsonObject> FileObject = MakeShareable(new FJsonObject);
+                FileObject->SetStringField(TEXT("file_id"), FileId);
+
+                OutParamsSet->SetObjectField(Param.Name, FileObject);
                 break;
         }
     }
