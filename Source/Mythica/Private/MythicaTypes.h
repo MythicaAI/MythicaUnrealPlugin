@@ -60,7 +60,8 @@ enum class EMythicaParameterType : uint8
     Float,
     Bool,
     String,
-    Enum
+    Enum,
+    File
 };
 
 USTRUCT()
@@ -150,6 +151,30 @@ struct FMythicaParameterEnum
     TArray<FMythicaParameterEnumValue> Values;
 };
 
+USTRUCT()
+struct FMythicaParameterFile
+{
+    GENERATED_BODY()
+
+    UPROPERTY(VisibleAnywhere, Category = "Parameter")
+    EMythicaInputType Type = EMythicaInputType::Mesh;
+
+    UPROPERTY(VisibleAnywhere, Category = "Parameter", meta = (EditCondition = "Type != EMythicaInputType::Mesh", EditConditionHides))
+    EMythicaExportTransformType TransformType = EMythicaExportTransformType::Relative;
+
+    UPROPERTY(VisibleAnywhere, Category = "Parameter", meta = (EditCondition = "Type == EMythicaInputType::Mesh", EditConditionHides))
+    UStaticMesh* Mesh = nullptr;
+
+    UPROPERTY(VisibleAnywhere, Category = "Parameter", meta = (EditCondition = "Type == EMythicaInputType::World", EditConditionHides))
+    TArray<AActor*> Actors;
+
+    UPROPERTY(VisibleAnywhere, Category = "Parameter", meta = (EditCondition = "Type == EMythicaInputType::Spline", EditConditionHides))
+    AActor* SplineActor = nullptr;
+
+    UPROPERTY(VisibleAnywhere, Category = "Parameter", meta = (EditCondition = "Type == EMythicaInputType::Volume", EditConditionHides))
+    AMythicaInputSelectionVolume* VolumeActor = nullptr;
+};
+
 USTRUCT(BlueprintType)
 struct FMythicaParameter
 {
@@ -178,6 +203,9 @@ struct FMythicaParameter
 
     UPROPERTY(VisibleAnywhere, Category = "Parameter")
     FMythicaParameterEnum ValueEnum;
+ 
+    UPROPERTY(VisibleAnywhere, Category = "Parameter")
+    FMythicaParameterFile ValueFile;
 };
 
 USTRUCT(BlueprintType)

@@ -47,8 +47,6 @@ void Mythica::ReadParameters(const TSharedPtr<FJsonObject>& ParamsSchema, FMythi
             int InputIndex = FCString::Atoi(*Matcher.GetCaptureGroup(1));
             OutInputs.Inputs.SetNum(InputIndex + 1, EAllowShrinking::No);
             OutInputs.Inputs[InputIndex] = Input;
-
-            continue;
         }
 
         // Handle Parameters
@@ -148,6 +146,11 @@ void Mythica::ReadParameters(const TSharedPtr<FJsonObject>& ParamsSchema, FMythi
             Parameter.Type = EMythicaParameterType::Enum;
             Parameter.ValueEnum = FMythicaParameterEnum{ DefaultValue, DefaultValue, Values };
         }
+        else if (Type == "file")
+        {
+            Parameter.Type = EMythicaParameterType::File;
+            Parameter.ValueFile = FMythicaParameterFile{};
+        }
         else
         {
             continue;
@@ -217,6 +220,10 @@ void Mythica::WriteParameters(const FMythicaInputs& Inputs, const TArray<FString
 
             case EMythicaParameterType::Enum:
                 OutParamsSet->SetStringField(Param.Name, Param.ValueEnum.Value);
+                break;
+
+            case EMythicaParameterType::File:
+                OutParamsSet->SetStringField(Param.Name, "file_xxxxxxxxxx");
                 break;
         }
     }

@@ -529,6 +529,10 @@ void FMythicaParametersDetails::CustomizeChildren(TSharedRef<IPropertyHandle> St
                 };
                 break;
             }
+            case EMythicaParameterType::File:
+            {
+                continue;
+            }
         }
 
         StructBuilder.AddCustomRow(FText::FromString(Parameter.Label))
