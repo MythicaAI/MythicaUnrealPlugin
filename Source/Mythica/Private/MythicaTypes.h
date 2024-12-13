@@ -156,22 +156,22 @@ struct FMythicaParameterFile
 {
     GENERATED_BODY()
 
-    UPROPERTY(VisibleAnywhere, Category = "Parameter")
+    UPROPERTY(EditAnywhere, Category = "Parameter")
     EMythicaInputType Type = EMythicaInputType::Mesh;
 
-    UPROPERTY(VisibleAnywhere, Category = "Parameter", meta = (EditCondition = "Type != EMythicaInputType::Mesh", EditConditionHides))
+    UPROPERTY(EditAnywhere, Category = "Parameter", meta = (EditCondition = "Type != EMythicaInputType::Mesh", EditConditionHides))
     EMythicaExportTransformType TransformType = EMythicaExportTransformType::Relative;
 
-    UPROPERTY(VisibleAnywhere, Category = "Parameter", meta = (EditCondition = "Type == EMythicaInputType::Mesh", EditConditionHides))
+    UPROPERTY(EditAnywhere, Category = "Parameter", meta = (EditCondition = "Type == EMythicaInputType::Mesh", EditConditionHides))
     UStaticMesh* Mesh = nullptr;
 
-    UPROPERTY(VisibleAnywhere, Category = "Parameter", meta = (EditCondition = "Type == EMythicaInputType::World", EditConditionHides))
+    UPROPERTY(EditAnywhere, Category = "Parameter", meta = (EditCondition = "Type == EMythicaInputType::World", EditConditionHides))
     TArray<AActor*> Actors;
 
-    UPROPERTY(VisibleAnywhere, Category = "Parameter", meta = (EditCondition = "Type == EMythicaInputType::Spline", EditConditionHides))
+    UPROPERTY(EditAnywhere, Category = "Parameter", meta = (EditCondition = "Type == EMythicaInputType::Spline", EditConditionHides))
     AActor* SplineActor = nullptr;
 
-    UPROPERTY(VisibleAnywhere, Category = "Parameter", meta = (EditCondition = "Type == EMythicaInputType::Volume", EditConditionHides))
+    UPROPERTY(EditAnywhere, Category = "Parameter", meta = (EditCondition = "Type == EMythicaInputType::Volume", EditConditionHides))
     AMythicaInputSelectionVolume* VolumeActor = nullptr;
 };
 
@@ -204,7 +204,7 @@ struct FMythicaParameter
     UPROPERTY(VisibleAnywhere, Category = "Parameter")
     FMythicaParameterEnum ValueEnum;
  
-    UPROPERTY(VisibleAnywhere, Category = "Parameter")
+    UPROPERTY(EditAnywhere, Category = "Parameter")
     FMythicaParameterFile ValueFile;
 };
 
@@ -213,7 +213,7 @@ struct FMythicaParameters
 {
     GENERATED_BODY()
 
-    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Parameter")
+    UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Parameter")
     TArray<FMythicaParameter> Parameters;
 };
 

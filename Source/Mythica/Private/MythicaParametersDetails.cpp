@@ -531,6 +531,13 @@ void FMythicaParametersDetails::CustomizeChildren(TSharedRef<IPropertyHandle> St
             }
             case EMythicaParameterType::File:
             {
+                const TSharedPtr<IPropertyHandleArray> ParametersArrayHandle = StructPropertyHandle->GetChildHandle(TEXT("Parameters"))->AsArray();
+                const TSharedPtr<IPropertyHandle> ParametersHandle = ParametersArrayHandle->GetElement(ParamIndex);
+                const TSharedPtr<IPropertyHandle> FileValueHandle = ParametersHandle->GetChildHandle(TEXT("ValueFile"));
+
+                StructBuilder.AddProperty(FileValueHandle.ToSharedRef())
+                    .DisplayName(FText::FromString(Parameter.Label));
+
                 continue;
             }
         }
