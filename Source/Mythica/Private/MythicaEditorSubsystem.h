@@ -94,9 +94,6 @@ struct FMythicaJobDefinition
     FString Description;
 
     UPROPERTY(BlueprintReadOnly, Category = "Data")
-    FMythicaInputs Inputs;
-
-    UPROPERTY(BlueprintReadOnly, Category = "Data")
     FMythicaParameters Parameters;
 };
 
@@ -140,9 +137,6 @@ struct FMythicaJob
 
     UPROPERTY()
     FString JobDefId;
-
-    UPROPERTY()
-    FMythicaInputs Inputs;
 
     UPROPERTY()
     TArray<FString> InputFileIds;
@@ -228,7 +222,6 @@ public:
     UFUNCTION(BlueprintCallable, Category = "Mythica")
     int ExecuteJob(
         const FString& JobDefId, 
-        const FMythicaInputs& Inputs, 
         const FMythicaParameters& Params, 
         const FString& ImportName, 
         const FVector& Origin);
@@ -273,7 +266,7 @@ private:
     void OnMeshDownloadInfoResponse(FHttpRequestPtr Request, FHttpResponsePtr Response, bool bWasSuccessful, int RequestId);
     void OnMeshDownloadResponse(FHttpRequestPtr Request, FHttpResponsePtr Response, bool bWasSuccessful, int RequestId);
 
-    int CreateJob(const FString& JobDefId, const FMythicaInputs& Inputs, const FMythicaParameters& Params, const FString& ImportName);
+    int CreateJob(const FString& JobDefId, const FMythicaParameters& Params, const FString& ImportName);
     void SetJobState(int RequestId, EMythicaJobState State, FText Message = FText::GetEmpty());
     void PollJobStatus();
     void OnJobTimeout(int RequestId);

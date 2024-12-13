@@ -19,7 +19,7 @@ bool Mythica::IsSystemParameter(const FString& Name)
     return false;
 }
 
-void Mythica::ReadParameters(const TSharedPtr<FJsonObject>& ParamsSchema, FMythicaInputs& OutInputs, FMythicaParameters& OutParameters)
+void Mythica::ReadParameters(const TSharedPtr<FJsonObject>& ParamsSchema, FMythicaParameters& OutParameters)
 {
     for (auto It = ParamsSchema->Values.CreateConstIterator(); It; ++It)
     {
@@ -146,7 +146,7 @@ void Mythica::ReadParameters(const TSharedPtr<FJsonObject>& ParamsSchema, FMythi
     }
 }
 
-void Mythica::WriteParameters(const FMythicaInputs& Inputs, const TArray<FString>& InputFileIds, const FMythicaParameters& Parameters, const TSharedPtr<FJsonObject>& OutParamsSet)
+void Mythica::WriteParameters(const TArray<FString>& InputFileIds, const FMythicaParameters& Parameters, const TSharedPtr<FJsonObject>& OutParamsSet)
 {
     for (int i = 0; i < Parameters.Parameters.Num(); ++i)
     {

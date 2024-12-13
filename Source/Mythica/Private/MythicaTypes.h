@@ -17,42 +17,6 @@ enum class EMythicaInputType : uint8
     Volume  UMETA(DisplayName = "Volume")
 };
 
-USTRUCT(BlueprintType)
-struct FMythicaInput
-{
-    GENERATED_BODY()
-
-    UPROPERTY(BlueprintReadOnly, VisibleAnywhere, Category = "Input")
-    FString Label;
-
-    UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = "Input")
-    EMythicaInputType Type = EMythicaInputType::Mesh;
-
-    UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = "Input", meta = (EditCondition = "Type != EMythicaInputType::Mesh", EditConditionHides))
-    EMythicaExportTransformType TransformType = EMythicaExportTransformType::Relative;
-
-    UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = "Input", meta = (EditCondition = "Type == EMythicaInputType::Mesh", EditConditionHides))
-    UStaticMesh* Mesh = nullptr;
-
-    UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = "Input", meta = (EditCondition = "Type == EMythicaInputType::World", EditConditionHides))
-    TArray<AActor*> Actors;
-
-    UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = "Input", meta = (EditCondition = "Type == EMythicaInputType::Spline", EditConditionHides))
-    AActor* SplineActor = nullptr;
-
-    UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = "Input", meta = (EditCondition = "Type == EMythicaInputType::Volume", EditConditionHides))
-    AMythicaInputSelectionVolume* VolumeActor = nullptr;
-};
-
-USTRUCT(BlueprintType)
-struct FMythicaInputs
-{
-    GENERATED_BODY()
-
-    UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = "Input")
-    TArray<FMythicaInput> Inputs;
-};
-
 UENUM()
 enum class EMythicaParameterType : uint8
 {
@@ -230,6 +194,6 @@ namespace Mythica
 {
     bool IsSystemParameter(const FString& Name);
 
-    void ReadParameters(const TSharedPtr<FJsonObject>& ParamsSchema, FMythicaInputs& OutInputs, FMythicaParameters& OutParameters);
-    void WriteParameters(const FMythicaInputs& Inputs, const TArray<FString>& InputFileIds, const FMythicaParameters& Parameters, const TSharedPtr<FJsonObject>& ParameterSet);
+    void ReadParameters(const TSharedPtr<FJsonObject>& ParamsSchema, FMythicaParameters& OutParameters);
+    void WriteParameters(const TArray<FString>& InputFileIds, const FMythicaParameters& Parameters, const TSharedPtr<FJsonObject>& ParameterSet);
 }

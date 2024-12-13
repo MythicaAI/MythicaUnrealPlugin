@@ -43,8 +43,6 @@ void UMythicaComponent::OnRegister()
 {
     Super::OnRegister();
 
-    DisplayInputs = !Inputs.Inputs.IsEmpty();
-
     UpdatePlaceholderMesh();
 }
 
@@ -90,7 +88,7 @@ void UMythicaComponent::RegenerateMesh()
     }
 
     UMythicaEditorSubsystem* MythicaEditorSubsystem = GEditor->GetEditorSubsystem<UMythicaEditorSubsystem>();
-    RequestId = MythicaEditorSubsystem->ExecuteJob(JobDefId.JobDefId, Inputs, Parameters, GetImportName(), K2_GetComponentLocation());
+    RequestId = MythicaEditorSubsystem->ExecuteJob(JobDefId.JobDefId, Parameters, GetImportName(), K2_GetComponentLocation());
 
     if (RequestId > 0)
     {
@@ -160,6 +158,7 @@ void UMythicaComponent::PostEditChangeProperty(FPropertyChangedEvent& PropertyCh
             }
         }
     }
+    /*
     else if (PropertyChangedEvent.MemberProperty->GetFName() == GET_MEMBER_NAME_CHECKED(UMythicaComponent, Inputs))
     {
         if (Settings.RegenerateOnInputChange)
@@ -168,6 +167,7 @@ void UMythicaComponent::PostEditChangeProperty(FPropertyChangedEvent& PropertyCh
             RegenerateMesh();
         }
     }
+    */
     else if (PropertyChangedEvent.Property->GetFName() == GET_MEMBER_NAME_CHECKED(FMythicaComponentSettings, RegenerateOnInputChange))
     {
         BindWorldInputListeners();
@@ -203,8 +203,6 @@ void UMythicaComponent::OnJobDefIdChanged()
 
     FMythicaJobDefinition Definition = MythicaEditorSubsystem->GetJobDefinitionById(JobDefId.JobDefId);
     Parameters = Definition.Parameters;
-    Inputs = Definition.Inputs;
-    DisplayInputs = !Inputs.Inputs.IsEmpty();
 
     State = EMythicaJobState::Invalid;
     StateDurations.Reset();
@@ -228,6 +226,7 @@ void UMythicaComponent::BindWorldInputListeners()
         return;
     }
 
+    /*
     for (FMythicaInput& Input : Inputs.Inputs)
     {
         if (Input.Type != EMythicaInputType::World)
@@ -250,6 +249,7 @@ void UMythicaComponent::BindWorldInputListeners()
             }
         }
     }
+    */
 }
 
 void UMythicaComponent::OnWorldInputTransformUpdated(USceneComponent* InComponent, EUpdateTransformFlags InFlags, ETeleportType InType)
