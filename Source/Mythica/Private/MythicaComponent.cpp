@@ -157,17 +157,9 @@ void UMythicaComponent::PostEditChangeProperty(FPropertyChangedEvent& PropertyCh
                 RegenerateMesh();
             }
         }
+
+        BindWorldInputListeners();
     }
-    /*
-    else if (PropertyChangedEvent.MemberProperty->GetFName() == GET_MEMBER_NAME_CHECKED(UMythicaComponent, Inputs))
-    {
-        if (Settings.RegenerateOnInputChange)
-        {
-            BindWorldInputListeners();
-            RegenerateMesh();
-        }
-    }
-    */
     else if (PropertyChangedEvent.Property->GetFName() == GET_MEMBER_NAME_CHECKED(FMythicaComponentSettings, RegenerateOnInputChange))
     {
         BindWorldInputListeners();
@@ -226,9 +218,14 @@ void UMythicaComponent::BindWorldInputListeners()
         return;
     }
 
-    /*
-    for (FMythicaInput& Input : Inputs.Inputs)
+    for (const FMythicaParameter& Parameter : Parameters.Parameters)
     {
+        if (Parameter.Type != EMythicaParameterType::File)
+        {
+            continue;
+        }
+
+        const FMythicaParameterFile& Input = Parameter.ValueFile;
         if (Input.Type != EMythicaInputType::World)
         {
             continue;
@@ -249,7 +246,6 @@ void UMythicaComponent::BindWorldInputListeners()
             }
         }
     }
-    */
 }
 
 void UMythicaComponent::OnWorldInputTransformUpdated(USceneComponent* InComponent, EUpdateTransformFlags InFlags, ETeleportType InType)
