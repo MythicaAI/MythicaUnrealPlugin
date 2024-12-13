@@ -43,8 +43,6 @@ void UMythicaComponent::OnRegister()
 {
     Super::OnRegister();
 
-    DisplayInputs = !Inputs.Inputs.IsEmpty();
-
     UpdatePlaceholderMesh();
 }
 
@@ -90,7 +88,7 @@ void UMythicaComponent::RegenerateMesh()
     }
 
     UMythicaEditorSubsystem* MythicaEditorSubsystem = GEditor->GetEditorSubsystem<UMythicaEditorSubsystem>();
-    RequestId = MythicaEditorSubsystem->ExecuteJob(JobDefId.JobDefId, Inputs, Parameters, GetImportName(), K2_GetComponentLocation());
+    RequestId = MythicaEditorSubsystem->ExecuteJob(JobDefId.JobDefId, Parameters, GetImportName(), K2_GetComponentLocation());
 
     if (RequestId > 0)
     {
@@ -159,14 +157,8 @@ void UMythicaComponent::PostEditChangeProperty(FPropertyChangedEvent& PropertyCh
                 RegenerateMesh();
             }
         }
-    }
-    else if (PropertyChangedEvent.MemberProperty->GetFName() == GET_MEMBER_NAME_CHECKED(UMythicaComponent, Inputs))
-    {
-        if (Settings.RegenerateOnInputChange)
-        {
-            BindWorldInputListeners();
-            RegenerateMesh();
-        }
+
+        BindWorldInputListeners();
     }
     else if (PropertyChangedEvent.Property->GetFName() == GET_MEMBER_NAME_CHECKED(FMythicaComponentSettings, RegenerateOnInputChange))
     {
@@ -203,8 +195,6 @@ void UMythicaComponent::OnJobDefIdChanged()
 
     FMythicaJobDefinition Definition = MythicaEditorSubsystem->GetJobDefinitionById(JobDefId.JobDefId);
     Parameters = Definition.Parameters;
-    Inputs = Definition.Inputs;
-    DisplayInputs = !Inputs.Inputs.IsEmpty();
 
     State = EMythicaJobState::Invalid;
     StateDurations.Reset();
@@ -228,8 +218,14 @@ void UMythicaComponent::BindWorldInputListeners()
         return;
     }
 
-    for (FMythicaInput& Input : Inputs.Inputs)
+    for (const FMythicaParameter& Parameter : Parameters.Parameters)
     {
+        if (Parameter.Type != EMythicaParameterType::File)
+        {
+            continue;
+        }
+
+        const FMythicaParameterFile& Input = Parameter.ValueFile;
         if (Input.Type != EMythicaInputType::World)
         {
             continue;

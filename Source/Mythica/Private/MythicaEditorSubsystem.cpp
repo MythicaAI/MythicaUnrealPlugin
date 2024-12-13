@@ -700,24 +700,28 @@ void UMythicaEditorSubsystem::OnJobDefinitionsResponse(FHttpRequestPtr Request, 
         TSharedPtr<FJsonObject> ParamsSchema = JsonObject->GetObjectField(TEXT("params_schema"));
         TSharedPtr<FJsonObject> ParamsSet = ParamsSchema->GetObjectField(TEXT("params"));
 
-        FMythicaInputs Inputs;
         FMythicaParameters Params;
-        Mythica::ReadParameters(ParamsSet, Inputs, Params);
+        Mythica::ReadParameters(ParamsSet, Params);
 
-        JobDefinitionList.Push({ JobDefId, JobType, Name, Description, Inputs, Params });
+        JobDefinitionList.Push({ JobDefId, JobType, Name, Description, Params });
     }
 
     OnJobDefinitionListUpdated.Broadcast();
 }
 
-bool UMythicaEditorSubsystem::PrepareInputFiles(const FMythicaInputs& Inputs, TMap<int, FString>& InputFiles, FString& ExportDirectory, const FVector& Origin)
+bool UMythicaEditorSubsystem::PrepareInputFiles(const FMythicaParameters& Params, TMap<int, FString>& InputFiles, FString& ExportDirectory, const FVector& Origin)
 {
     FString DesiredDirectory = FPaths::Combine(FPaths::ProjectIntermediateDir(), TEXT("MythicaCache"), TEXT("ExportCache"), TEXT("Export"));
     ExportDirectory = MakeUniquePath(DesiredDirectory);
 
-    for (int i = 0; i < Inputs.Inputs.Num(); i++)
+    for (int i = 0; i < Params.Parameters.Num(); i++)
     {
-        const FMythicaInput& Input = Inputs.Inputs[i];
+        if (Params.Parameters[i].Type != EMythicaParameterType::File)
+        {
+            continue;
+        }
+        
+        const FMythicaParameterFile& Input = Params.Parameters[i].ValueFile;
         if (Input.Type == EMythicaInputType::Mesh)
         {
             if (!Input.Mesh)
@@ -907,7 +911,6 @@ void UMythicaEditorSubsystem::OnUploadInputFilesResponse(FHttpRequestPtr Request
 
 int UMythicaEditorSubsystem::ExecuteJob(
     const FString& JobDefId, 
-    const FMythicaInputs& Inputs, 
     const FMythicaParameters& Params, 
     const FString& ImportName, 
     const FVector& Origin
@@ -927,7 +930,7 @@ int UMythicaEditorSubsystem::ExecuteJob(
 
     FString ExportDirectory;
     TMap<int, FString> InputFiles;
-    bool Success = PrepareInputFiles(Inputs, InputFiles, ExportDirectory, Origin);
+    bool Success = PrepareInputFiles(Params, InputFiles, ExportDirectory, Origin);
     if (!Success)
     {
         UE_LOG(LogMythica, Error, TEXT("Failed to prepare job input files"));
@@ -938,7 +941,7 @@ int UMythicaEditorSubsystem::ExecuteJob(
     FString ImportNameClean = ObjectTools::SanitizeObjectName(ImportName);
     FString ImportPath = FPaths::Combine(ImportFolderClean, ImportNameClean);
 
-    int RequestId = CreateJob(JobDefId, Inputs, Params, ImportPath);
+    int RequestId = CreateJob(JobDefId, Params, ImportPath);
 
     if (InputFiles.IsEmpty())
     {
@@ -966,7 +969,7 @@ void UMythicaEditorSubsystem::SendJobRequest(int RequestId)
 
     // Create JSON payload
     TSharedPtr<FJsonObject> ParamsSetObject = MakeShareable(new FJsonObject);
-    Mythica::WriteParameters(RequestData->Inputs, RequestData->InputFileIds, RequestData->Params, ParamsSetObject);
+    Mythica::WriteParameters(RequestData->InputFileIds, RequestData->Params, ParamsSetObject);
 
     TSharedPtr<FJsonObject> JsonObject = MakeShareable(new FJsonObject);
     JsonObject->SetStringField(TEXT("job_def_id"), RequestData->JobDefId);
@@ -1036,10 +1039,10 @@ void UMythicaEditorSubsystem::OnExecuteJobResponse(FHttpRequestPtr Request, FHtt
     SetJobState(RequestId, EMythicaJobState::Queued);
 }
 
-int UMythicaEditorSubsystem::CreateJob(const FString& JobDefId, const FMythicaInputs& Inputs, const FMythicaParameters& Params, const FString& ImportPath)
+int UMythicaEditorSubsystem::CreateJob(const FString& JobDefId, const FMythicaParameters& Params, const FString& ImportPath)
 {
     int RequestId = NextRequestId++;
-    Jobs.Add(RequestId, { JobDefId, Inputs, {}, Params, ImportPath });
+    Jobs.Add(RequestId, { JobDefId, {}, Params, ImportPath });
 
     if (!JobPollTimer.IsValid())
     {
