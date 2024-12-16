@@ -21,7 +21,7 @@ struct FMythicaComponentSettings
     bool RegenerateOnTransformChange = false;
 };
 
-UCLASS( ClassGroup=(Custom), meta=(BlueprintSpawnableComponent) )
+UCLASS( ClassGroup=(Custom), meta=(BlueprintSpawnableComponent), hidecategories=(Rendering, Activation, Cooking, Physics, LOD, Navigation, AssetUserData))
 class UMythicaComponent : public USceneComponent
 {
     GENERATED_BODY()
