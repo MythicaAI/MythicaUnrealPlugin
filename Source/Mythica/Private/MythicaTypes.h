@@ -121,7 +121,7 @@ struct FMythicaParameterFile
     GENERATED_BODY()
 
     UPROPERTY(EditAnywhere, Category = "Parameter")
-    EMythicaInputType Type = EMythicaInputType::Mesh;
+    EMythicaInputType Type = EMythicaInputType::World;
 
     UPROPERTY(EditAnywhere, Category = "Parameter", meta = (EditCondition = "Type != EMythicaInputType::Mesh", EditConditionHides))
     EMythicaExportTransformType TransformType = EMythicaExportTransformType::Relative;
