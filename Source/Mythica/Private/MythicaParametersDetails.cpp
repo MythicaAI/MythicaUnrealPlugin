@@ -1,8 +1,9 @@
 #include "MythicaParametersDetails.h"
 
-#include "MythicaTypes.h"
 #include "DetailWidgetRow.h"
 #include "IDetailChildrenBuilder.h"
+#include "MythicaTypes.h"
+#include "Styling/AppStyle.h"
 #include "Widgets/Text/SMultiLineEditableText.h"
 #include "Widgets/Input/SNumericEntryBox.h"
 
@@ -547,6 +548,7 @@ void FMythicaParametersDetails::CustomizeChildren(TSharedRef<IPropertyHandle> St
             [
                 SNew(STextBlock)
                     .Text(FText::FromString(Parameter.Label))
+                    .Font(FAppStyle::GetFontStyle(TEXT("PropertyWindow.NormalFont")))
             ]
             .ValueContent()
             .MinDesiredWidth(DesiredWidthScalar * 128)
