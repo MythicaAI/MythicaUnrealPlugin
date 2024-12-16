@@ -29,9 +29,9 @@ class UMythicaComponent : public USceneComponent
 public:
     UMythicaComponent();
 
-    virtual void PostLoad() override;
-    virtual void OnComponentDestroyed(bool bDestroyingHierarchy) override;
     virtual void OnRegister() override;
+    virtual void OnUnregister() override;
+    virtual void OnComponentDestroyed(bool bDestroyingHierarchy) override;
 
     bool CanRegenerateMesh() const;
     void RegenerateMesh();
@@ -48,6 +48,7 @@ private:
     void OnJobDefIdChanged();
 
     void BindWorldInputListeners();
+    void UnbindWorldInputListeners();
     void OnWorldInputTransformUpdated(USceneComponent* InComponent, EUpdateTransformFlags InFlags, ETeleportType InType);
     void OnTransformUpdated(USceneComponent* InComponent, EUpdateTransformFlags InFlags, ETeleportType InType);
 
@@ -56,6 +57,7 @@ private:
 
     void UpdateMesh();
     void UpdatePlaceholderMesh();
+    void DestroyPlaceholderMesh();
 
 public:
     UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Mythica", meta = (EditCondition = "false", EditConditionHides))

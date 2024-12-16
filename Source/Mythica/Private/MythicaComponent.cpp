@@ -25,25 +25,27 @@ UMythicaComponent::UMythicaComponent()
     PrimaryComponentTick.bCanEverTick = false;
 }
 
-void UMythicaComponent::PostLoad()
-{
-    Super::PostLoad();
-
-    if (!CanRegenerateMesh())
-    {
-        return;
-    }
-
-    BindWorldInputListeners();
-
-    TransformUpdated.AddUObject(this, &UMythicaComponent::OnTransformUpdated);
-}
-
 void UMythicaComponent::OnRegister()
 {
     Super::OnRegister();
 
     UpdatePlaceholderMesh();
+
+    if (CanRegenerateMesh())
+    {
+        BindWorldInputListeners();
+        TransformUpdated.AddUObject(this, &UMythicaComponent::OnTransformUpdated);
+    }
+}
+
+void UMythicaComponent::OnUnregister()
+{
+    Super::OnUnregister();
+
+    DestroyPlaceholderMesh();
+
+    UnbindWorldInputListeners();
+    TransformUpdated.RemoveAll(this);
 }
 
 void UMythicaComponent::OnComponentDestroyed(bool bDestroyingHierarchy)
@@ -59,12 +61,6 @@ void UMythicaComponent::OnComponentDestroyed(bool bDestroyingHierarchy)
         {
             MythicaEditorSubsystem->OnJobStateChange.RemoveDynamic(this, &UMythicaComponent::OnJobStateChanged);
         }
-    }
-
-    if (PlaceholderMeshComponent)
-    {
-        PlaceholderMeshComponent->DestroyComponent();
-        PlaceholderMeshComponent = nullptr;
     }
 }
 
@@ -132,38 +128,36 @@ float UMythicaComponent::JobProgressPercent() const
 
 void UMythicaComponent::PostEditChangeProperty(FPropertyChangedEvent& PropertyChangedEvent)
 {
-    Super::PostEditChangeProperty(PropertyChangedEvent);
-
     if (PropertyChangedEvent.MemberProperty->GetFName() == GET_MEMBER_NAME_CHECKED(UMythicaComponent, JobDefId))
     {
         OnJobDefIdChanged();
     }
 
-    if (!CanRegenerateMesh())
+    if (CanRegenerateMesh())
     {
-        return;
-    }
-
-    if (PropertyChangedEvent.MemberProperty->GetFName() == GET_MEMBER_NAME_CHECKED(UMythicaComponent, Parameters))
-    {
-        if (Settings.RegenerateOnParameterChange)
+        if (PropertyChangedEvent.MemberProperty->GetFName() == GET_MEMBER_NAME_CHECKED(UMythicaComponent, Parameters))
         {
-            if (PropertyChangedEvent.ChangeType == EPropertyChangeType::Interactive)
+            if (Settings.RegenerateOnParameterChange)
             {
-                GEditor->GetTimerManager()->SetTimer(DelayRegenerateHandle, [this]() { RegenerateMesh(); }, 0.05f, false); 
+                if (PropertyChangedEvent.ChangeType == EPropertyChangeType::Interactive)
+                {
+                    GEditor->GetTimerManager()->SetTimer(DelayRegenerateHandle, [this]() { RegenerateMesh(); }, 0.05f, false);
+                }
+                else
+                {
+                    RegenerateMesh();
+                }
             }
-            else
-            {
-                RegenerateMesh();
-            }
-        }
 
-        BindWorldInputListeners();
+            BindWorldInputListeners();
+        }
+        else if (PropertyChangedEvent.Property->GetFName() == GET_MEMBER_NAME_CHECKED(FMythicaComponentSettings, RegenerateOnInputChange))
+        {
+            BindWorldInputListeners();
+        }
     }
-    else if (PropertyChangedEvent.Property->GetFName() == GET_MEMBER_NAME_CHECKED(FMythicaComponentSettings, RegenerateOnInputChange))
-    {
-        BindWorldInputListeners();
-    }
+
+    Super::PostEditChangeProperty(PropertyChangedEvent);
 }
 
 static void ForceRefreshDetailsViewPanel()
@@ -204,14 +198,7 @@ void UMythicaComponent::OnJobDefIdChanged()
 
 void UMythicaComponent::BindWorldInputListeners()
 {
-    for (USceneComponent* Component : WorldInputComponents)
-    {
-        if (Component)
-        {
-            Component->TransformUpdated.RemoveAll(this);
-        }
-    }
-    WorldInputComponents.Reset();
+    UnbindWorldInputListeners();
 
     if (!Settings.RegenerateOnInputChange)
     {
@@ -246,6 +233,18 @@ void UMythicaComponent::BindWorldInputListeners()
             }
         }
     }
+}
+
+void UMythicaComponent::UnbindWorldInputListeners()
+{
+    for (USceneComponent* Component : WorldInputComponents)
+    {
+        if (Component)
+        {
+            Component->TransformUpdated.RemoveAll(this);
+        }
+    }
+    WorldInputComponents.Reset();
 }
 
 void UMythicaComponent::OnWorldInputTransformUpdated(USceneComponent* InComponent, EUpdateTransformFlags InFlags, ETeleportType InType)
@@ -399,6 +398,15 @@ void UMythicaComponent::UpdatePlaceholderMesh()
     {
         PlaceholderMeshComponent->DetachFromComponent(FDetachmentTransformRules::KeepRelativeTransform);
         PlaceholderMeshComponent->UnregisterComponent();
+        PlaceholderMeshComponent->DestroyComponent();
+        PlaceholderMeshComponent = nullptr;
+    }
+}
+
+void UMythicaComponent::DestroyPlaceholderMesh()
+{
+    if (PlaceholderMeshComponent)
+    {
         PlaceholderMeshComponent->DestroyComponent();
         PlaceholderMeshComponent = nullptr;
     }
