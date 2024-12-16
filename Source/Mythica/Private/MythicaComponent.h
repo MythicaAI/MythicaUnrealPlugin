@@ -70,12 +70,22 @@ public:
     FMythicaParameters Parameters;
 
 private:
+    UPROPERTY(VisibleAnywhere, DuplicateTransient, meta = (EditCondition = "false", EditConditionHides))
     int RequestId = -1;
+
+    UPROPERTY(VisibleAnywhere, DuplicateTransient, meta = (EditCondition = "false", EditConditionHides))
     EMythicaJobState State = EMythicaJobState::Invalid;
+
+    UPROPERTY(VisibleAnywhere, DuplicateTransient, meta = (EditCondition = "false", EditConditionHides))
     FText Message;
+
+    UPROPERTY(VisibleAnywhere, DuplicateTransient, meta = (EditCondition = "false", EditConditionHides))
     double StateBeginTime = 0.0f;
 
+    UPROPERTY(VisibleAnywhere, DuplicateTransient, meta = (EditCondition = "false", EditConditionHides))
     bool QueueRegenerate = false;
+
+    UPROPERTY(Transient)
     FTimerHandle DelayRegenerateHandle;
 
     UPROPERTY(VisibleAnywhere, Category = "Mythica", meta = (EditCondition = "false", EditConditionHides))

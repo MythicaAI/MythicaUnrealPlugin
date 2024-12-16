@@ -36,6 +36,12 @@ void UMythicaComponent::OnRegister()
         BindWorldInputListeners();
         TransformUpdated.AddUObject(this, &UMythicaComponent::OnTransformUpdated);
     }
+
+    if (RequestId > 0)
+    {
+        UMythicaEditorSubsystem* MythicaEditorSubsystem = GEditor->GetEditorSubsystem<UMythicaEditorSubsystem>();
+        MythicaEditorSubsystem->OnJobStateChange.AddDynamic(this, &UMythicaComponent::OnJobStateChanged);
+    }
 }
 
 void UMythicaComponent::OnUnregister()
@@ -46,13 +52,6 @@ void UMythicaComponent::OnUnregister()
 
     UnbindWorldInputListeners();
     TransformUpdated.RemoveAll(this);
-}
-
-void UMythicaComponent::OnComponentDestroyed(bool bDestroyingHierarchy)
-{
-    Super::OnComponentDestroyed(bDestroyingHierarchy);
-
-    GEditor->GetTimerManager()->ClearTimer(DelayRegenerateHandle);
 
     if (RequestId > 0)
     {
@@ -62,6 +61,13 @@ void UMythicaComponent::OnComponentDestroyed(bool bDestroyingHierarchy)
             MythicaEditorSubsystem->OnJobStateChange.RemoveDynamic(this, &UMythicaComponent::OnJobStateChanged);
         }
     }
+}
+
+void UMythicaComponent::OnComponentDestroyed(bool bDestroyingHierarchy)
+{
+    Super::OnComponentDestroyed(bDestroyingHierarchy);
+
+    GEditor->GetTimerManager()->ClearTimer(DelayRegenerateHandle);
 }
 
 bool UMythicaComponent::CanRegenerateMesh() const
@@ -86,7 +92,7 @@ void UMythicaComponent::RegenerateMesh()
     UMythicaEditorSubsystem* MythicaEditorSubsystem = GEditor->GetEditorSubsystem<UMythicaEditorSubsystem>();
     RequestId = MythicaEditorSubsystem->ExecuteJob(JobDefId.JobDefId, Parameters, GetImportName(), K2_GetComponentLocation());
 
-    if (RequestId > 0)
+    if (RequestId > 0 && IsRegistered())
     {
         MythicaEditorSubsystem->OnJobStateChange.AddDynamic(this, &UMythicaComponent::OnJobStateChanged);
     }
