@@ -116,15 +116,21 @@ struct FMythicaParameterEnum
 };
 
 USTRUCT()
+struct FMythicaParameterFileSettings
+{
+    GENERATED_BODY()
+
+    UPROPERTY(EditAnywhere, Category = "Parameter")
+    EMythicaExportTransformType TransformType = EMythicaExportTransformType::Relative;
+};
+
+USTRUCT()
 struct FMythicaParameterFile
 {
     GENERATED_BODY()
 
     UPROPERTY(EditAnywhere, Category = "Parameter")
     EMythicaInputType Type = EMythicaInputType::World;
-
-    UPROPERTY(EditAnywhere, Category = "Parameter", meta = (EditCondition = "Type != EMythicaInputType::Mesh", EditConditionHides))
-    EMythicaExportTransformType TransformType = EMythicaExportTransformType::Relative;
 
     UPROPERTY(EditAnywhere, Category = "Parameter", meta = (EditCondition = "Type == EMythicaInputType::Mesh", EditConditionHides))
     UStaticMesh* Mesh = nullptr;
@@ -137,6 +143,9 @@ struct FMythicaParameterFile
 
     UPROPERTY(EditAnywhere, Category = "Parameter", meta = (EditCondition = "Type == EMythicaInputType::Volume", EditConditionHides))
     AMythicaInputSelectionVolume* VolumeActor = nullptr;
+
+    UPROPERTY(EditAnywhere, Category = "Parameter", meta = (EditCondition = "Type != EMythicaInputType::Mesh", EditConditionHides))
+    FMythicaParameterFileSettings Settings;
 };
 
 USTRUCT(BlueprintType)
