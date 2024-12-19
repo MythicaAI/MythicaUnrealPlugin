@@ -10,17 +10,10 @@ public:
 		, _ViewMaxInput(1.0f)
 		, _ViewMinOutput(0.0f)
 		, _ViewMaxOutput(1.0f)
-		, _InputSnap(0.1f)
-		, _OutputSnap(0.05f)
-		, _InputSnappingEnabled(false)
-		, _OutputSnappingEnabled(false)
-		, _ShowTimeInFrames(false)
 		, _TimelineLength(1.0f)
-		, _DesiredSize(FVector2D::ZeroVector)
 		, _DrawCurve(true)
 		, _HideUI(true)
 		, _AllowZoomOutput(false)
-		, _AlwaysDisplayColorCurves(false)
 		, _ZoomToFitVertical(false)
 		, _ZoomToFitHorizontal(false)
 		, _ShowZoomButtons(false)
@@ -28,8 +21,6 @@ public:
 		, _YAxisName("Y")
 		, _ShowInputGridNumbers(false)
 		, _ShowOutputGridNumbers(false)
-		, _ShowCurveSelector(false)
-		, _GridColor(FLinearColor(0.0f, 0.0f, 0.0f, 0.3f))
 		{
 			_Clipping = EWidgetClipping::ClipToBounds;
 		}
@@ -69,8 +60,8 @@ public:
 	SLATE_END_ARGS()
 
 	void Construct(const FArguments& InArgs);
+	~SMythicaCurveEditor();
 
 private:
-
-
+	UCurveFloat* Curve;
 };

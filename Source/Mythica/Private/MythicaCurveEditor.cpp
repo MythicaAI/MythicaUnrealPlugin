@@ -19,4 +19,21 @@ void SMythicaCurveEditor::Construct(const FArguments& InArgs)
 		.ShowZoomButtons(InArgs._ShowZoomButtons)
 		.ZoomToFitHorizontal(InArgs._ZoomToFitHorizontal)
 		.ZoomToFitVertical(InArgs._ZoomToFitVertical));
+
+	Curve = NewObject<UCurveFloat>(
+		GetTransientPackage(),
+		UCurveFloat::StaticClass(),
+		NAME_None,
+		RF_Transactional | RF_Public);
+	Curve->AddToRoot();
+	SetCurveOwner(Curve);
+}
+
+SMythicaCurveEditor::~SMythicaCurveEditor()
+{
+    if (Curve)
+    {
+		SetCurveOwner(nullptr);
+		Curve->RemoveFromRoot();
+    }
 }

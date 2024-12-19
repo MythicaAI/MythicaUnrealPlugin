@@ -2,6 +2,7 @@
 
 #include "DetailWidgetRow.h"
 #include "IDetailChildrenBuilder.h"
+#include "MythicaCurveEditor.h"
 #include "MythicaTypes.h"
 #include "Styling/AppStyle.h"
 #include "Widgets/Text/SMultiLineEditableText.h"
@@ -308,6 +309,9 @@ void FMythicaParametersDetails::CustomizeChildren(TSharedRef<IPropertyHandle> St
             }
             case EMythicaParameterType::Bool:
             {
+                ValueWidget = SNew(SMythicaCurveEditor);
+                DesiredWidthScalar = 3;
+                /*
                 auto IsChecked = [this, ParamIndex]()
                 {
                     FMythicaParameters* Parameters = GetParametersFromHandleWeak(HandleWeak);
@@ -334,7 +338,7 @@ void FMythicaParametersDetails::CustomizeChildren(TSharedRef<IPropertyHandle> St
                 ValueWidget = SNew(SCheckBox)
                     .IsChecked_Lambda(IsChecked)
                     .OnCheckStateChanged_Lambda(OnCheckStateChanged);
-
+                */
                 ResetToDefaultVisible = [this, ParamIndex]()
                 {
                     FMythicaParameters* Parameters = GetParametersFromHandleWeak(HandleWeak);
