@@ -29,5 +29,5 @@ public:
 private:
 	void OnCurveChanged(UCurveBase* InCurve, EPropertyChangeType::Type InChangeType);
 
-	UCurveFloat* Curve;
+	UCurveFloat* Curve = nullptr;
 };
