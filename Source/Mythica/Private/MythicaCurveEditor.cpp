@@ -8,17 +8,13 @@ void SMythicaCurveEditor::Construct(const FArguments& InArgs)
 		.ViewMaxInput(InArgs._ViewMaxInput)
 		.ViewMinOutput(InArgs._ViewMinOutput)
 		.ViewMaxOutput(InArgs._ViewMaxOutput)
-		.XAxisName(InArgs._XAxisName)
-		.YAxisName(InArgs._YAxisName)
-		.HideUI(InArgs._HideUI)
-		.DrawCurve(InArgs._DrawCurve)
 		.TimelineLength(InArgs._TimelineLength)
-		.AllowZoomOutput(InArgs._AllowZoomOutput)
-		.ShowInputGridNumbers(InArgs._ShowInputGridNumbers)
-		.ShowOutputGridNumbers(InArgs._ShowOutputGridNumbers)
-		.ShowZoomButtons(InArgs._ShowZoomButtons)
-		.ZoomToFitHorizontal(InArgs._ZoomToFitHorizontal)
-		.ZoomToFitVertical(InArgs._ZoomToFitVertical));
+		.AllowZoomOutput(false)
+		.ShowInputGridNumbers(false)
+		.ShowOutputGridNumbers(false)
+		.ShowZoomButtons(false)
+		.ZoomToFitHorizontal(false)
+		.ZoomToFitVertical(false));
 
 	Curve = NewObject<UCurveFloat>(
 		GetTransientPackage(),
