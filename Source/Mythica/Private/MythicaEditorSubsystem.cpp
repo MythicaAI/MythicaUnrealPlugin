@@ -129,11 +129,7 @@ void UMythicaEditorSubsystem::OnMapChanged(UWorld* InWorld, EMapChangeType InMap
 
 void UMythicaEditorSubsystem::OnSettingsChanged(UObject* Settings, FPropertyChangedEvent& PropertyChangedEvent)
 {
-    if (PropertyChangedEvent.Property->GetFName() == GET_MEMBER_NAME_CHECKED(UMythicaDeveloperSettings, APIKey)
-        || PropertyChangedEvent.Property->GetFName() == GET_MEMBER_NAME_CHECKED(UMythicaDeveloperSettings, Environment))
-    {
-        ResetSession();
-    }
+    ResetSession();
 }
 
 EMythicaSessionState UMythicaEditorSubsystem::GetSessionState()
@@ -219,14 +215,15 @@ void UMythicaEditorSubsystem::CreateSession()
     }
 
     const UMythicaDeveloperSettings* Settings = GetDefault<UMythicaDeveloperSettings>();
-    if (Settings->APIKey.IsEmpty())
+    FString APIKey = Settings->GetAPIKey();
+    if (APIKey.IsEmpty())
     {
         UE_LOG(LogMythica, Error, TEXT("API key not setup"));
         SetSessionState(EMythicaSessionState::SessionFailed);
         return;
     }
 
-    FString Url = FString::Printf(TEXT("%s/v1/sessions/key/%s"), *Settings->GetServiceURL(), *Settings->APIKey);
+    FString Url = FString::Printf(TEXT("%s/v1/sessions/key/%s"), *Settings->GetServiceURL(), *APIKey);
 
     TSharedRef<IHttpRequest, ESPMode::ThreadSafe> Request = FHttpModule::Get().CreateRequest();
     Request->SetURL(Url);

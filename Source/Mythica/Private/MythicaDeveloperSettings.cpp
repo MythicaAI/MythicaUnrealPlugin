@@ -50,3 +50,18 @@ FString UMythicaDeveloperSettings::GetImagesURL() const
 
     return TEXT("");
 }
+
+FString UMythicaDeveloperSettings::GetAPIKey() const
+{
+    switch (Environment)
+    {
+        case EMythicaEnvironment::Production:
+            return ProductionAPIKey;
+        case EMythicaEnvironment::Staging:
+            return StagingAPIKey;
+        case EMythicaEnvironment::Local:
+            return LocalAPIKey;
+    }
+
+    return TEXT("");
+}

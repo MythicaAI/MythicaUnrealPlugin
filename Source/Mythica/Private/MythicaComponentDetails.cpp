@@ -193,7 +193,7 @@ void FMythicaComponentDetails::CustomizeDetails(IDetailLayoutBuilder& DetailBuil
                         .Text_Lambda([]()
                         {
                             const UMythicaDeveloperSettings* Settings = GetDefault<UMythicaDeveloperSettings>();
-                            if (Settings->APIKey.IsEmpty())
+                            if (Settings->GetAPIKey().IsEmpty())
                             {
                                 return FText::FromString("Missing API Key");
                             }
