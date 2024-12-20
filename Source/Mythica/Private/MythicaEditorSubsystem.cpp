@@ -105,6 +105,20 @@ void UMythicaEditorSubsystem::Deinitialize()
     Settings->OnSettingChanged().RemoveAll(this);
 }
 
+void UMythicaEditorSubsystem::ResetSession()
+{
+    ClearJobs();
+
+    AuthToken.Empty();
+    SetSessionState(EMythicaSessionState::None);
+
+    JobDefinitionList.Reset();
+    AssetList.Reset();
+    UpdateStats();
+
+    CreateSession();
+}
+
 void UMythicaEditorSubsystem::OnMapChanged(UWorld* InWorld, EMapChangeType InMapChangeType)
 {
     if (InMapChangeType == EMapChangeType::TearDownWorld)
@@ -115,9 +129,10 @@ void UMythicaEditorSubsystem::OnMapChanged(UWorld* InWorld, EMapChangeType InMap
 
 void UMythicaEditorSubsystem::OnSettingsChanged(UObject* Settings, FPropertyChangedEvent& PropertyChangedEvent)
 {
-    if (PropertyChangedEvent.Property->GetFName() == GET_MEMBER_NAME_CHECKED(UMythicaDeveloperSettings, APIKey))
+    if (PropertyChangedEvent.Property->GetFName() == GET_MEMBER_NAME_CHECKED(UMythicaDeveloperSettings, APIKey)
+        || PropertyChangedEvent.Property->GetFName() == GET_MEMBER_NAME_CHECKED(UMythicaDeveloperSettings, Environment))
     {
-        CreateSession();
+        ResetSession();
     }
 }
 

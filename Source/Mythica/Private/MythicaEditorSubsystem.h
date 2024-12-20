@@ -170,6 +170,7 @@ class UMythicaEditorSubsystem : public UEditorSubsystem
 
     virtual void Initialize(FSubsystemCollectionBase& Collection);
     virtual void Deinitialize();
+    void ResetSession();
 
     void OnMapChanged(UWorld* InWorld, EMapChangeType InMapChangeType);
     void OnSettingsChanged(UObject* Settings, FPropertyChangedEvent& PropertyChangedEvent);
