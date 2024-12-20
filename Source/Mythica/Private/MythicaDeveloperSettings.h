@@ -4,6 +4,14 @@
 
 #include "MythicaDeveloperSettings.generated.h"
 
+UENUM(BlueprintType)
+enum class EMythicaEnvironment : uint8
+{
+    Production,
+    Staging,
+    Local
+};
+
 UCLASS(config = Plugins, defaultconfig, meta = (DisplayName = "Mythica"))
 class MYTHICA_API UMythicaDeveloperSettings : public UDeveloperSettings
 {
@@ -12,11 +20,11 @@ class MYTHICA_API UMythicaDeveloperSettings : public UDeveloperSettings
 public:
     UMythicaDeveloperSettings(const FObjectInitializer& ObjectInitializer);
 
-    UPROPERTY(Config, EditAnywhere, BlueprintReadOnly, Category = Server)
-    FString ServiceURL = TEXT("https://api.mythica.ai");
+    FString GetServiceURL() const;
+    FString GetImagesURL() const;
 
     UPROPERTY(Config, EditAnywhere, BlueprintReadOnly, Category = Server)
-    FString ImagesURL = TEXT("https://api.mythica.ai/images");
+    EMythicaEnvironment Environment = EMythicaEnvironment::Production;
 
     UPROPERTY(Config, EditAnywhere, BlueprintReadOnly, Category = Server)
     FString PackageImportDirectory = TEXT("/Game/Mythica/Packages");

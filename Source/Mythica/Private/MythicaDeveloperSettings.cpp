@@ -20,3 +20,33 @@ UMythicaDeveloperSettings::UMythicaDeveloperSettings(const FObjectInitializer& O
         JobDefIdWhitelist.Add(JobDefId);
     }
 }
+
+FString UMythicaDeveloperSettings::GetServiceURL() const
+{
+    switch (Environment)
+    {
+        case EMythicaEnvironment::Production:
+            return TEXT("https://api.mythica.gg");
+        case EMythicaEnvironment::Staging:
+            return TEXT("https://api-staging.mythica.gg");
+        case EMythicaEnvironment::Local:
+            return TEXT("http://localhost:8080");
+    }
+
+    return TEXT("");
+}
+
+FString UMythicaDeveloperSettings::GetImagesURL() const
+{
+    switch (Environment)
+    {
+        case EMythicaEnvironment::Production:
+            return TEXT("https://api.mythica.gg/images");
+        case EMythicaEnvironment::Staging:
+            return TEXT("https://api-staging.mythica.io/images");
+        case EMythicaEnvironment::Local:
+            return TEXT("http://localhost:8080/images");
+    }
+
+    return TEXT("");
+}

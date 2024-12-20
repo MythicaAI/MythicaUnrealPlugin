@@ -210,14 +210,8 @@ void UMythicaEditorSubsystem::CreateSession()
         SetSessionState(EMythicaSessionState::SessionFailed);
         return;
     }
-    if (Settings->ServiceURL.IsEmpty())
-    {
-        UE_LOG(LogMythica, Error, TEXT("ServiceURL is empty"));
-        SetSessionState(EMythicaSessionState::SessionFailed);
-        return;
-    }
 
-    FString Url = FString::Printf(TEXT("%s/v1/sessions/key/%s"), *Settings->ServiceURL, *Settings->APIKey);
+    FString Url = FString::Printf(TEXT("%s/v1/sessions/key/%s"), *Settings->GetServiceURL(), *Settings->APIKey);
 
     TSharedRef<IHttpRequest, ESPMode::ThreadSafe> Request = FHttpModule::Get().CreateRequest();
     Request->SetURL(Url);
@@ -269,7 +263,7 @@ void UMythicaEditorSubsystem::UpdateAssetList()
 {
     const UMythicaDeveloperSettings* Settings = GetDefault<UMythicaDeveloperSettings>();
 
-    FString Url = FString::Printf(TEXT("%s/v1/assets/top"), *Settings->ServiceURL);
+    FString Url = FString::Printf(TEXT("%s/v1/assets/top"), *Settings->GetServiceURL());
 
     TSharedRef<IHttpRequest, ESPMode::ThreadSafe> Request = FHttpModule::Get().CreateRequest();
     Request->SetURL(Url);
@@ -378,7 +372,7 @@ void UMythicaEditorSubsystem::OnGetAssetsResponse(FHttpRequestPtr Request, FHttp
                 {
                     FString FileExtension = FPaths::GetExtension(FileName);
                     FString ContentHash = ThumbnailObject->GetStringField(TEXT("content_hash"));
-                    ThumbnailURL = FString::Printf(TEXT("%s/%s.%s"), *Settings->ImagesURL, *ContentHash, *FileExtension);
+                    ThumbnailURL = FString::Printf(TEXT("%s/%s.%s"), *Settings->GetImagesURL(), *ContentHash, *FileExtension);
                     break;
                 }
             }
@@ -413,7 +407,7 @@ void UMythicaEditorSubsystem::InstallAsset(const FString& PackageId)
 
     FString DownloadId = PackageId;
 
-    FString Url = FString::Printf(TEXT("%s/v1/download/info/%s"), *Settings->ServiceURL, *DownloadId);
+    FString Url = FString::Printf(TEXT("%s/v1/download/info/%s"), *Settings->GetServiceURL(), *DownloadId);
 
     auto Callback = [this, PackageId](FHttpRequestPtr Request, FHttpResponsePtr Response, bool bConnectedSuccessfully)
     {
@@ -640,7 +634,7 @@ void UMythicaEditorSubsystem::UpdateJobDefinitionList()
 {
     const UMythicaDeveloperSettings* Settings = GetDefault<UMythicaDeveloperSettings>();
 
-    FString Url = FString::Printf(TEXT("%s/v1/jobs/definitions"), *Settings->ServiceURL);
+    FString Url = FString::Printf(TEXT("%s/v1/jobs/definitions"), *Settings->GetServiceURL());
 
     auto Callback = [this](FHttpRequestPtr Request, FHttpResponsePtr Response, bool bConnectedSuccessfully)
     {
@@ -809,7 +803,7 @@ void UMythicaEditorSubsystem::UploadInputFiles(int RequestId, const TMap<int, FS
     // Construct the upload request
     const UMythicaDeveloperSettings* Settings = GetDefault<UMythicaDeveloperSettings>();
 
-    FString Url = FString::Printf(TEXT("%s/v1/upload/store"), *Settings->ServiceURL);
+    FString Url = FString::Printf(TEXT("%s/v1/upload/store"), *Settings->GetServiceURL());
 
     auto Callback = [this, RequestId, InputFiles](FHttpRequestPtr Request, FHttpResponsePtr Response, bool bConnectedSuccessfully)
     {
@@ -983,7 +977,7 @@ void UMythicaEditorSubsystem::SendJobRequest(int RequestId)
     // Send request
     const UMythicaDeveloperSettings* Settings = GetDefault<UMythicaDeveloperSettings>();
 
-    FString Url = FString::Printf(TEXT("%s/v1/jobs/"), *Settings->ServiceURL);
+    FString Url = FString::Printf(TEXT("%s/v1/jobs/"), *Settings->GetServiceURL());
 
     auto Callback = [this, RequestId](FHttpRequestPtr Request, FHttpResponsePtr Response, bool bConnectedSuccessfully)
     {
@@ -1102,7 +1096,7 @@ void UMythicaEditorSubsystem::PollJobStatus()
 
         const UMythicaDeveloperSettings* Settings = GetDefault<UMythicaDeveloperSettings>();
 
-        FString Url = FString::Printf(TEXT("%s/v1/jobs/results/%s"), *Settings->ServiceURL, *JobData.JobId);
+        FString Url = FString::Printf(TEXT("%s/v1/jobs/results/%s"), *Settings->GetServiceURL(), *JobData.JobId);
 
         auto Callback = [this, RequestId](FHttpRequestPtr Request, FHttpResponsePtr Response, bool bConnectedSuccessfully)
         {
@@ -1205,7 +1199,7 @@ void UMythicaEditorSubsystem::OnJobResultsResponse(FHttpRequestPtr Request, FHtt
 
     const UMythicaDeveloperSettings* Settings = GetDefault<UMythicaDeveloperSettings>();
 
-    FString Url = FString::Printf(TEXT("%s/v1/download/info/%s"), *Settings->ServiceURL, *FileId);
+    FString Url = FString::Printf(TEXT("%s/v1/download/info/%s"), *Settings->GetServiceURL(), *FileId);
 
     auto Callback = [this, FileId, RequestId](FHttpRequestPtr Request, FHttpResponsePtr Response, bool bConnectedSuccessfully)
     {
