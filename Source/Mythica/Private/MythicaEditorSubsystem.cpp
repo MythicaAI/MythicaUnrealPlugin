@@ -378,7 +378,10 @@ void UMythicaEditorSubsystem::OnGetAssetsResponse(FHttpRequestPtr Request, FHttp
             }
         }
 
-        AssetList.Push({ AssetId, PackageId, Name, Description, OrgName, AssetVersion, {}, ThumbnailURL, DigitalAssetCount });
+        FString PackageURL;
+        PackageURL = FString::Printf(TEXT("%s/package-view/%s/versions/%d.%d.%d"), *Settings->GetServiceURL(), *AssetId, AssetVersion.Major, AssetVersion.Minor, AssetVersion.Patch);
+
+        AssetList.Push({ AssetId, PackageId, Name, Description, OrgName, AssetVersion, {}, ThumbnailURL, PackageURL, DigitalAssetCount });
     }
 
     UpdateStats();

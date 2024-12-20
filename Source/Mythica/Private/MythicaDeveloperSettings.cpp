@@ -43,7 +43,7 @@ FString UMythicaDeveloperSettings::GetImagesURL() const
         case EMythicaEnvironment::Production:
             return TEXT("https://api.mythica.gg/images");
         case EMythicaEnvironment::Staging:
-            return TEXT("https://api-staging.mythica.io/images");
+            return TEXT("https://api-staging.mythica.gg/images");
         case EMythicaEnvironment::Local:
             return TEXT("http://localhost:8080/images");
     }
