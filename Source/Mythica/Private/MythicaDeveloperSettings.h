@@ -4,6 +4,14 @@
 
 #include "MythicaDeveloperSettings.generated.h"
 
+UENUM(BlueprintType)
+enum class EMythicaEnvironment : uint8
+{
+    Production,
+    Staging,
+    Local
+};
+
 UCLASS(config = Plugins, defaultconfig, meta = (DisplayName = "Mythica"))
 class MYTHICA_API UMythicaDeveloperSettings : public UDeveloperSettings
 {
@@ -12,21 +20,28 @@ class MYTHICA_API UMythicaDeveloperSettings : public UDeveloperSettings
 public:
     UMythicaDeveloperSettings(const FObjectInitializer& ObjectInitializer);
 
-    UPROPERTY(Config, EditAnywhere, BlueprintReadOnly, Category = Server)
-    FString ServiceURL = TEXT("https://api.mythica.ai");
+    FString GetServiceURL() const;
+    FString GetImagesURL() const;
+    FString GetAPIKey() const;
 
     UPROPERTY(Config, EditAnywhere, BlueprintReadOnly, Category = Server)
-    FString ImagesURL = TEXT("https://api.mythica.ai/images");
+    EMythicaEnvironment Environment = EMythicaEnvironment::Production;
 
-    UPROPERTY(Config, EditAnywhere, BlueprintReadOnly, Category = Server)
+    UPROPERTY(Config, EditAnywhere, BlueprintReadOnly, Category = Server, meta = (EditCondition = "Environment == EMythicaEnvironment::Production", EditConditionHides))
+    FString ProductionAPIKey;
+
+    UPROPERTY(Config, EditAnywhere, BlueprintReadOnly, Category = Server, meta = (EditCondition = "Environment == EMythicaEnvironment::Staging", EditConditionHides))
+    FString StagingAPIKey;
+
+    UPROPERTY(Config, EditAnywhere, BlueprintReadOnly, Category = Server, meta = (EditCondition = "Environment == EMythicaEnvironment::Local", EditConditionHides))
+    FString LocalAPIKey;
+
+    UPROPERTY(Config, EditAnywhere, BlueprintReadOnly, Category = Import)
     FString PackageImportDirectory = TEXT("/Game/Mythica/Packages");
     
-    UPROPERTY(Config, EditAnywhere, BlueprintReadOnly, Category = Server)
+    UPROPERTY(Config, EditAnywhere, BlueprintReadOnly, Category = Import)
     FString GeneratedAssetImportDirectory = TEXT("/Game/Mythica/Generated");
  
-    UPROPERTY(Config, EditAnywhere, BlueprintReadOnly, Category = User)
-    FString APIKey;
-
     UPROPERTY(Config, EditAnywhere, BlueprintReadOnly, Category = Tools)
     bool UseToolWhitelist = true;
 
