@@ -35,7 +35,7 @@ public:
 
     bool CanRegenerateMesh() const;
     void RegenerateMesh();
-    FString GetImportName();
+    FString GetImportPath();
 
     EMythicaJobState GetJobState() const { return State; }
     FText GetJobMessage() const { return Message; }
@@ -62,6 +62,9 @@ private:
 public:
     UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Mythica", meta = (EditCondition = "false", EditConditionHides))
     FMythicaJobDefinitionId JobDefId;
+
+    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Mythica", meta = (EditCondition = "false", EditConditionHides))
+    FString ToolName;
 
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Mythica")
     FMythicaComponentSettings Settings;

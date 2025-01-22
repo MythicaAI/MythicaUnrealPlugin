@@ -1,6 +1,7 @@
 #include "MythicaComponent.h"
 
 #include "AssetRegistry/AssetRegistryModule.h"
+#include "ObjectTools.h"
 
 #define IMPORT_NAME_LENGTH 10
 
@@ -90,7 +91,7 @@ void UMythicaComponent::RegenerateMesh()
     }
 
     UMythicaEditorSubsystem* MythicaEditorSubsystem = GEditor->GetEditorSubsystem<UMythicaEditorSubsystem>();
-    RequestId = MythicaEditorSubsystem->ExecuteJob(JobDefId.JobDefId, Parameters, GetImportName(), K2_GetComponentLocation());
+    RequestId = MythicaEditorSubsystem->ExecuteJob(JobDefId.JobDefId, Parameters, GetImportPath(), K2_GetComponentLocation());
 
     if (RequestId > 0 && IsRegistered())
     {
@@ -98,9 +99,12 @@ void UMythicaComponent::RegenerateMesh()
     }
 }
 
-FString UMythicaComponent::GetImportName()
+FString UMythicaComponent::GetImportPath()
 {
-    return ComponentGUID.ToString().Left(IMPORT_NAME_LENGTH);
+    FString ImportFolderClean = ObjectTools::SanitizeObjectName(ToolName);
+    FString ImportNameClean = ObjectTools::SanitizeObjectName(ComponentGUID.ToString().Left(IMPORT_NAME_LENGTH));
+
+    return FPaths::Combine(ImportFolderClean, ImportNameClean);
 }
 
 bool UMythicaComponent::IsJobProcessing() const
@@ -194,6 +198,7 @@ void UMythicaComponent::OnJobDefIdChanged()
     UMythicaEditorSubsystem* MythicaEditorSubsystem = GEditor->GetEditorSubsystem<UMythicaEditorSubsystem>();
 
     FMythicaJobDefinition Definition = MythicaEditorSubsystem->GetJobDefinitionById(JobDefId.JobDefId);
+    ToolName = Definition.Name;
     Parameters = Definition.Parameters;
 
     State = EMythicaJobState::Invalid;
