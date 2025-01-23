@@ -41,7 +41,10 @@ public:
     
     UPROPERTY(Config, EditAnywhere, BlueprintReadOnly, Category = Import)
     FString GeneratedAssetImportDirectory = TEXT("/Game/Mythica/Generated");
- 
+
+    UPROPERTY(Config, EditAnywhere, BlueprintReadOnly, Category = Tools)
+    float JobTimeoutSeconds = 120.0f;
+
     UPROPERTY(Config, EditAnywhere, BlueprintReadOnly, Category = Tools)
     bool UseToolWhitelist = true;
 

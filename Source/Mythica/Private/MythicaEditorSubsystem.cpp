@@ -22,8 +22,6 @@
 
 DEFINE_LOG_CATEGORY(LogMythica);
 
-#define JOB_TIMEOUT 60.0f
-
 const TCHAR* ConfigFile = TEXT("PackageInfo.ini");
 const TCHAR* ConfigPackageInfoSection = TEXT("PackageInfo");
 const TCHAR* ConfigPackageIdKey = TEXT("PackageId");
@@ -1075,8 +1073,9 @@ void UMythicaEditorSubsystem::SetJobState(int RequestId, EMythicaJobState State,
 
     if (State == EMythicaJobState::Queued)
     {
+        const UMythicaDeveloperSettings* Settings = GetDefault<UMythicaDeveloperSettings>();
         FTimerDelegate TimerDelegate = FTimerDelegate::CreateUObject(this, &UMythicaEditorSubsystem::OnJobTimeout, RequestId);
-        GEditor->GetTimerManager()->SetTimer(JobData->TimeoutTimer, TimerDelegate, JOB_TIMEOUT, false);
+        GEditor->GetTimerManager()->SetTimer(JobData->TimeoutTimer, TimerDelegate, Settings->JobTimeoutSeconds, false);
     }
     else if (State == EMythicaJobState::Importing || State == EMythicaJobState::Failed)
     {
