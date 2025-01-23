@@ -48,6 +48,7 @@ public class Mythica : ModuleRules
                 "ImageCore",
                 "InputCore",
                 "Json",
+                "Landscape",
                 "MaterialBaking",
                 "Projects",
                 "PythonScriptPlugin",
