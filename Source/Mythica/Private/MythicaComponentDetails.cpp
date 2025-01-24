@@ -145,21 +145,70 @@ void FMythicaComponentDetails::CustomizeDetails(IDetailLayoutBuilder& DetailBuil
                                         .OnSelectionChanged_Lambda([this, ComponentWeak](TSharedPtr<FString> NewValue, ESelectInfo::Type SelectInfo)
                                         {
                                             int32 SelectedIndex = Options.IndexOfByKey(NewValue);
-                                            if (Options.IsValidIndex(SelectedIndex))
-                                            {
-                                                SelectTool(OptionData[SelectedIndex].JobDefId, ComponentWeak);
-                                            }
+                                            check(OptionData.IsValidIndex(SelectedIndex));
+                                            const FMythicaToolOptionData& Data = OptionData[SelectedIndex];
+
+                                            SelectTool(Data.JobDefId, ComponentWeak);
                                         })
-                                        .OnGenerateWidget_Lambda([](TSharedPtr<FString> InOption)
+                                        .OnGenerateWidget_Lambda([this](TSharedPtr<FString> InOption)
                                         {
-                                            return SNew(STextBlock).Text(FText::FromString(*InOption));
+                                            int32 SelectedIndex = Options.IndexOfByKey(InOption);
+                                            check(OptionData.IsValidIndex(SelectedIndex));
+                                            const FMythicaToolOptionData& Data = OptionData[SelectedIndex];
+
+                                            FSlateFontInfo TitleFontInfo = IDetailLayoutBuilder::GetDetailFont();
+                                            FSlateFontInfo SubtitleFontInfo = IDetailLayoutBuilder::GetDetailFont();
+                                            TitleFontInfo.Size += 3;
+
+                                            return SNew(SHorizontalBox)
+                                                + SHorizontalBox::Slot()
+                                                .AutoWidth()
+                                                .Padding(FMargin(5.0f))
+                                                [
+                                                    SNew(SImage)
+                                                        .Image(FCoreStyle::Get().GetBrush("DefaultIcon"))
+                                                        .DesiredSizeOverride(FVector2D(32.0f, 32.0f))
+                                                ]
+                                                + SHorizontalBox::Slot()
+                                                .FillWidth(1.0f)
+                                                .Padding(FMargin(5.0f, 0.0f, 5.0f, 0.0f))
+                                                .VAlign(VAlign_Center)
+                                                [
+                                                    SNew(SVerticalBox)
+                                                        + SVerticalBox::Slot()
+                                                        .AutoHeight()
+                                                        [
+                                                            SNew(STextBlock)
+                                                                .Text(FText::FromString(*Data.Name))
+                                                                .Font(TitleFontInfo)
+                                                                .ColorAndOpacity(FSlateColor(FLinearColor::White))
+                                                        ]
+                                                        + SVerticalBox::Slot()
+                                                        .AutoHeight()
+                                                        [
+                                                            SNew(STextBlock)
+                                                                .Text(FText::FromString(FString::Printf(TEXT("%s - %s"), *Data.Owner, *Data.AssetName)))
+                                                                .Font(SubtitleFontInfo)
+                                                                .ColorAndOpacity(FSlateColor(FLinearColor::Gray))
+                                                        ]
+                                                ]
+                                                + SHorizontalBox::Slot()
+                                                .AutoWidth()
+                                                .Padding(FMargin(5.0f))
+                                                .HAlign(HAlign_Right)
+                                                .VAlign(VAlign_Center)
+                                                [
+                                                    SNew(STextBlock)
+                                                        .Text(FText::FromString(FString::Printf(TEXT("v%s"), *Data.Version)))
+                                                        .ColorAndOpacity(FSlateColor(FLinearColor::Gray))
+                                                ];
                                         })
                                         .Content()
                                         [
                                             SNew(STextBlock)
                                                 .Text_Lambda([this, ComponentWeak]() -> FText
                                                 {
-                                                    return FText::FromString(GetSelectedOption(ComponentWeak));
+                                                    return FText::FromString(GetComboBoxDisplayString(ComponentWeak));
                                                 })
                                         ]
                                 ]
@@ -266,7 +315,7 @@ void FMythicaComponentDetails::SelectTool(const FString& JobDefId, TWeakObjectPt
     }
 }
 
-FString FMythicaComponentDetails::GetSelectedOption(TWeakObjectPtr<class UMythicaComponent> ComponentWeak) const
+FString FMythicaComponentDetails::GetComboBoxDisplayString(TWeakObjectPtr<class UMythicaComponent> ComponentWeak) const
 {
     if (ComponentWeak.IsValid())
     {
@@ -275,9 +324,9 @@ FString FMythicaComponentDetails::GetSelectedOption(TWeakObjectPtr<class UMythic
             return Data.JobDefId == ComponentWeak->JobDefId.JobDefId;
         });
 
-        if (Options.IsValidIndex(SelectedIndex))
+        if (OptionData.IsValidIndex(SelectedIndex))
         {
-            return *Options[SelectedIndex];
+            return *OptionData[SelectedIndex].Name;
         }
     }
 

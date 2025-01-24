@@ -24,5 +24,5 @@ private:
 
     void PopulateToolOptions();
     void SelectTool(const FString& JobDefId, TWeakObjectPtr<class UMythicaComponent> ComponentWeak);
-    FString GetSelectedOption(TWeakObjectPtr<class UMythicaComponent> ComponentWeak) const;
+    FString GetComboBoxDisplayString(TWeakObjectPtr<class UMythicaComponent> ComponentWeak) const;
 };
