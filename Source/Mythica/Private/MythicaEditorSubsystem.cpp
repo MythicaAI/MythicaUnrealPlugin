@@ -74,9 +74,14 @@ bool FMythicaAssetVersion::operator<(const FMythicaAssetVersion& Other) const
         || (Major == Other.Major && Minor == Other.Minor && Patch < Other.Patch);
 }
 
+bool FMythicaAssetVersion::IsValid() const
+{
+    return Major > 0 || Minor > 0 || Patch > 0;
+}
+
 FString FMythicaAssetVersion::ToString() const
 {
-    return FString::Printf(TEXT("%d.%d.%d"), Major, Minor, Patch);
+    return IsValid() ? FString::Printf(TEXT("%d.%d.%d"), Major, Minor, Patch) : "";
 }
 
 void UMythicaEditorSubsystem::Initialize(FSubsystemCollectionBase& Collection)

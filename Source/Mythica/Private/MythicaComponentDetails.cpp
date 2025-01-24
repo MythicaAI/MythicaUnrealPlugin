@@ -190,6 +190,7 @@ void FMythicaComponentDetails::CustomizeDetails(IDetailLayoutBuilder& DetailBuil
                                                                 .Text(FText::FromString(FString::Printf(TEXT("%s - %s"), *Data.Owner, *Data.AssetName)))
                                                                 .Font(SubtitleFontInfo)
                                                                 .ColorAndOpacity(FSlateColor(FLinearColor::Gray))
+                                                                .Visibility(!Data.AssetName.IsEmpty() ? EVisibility::Visible : EVisibility::Hidden)
                                                         ]
                                                 ]
                                                 + SHorizontalBox::Slot()
@@ -201,6 +202,7 @@ void FMythicaComponentDetails::CustomizeDetails(IDetailLayoutBuilder& DetailBuil
                                                     SNew(STextBlock)
                                                         .Text(FText::FromString(FString::Printf(TEXT("v%s"), *Data.Version)))
                                                         .ColorAndOpacity(FSlateColor(FLinearColor::Gray))
+                                                        .Visibility(!Data.Version.IsEmpty() ? EVisibility::Visible : EVisibility::Hidden)
                                                 ];
                                         })
                                         .Content()
