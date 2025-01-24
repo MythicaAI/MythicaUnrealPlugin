@@ -17,7 +17,7 @@ UMythicaDeveloperSettings::UMythicaDeveloperSettings(const FObjectInitializer& O
 
     for (const TCHAR* JobDefId : DefaultJobDefIdWhitelist)
     {
-        JobDefIdWhitelist.Add(JobDefId);
+        ProductionJobDefIdWhitelist.Add(JobDefId);
     }
 }
 
@@ -64,4 +64,20 @@ FString UMythicaDeveloperSettings::GetAPIKey() const
     }
 
     return TEXT("");
+}
+
+const TArray<FString>& UMythicaDeveloperSettings::GetJobDefIdWhitelist() const
+{
+    switch (Environment)
+    {
+        case EMythicaEnvironment::Production:
+            return ProductionJobDefIdWhitelist;
+        case EMythicaEnvironment::Staging:
+            return StagingJobDefIdWhitelist;
+        case EMythicaEnvironment::Local:
+            return LocalJobDefIdWhitelist;
+    }
+
+    static const TArray<FString> EmptyArray;
+    return EmptyArray;
 }
