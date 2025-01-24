@@ -31,14 +31,7 @@ void FMythicaComponentDetails::CustomizeDetails(IDetailLayoutBuilder& DetailBuil
     TWeakObjectPtr<class UMythicaComponent> ComponentWeak = Component;
 
     // Gather options
-    UMythicaEditorSubsystem* MythicaEditorSubsystem = GEditor->GetEditorSubsystem<UMythicaEditorSubsystem>();
-    TArray<FMythicaJobDefinition> JobDefinitions = MythicaEditorSubsystem->GetJobDefinitionList("houdini::/mythica/generate_mesh");
-
-    for (const FMythicaJobDefinition& JobDefinition : JobDefinitions)
-    {
-        Options.Add(MakeShared<FString>(JobDefinition.Name));
-        JobDefIds.Add(JobDefinition.JobDefId);
-    }
+    PopulateToolOptions();
 
     // Create widget
     IDetailCategoryBuilder& MyCategory = DetailBuilder.EditCategory("Mythica", FText::FromString("Mythica"), ECategoryPriority::Important);
@@ -154,7 +147,7 @@ void FMythicaComponentDetails::CustomizeDetails(IDetailLayoutBuilder& DetailBuil
                                             int32 SelectedIndex = Options.IndexOfByKey(NewValue);
                                             if (Options.IsValidIndex(SelectedIndex))
                                             {
-                                                OnSelectionChanged(JobDefIds[SelectedIndex], ComponentWeak);
+                                                SelectTool(OptionData[SelectedIndex].JobDefId, ComponentWeak);
                                             }
                                         })
                                         .OnGenerateWidget_Lambda([](TSharedPtr<FString> InOption)
@@ -237,14 +230,35 @@ void FMythicaComponentDetails::CustomizeDetails(IDetailLayoutBuilder& DetailBuil
         ];
 }
 
-void FMythicaComponentDetails::OnSelectionChanged(const FString& NewValue, TWeakObjectPtr<class UMythicaComponent> ComponentWeak)
+void FMythicaComponentDetails::PopulateToolOptions()
+{
+    UMythicaEditorSubsystem* MythicaEditorSubsystem = GEditor->GetEditorSubsystem<UMythicaEditorSubsystem>();
+    TArray<FMythicaJobDefinition> JobDefinitions = MythicaEditorSubsystem->GetJobDefinitionList("houdini::/mythica/generate_mesh");
+
+    for (const FMythicaJobDefinition& JobDefinition : JobDefinitions)
+    {
+        FMythicaToolOptionData Data;
+        Data.JobDefId = JobDefinition.JobDefId;
+        Data.Name = JobDefinition.Name;
+        Data.Owner = "Mythica";
+        Data.AssetName = "Example Package";
+        Data.Version = "1.0.0";
+
+        FString SearchString = FString::Printf(TEXT("%s %s %s"), *Data.Owner, *Data.AssetName, *Data.Name);
+
+        Options.Add(MakeShared<FString>(SearchString));
+        OptionData.Add(Data);
+    }
+}
+
+void FMythicaComponentDetails::SelectTool(const FString& JobDefId, TWeakObjectPtr<class UMythicaComponent> ComponentWeak)
 {
     if (ComponentWeak.IsValid())
     {
         const FScopedTransaction Transaction(LOCTEXT("MythicaSelectTool", "Select Tool"));
         ComponentWeak->Modify();
 
-        ComponentWeak->JobDefId.JobDefId = NewValue;
+        ComponentWeak->JobDefId.JobDefId = JobDefId;
 
         FPropertyChangedEvent PropertyChangedEvent(
             FindFieldChecked<FProperty>(UMythicaComponent::StaticClass(), GET_MEMBER_NAME_CHECKED(UMythicaComponent, JobDefId)));
@@ -256,8 +270,12 @@ FString FMythicaComponentDetails::GetSelectedOption(TWeakObjectPtr<class UMythic
 {
     if (ComponentWeak.IsValid())
     {
-        int32 SelectedIndex = JobDefIds.IndexOfByKey(ComponentWeak->JobDefId.JobDefId);
-        if (JobDefIds.IsValidIndex(SelectedIndex))
+        int32 SelectedIndex = OptionData.IndexOfByPredicate([ComponentWeak](const FMythicaToolOptionData& Data)
+        {
+            return Data.JobDefId == ComponentWeak->JobDefId.JobDefId;
+        });
+
+        if (Options.IsValidIndex(SelectedIndex))
         {
             return *Options[SelectedIndex];
         }
