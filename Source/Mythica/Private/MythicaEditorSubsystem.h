@@ -35,7 +35,6 @@ DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnAssetListUpdated);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnThumbnailLoaded, const FString&, PackageId);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnAssetInstalled, const FString&, PackageId);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnAssetUninstalled, const FString&, PackageId);
-DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnJobDefinitionListUpdated);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_ThreeParams(FOnJobStateChanged, int, RequestId, EMythicaJobState, State, FText, Message);
 
 USTRUCT(BlueprintType)
@@ -247,9 +246,6 @@ public:
     FOnAssetInstalled OnAssetUninstalled;
 
     UPROPERTY(BlueprintAssignable, Category = "Mythica")
-    FOnJobDefinitionListUpdated OnJobDefinitionListUpdated;
-
-    UPROPERTY(BlueprintAssignable, Category = "Mythica")
     FOnJobStateChanged OnJobStateChange;
 
 private:
@@ -258,7 +254,7 @@ private:
     void OnDownloadInfoResponse(FHttpRequestPtr Request, FHttpResponsePtr Response, bool bWasSuccessful, const FString& PackageId);
     void OnDownloadAssetResponse(FHttpRequestPtr Request, FHttpResponsePtr Response, bool bWasSuccessful, const FString& PackageId);
 
-    void OnJobDefinitionsResponse(FHttpRequestPtr Request, FHttpResponsePtr Response, bool bWasSuccessful);
+    void OnJobDefinitionResponse(FHttpRequestPtr Request, FHttpResponsePtr Response, bool bWasSuccessful);
 
     bool PrepareInputFiles(const FMythicaParameters& Params, TMap<int, FString>& InputFiles, FString& ExportDirectory, const FVector& Origin);
     void UploadInputFiles(int RequestId, const TMap<int, FString>& InputFiles);
