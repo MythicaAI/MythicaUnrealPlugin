@@ -31,14 +31,7 @@ void FMythicaComponentDetails::CustomizeDetails(IDetailLayoutBuilder& DetailBuil
     TWeakObjectPtr<class UMythicaComponent> ComponentWeak = Component;
 
     // Gather options
-    UMythicaEditorSubsystem* MythicaEditorSubsystem = GEditor->GetEditorSubsystem<UMythicaEditorSubsystem>();
-    TArray<FMythicaJobDefinition> JobDefinitions = MythicaEditorSubsystem->GetJobDefinitionList("houdini::/mythica/generate_mesh");
-
-    for (const FMythicaJobDefinition& JobDefinition : JobDefinitions)
-    {
-        Options.Add(MakeShared<FString>(JobDefinition.Name));
-        JobDefIds.Add(JobDefinition.JobDefId);
-    }
+    PopulateToolOptions();
 
     // Create widget
     IDetailCategoryBuilder& MyCategory = DetailBuilder.EditCategory("Mythica", FText::FromString("Mythica"), ECategoryPriority::Important);
@@ -152,21 +145,70 @@ void FMythicaComponentDetails::CustomizeDetails(IDetailLayoutBuilder& DetailBuil
                                         .OnSelectionChanged_Lambda([this, ComponentWeak](TSharedPtr<FString> NewValue, ESelectInfo::Type SelectInfo)
                                         {
                                             int32 SelectedIndex = Options.IndexOfByKey(NewValue);
-                                            if (Options.IsValidIndex(SelectedIndex))
-                                            {
-                                                OnSelectionChanged(JobDefIds[SelectedIndex], ComponentWeak);
-                                            }
+                                            check(OptionData.IsValidIndex(SelectedIndex));
+                                            const FMythicaToolOptionData& Data = OptionData[SelectedIndex];
+
+                                            SelectTool(Data.JobDefId, ComponentWeak);
                                         })
-                                        .OnGenerateWidget_Lambda([](TSharedPtr<FString> InOption)
+                                        .OnGenerateWidget_Lambda([this](TSharedPtr<FString> InOption)
                                         {
-                                            return SNew(STextBlock).Text(FText::FromString(*InOption));
+                                            int32 SelectedIndex = Options.IndexOfByKey(InOption);
+                                            check(OptionData.IsValidIndex(SelectedIndex));
+                                            const FMythicaToolOptionData& Data = OptionData[SelectedIndex];
+
+                                            FSlateFontInfo TitleFontInfo = IDetailLayoutBuilder::GetDetailFont();
+                                            FSlateFontInfo SubtitleFontInfo = IDetailLayoutBuilder::GetDetailFont();
+                                            TitleFontInfo.Size += 3;
+
+                                            return SNew(SHorizontalBox)
+                                                + SHorizontalBox::Slot()
+                                                .AutoWidth()
+                                                .Padding(FMargin(5.0f))
+                                                [
+                                                    SNew(SImage)
+                                                        .Image(FCoreStyle::Get().GetBrush("DefaultIcon"))
+                                                        .DesiredSizeOverride(FVector2D(32.0f, 32.0f))
+                                                ]
+                                                + SHorizontalBox::Slot()
+                                                .FillWidth(1.0f)
+                                                .Padding(FMargin(5.0f, 0.0f, 5.0f, 0.0f))
+                                                .VAlign(VAlign_Center)
+                                                [
+                                                    SNew(SVerticalBox)
+                                                        + SVerticalBox::Slot()
+                                                        .AutoHeight()
+                                                        [
+                                                            SNew(STextBlock)
+                                                                .Text(FText::FromString(*Data.Name))
+                                                                .Font(TitleFontInfo)
+                                                                .ColorAndOpacity(FSlateColor(FLinearColor::White))
+                                                        ]
+                                                        + SVerticalBox::Slot()
+                                                        .AutoHeight()
+                                                        [
+                                                            SNew(STextBlock)
+                                                                .Text(FText::FromString(FString::Printf(TEXT("%s - %s"), *Data.Owner, *Data.AssetName)))
+                                                                .Font(SubtitleFontInfo)
+                                                                .ColorAndOpacity(FSlateColor(FLinearColor::Gray))
+                                                        ]
+                                                ]
+                                                + SHorizontalBox::Slot()
+                                                .AutoWidth()
+                                                .Padding(FMargin(5.0f))
+                                                .HAlign(HAlign_Right)
+                                                .VAlign(VAlign_Center)
+                                                [
+                                                    SNew(STextBlock)
+                                                        .Text(FText::FromString(FString::Printf(TEXT("v%s"), *Data.Version)))
+                                                        .ColorAndOpacity(FSlateColor(FLinearColor::Gray))
+                                                ];
                                         })
                                         .Content()
                                         [
                                             SNew(STextBlock)
                                                 .Text_Lambda([this, ComponentWeak]() -> FText
                                                 {
-                                                    return FText::FromString(GetSelectedOption(ComponentWeak));
+                                                    return FText::FromString(GetComboBoxDisplayString(ComponentWeak));
                                                 })
                                         ]
                                 ]
@@ -237,14 +279,35 @@ void FMythicaComponentDetails::CustomizeDetails(IDetailLayoutBuilder& DetailBuil
         ];
 }
 
-void FMythicaComponentDetails::OnSelectionChanged(const FString& NewValue, TWeakObjectPtr<class UMythicaComponent> ComponentWeak)
+void FMythicaComponentDetails::PopulateToolOptions()
+{
+    UMythicaEditorSubsystem* MythicaEditorSubsystem = GEditor->GetEditorSubsystem<UMythicaEditorSubsystem>();
+    TArray<FMythicaJobDefinition> JobDefinitions = MythicaEditorSubsystem->GetJobDefinitionList("houdini::/mythica/generate_mesh");
+
+    for (const FMythicaJobDefinition& JobDefinition : JobDefinitions)
+    {
+        FMythicaToolOptionData Data;
+        Data.JobDefId = JobDefinition.JobDefId;
+        Data.Name = JobDefinition.Name;
+        Data.Owner = "Mythica";
+        Data.AssetName = "Example Package";
+        Data.Version = "1.0.0";
+
+        FString SearchString = FString::Printf(TEXT("%s %s %s"), *Data.Owner, *Data.AssetName, *Data.Name);
+
+        Options.Add(MakeShared<FString>(SearchString));
+        OptionData.Add(Data);
+    }
+}
+
+void FMythicaComponentDetails::SelectTool(const FString& JobDefId, TWeakObjectPtr<class UMythicaComponent> ComponentWeak)
 {
     if (ComponentWeak.IsValid())
     {
         const FScopedTransaction Transaction(LOCTEXT("MythicaSelectTool", "Select Tool"));
         ComponentWeak->Modify();
 
-        ComponentWeak->JobDefId.JobDefId = NewValue;
+        ComponentWeak->JobDefId.JobDefId = JobDefId;
 
         FPropertyChangedEvent PropertyChangedEvent(
             FindFieldChecked<FProperty>(UMythicaComponent::StaticClass(), GET_MEMBER_NAME_CHECKED(UMythicaComponent, JobDefId)));
@@ -252,14 +315,18 @@ void FMythicaComponentDetails::OnSelectionChanged(const FString& NewValue, TWeak
     }
 }
 
-FString FMythicaComponentDetails::GetSelectedOption(TWeakObjectPtr<class UMythicaComponent> ComponentWeak) const
+FString FMythicaComponentDetails::GetComboBoxDisplayString(TWeakObjectPtr<class UMythicaComponent> ComponentWeak) const
 {
     if (ComponentWeak.IsValid())
     {
-        int32 SelectedIndex = JobDefIds.IndexOfByKey(ComponentWeak->JobDefId.JobDefId);
-        if (JobDefIds.IsValidIndex(SelectedIndex))
+        int32 SelectedIndex = OptionData.IndexOfByPredicate([ComponentWeak](const FMythicaToolOptionData& Data)
         {
-            return *Options[SelectedIndex];
+            return Data.JobDefId == ComponentWeak->JobDefId.JobDefId;
+        });
+
+        if (OptionData.IsValidIndex(SelectedIndex))
+        {
+            return *OptionData[SelectedIndex].Name;
         }
     }
 

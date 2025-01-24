@@ -2,6 +2,15 @@
 
 #include "IDetailCustomization.h"
 
+struct FMythicaToolOptionData
+{
+    FString JobDefId;
+    FString Name;
+    FString Owner;
+    FString AssetName;
+    FString Version;
+};
+
 class FMythicaComponentDetails : public IDetailCustomization
 {
 public:
@@ -11,8 +20,9 @@ public:
 
 private:
     TArray<TSharedPtr<FString>> Options;
-    TArray<FString> JobDefIds;
+    TArray<FMythicaToolOptionData> OptionData;
 
-    void OnSelectionChanged(const FString& NewValue, TWeakObjectPtr<class UMythicaComponent> ComponentWeak);
-    FString GetSelectedOption(TWeakObjectPtr<class UMythicaComponent> ComponentWeak) const;
+    void PopulateToolOptions();
+    void SelectTool(const FString& JobDefId, TWeakObjectPtr<class UMythicaComponent> ComponentWeak);
+    FString GetComboBoxDisplayString(TWeakObjectPtr<class UMythicaComponent> ComponentWeak) const;
 };
