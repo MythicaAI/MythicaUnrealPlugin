@@ -23,28 +23,39 @@ public:
     FString GetServiceURL() const;
     FString GetImagesURL() const;
     FString GetAPIKey() const;
+    const TArray<FString>& GetJobDefIdWhitelist() const;
 
     UPROPERTY(Config, EditAnywhere, BlueprintReadOnly, Category = Server)
     EMythicaEnvironment Environment = EMythicaEnvironment::Production;
 
-    UPROPERTY(Config, EditAnywhere, BlueprintReadOnly, Category = Server, meta = (EditCondition = "Environment == EMythicaEnvironment::Production", EditConditionHides))
+    // Production Settings
+    UPROPERTY(Config, EditAnywhere, BlueprintReadOnly, Category = Server, DisplayName = "APIKey", meta = (EditCondition = "Environment == EMythicaEnvironment::Production", EditConditionHides))
     FString ProductionAPIKey;
 
-    UPROPERTY(Config, EditAnywhere, BlueprintReadOnly, Category = Server, meta = (EditCondition = "Environment == EMythicaEnvironment::Staging", EditConditionHides))
+    UPROPERTY(Config, EditAnywhere, BlueprintReadOnly, Category = Server, DisplayName = "JobDefIdWhitelist", meta = (EditCondition = "Environment == EMythicaEnvironment::Production", EditConditionHides))
+    TArray<FString> ProductionJobDefIdWhitelist;
+
+    // Staging Settings
+    UPROPERTY(Config, EditAnywhere, BlueprintReadOnly, Category = Server, DisplayName = "APIKey", meta = (EditCondition = "Environment == EMythicaEnvironment::Staging", EditConditionHides))
     FString StagingAPIKey;
 
-    UPROPERTY(Config, EditAnywhere, BlueprintReadOnly, Category = Server, meta = (EditCondition = "Environment == EMythicaEnvironment::Local", EditConditionHides))
+    UPROPERTY(Config, EditAnywhere, BlueprintReadOnly, Category = Server, DisplayName = "JobDefIdWhitelist", meta = (EditCondition = "Environment == EMythicaEnvironment::Staging", EditConditionHides))
+    TArray<FString> StagingJobDefIdWhitelist;
+
+    // Local Settings
+    UPROPERTY(Config, EditAnywhere, BlueprintReadOnly, Category = Server, DisplayName = "APIKey", meta = (EditCondition = "Environment == EMythicaEnvironment::Local", EditConditionHides))
     FString LocalAPIKey;
 
+    UPROPERTY(Config, EditAnywhere, BlueprintReadOnly, Category = Server, DisplayName = "JobDefIdWhitelist", meta = (EditCondition = "Environment == EMythicaEnvironment::Local", EditConditionHides))
+    TArray<FString> LocalJobDefIdWhitelist;
+
+    // Global Settings
     UPROPERTY(Config, EditAnywhere, BlueprintReadOnly, Category = Import)
     FString PackageImportDirectory = TEXT("/Game/Mythica/Packages");
     
     UPROPERTY(Config, EditAnywhere, BlueprintReadOnly, Category = Import)
     FString GeneratedAssetImportDirectory = TEXT("/Game/Mythica/Generated");
 
-    UPROPERTY(Config, EditAnywhere, BlueprintReadOnly, Category = Tools)
+    UPROPERTY(Config, EditAnywhere, BlueprintReadOnly, Category = Settings)
     float JobTimeoutSeconds = 120.0f;
-
-    UPROPERTY(Config, EditAnywhere, BlueprintReadOnly, Category = Tools, meta = (EditCondition = "UseToolWhitelist", EditConditionHides))
-    TArray<FString> JobDefIdWhitelist;
 };

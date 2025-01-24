@@ -644,7 +644,7 @@ void UMythicaEditorSubsystem::UpdateJobDefinitionList()
 
     const UMythicaDeveloperSettings* Settings = GetDefault<UMythicaDeveloperSettings>();
 
-    for (const FString& JobDefId : Settings->JobDefIdWhitelist)
+    for (const FString& JobDefId : Settings->GetJobDefIdWhitelist())
     {
         FString Url = FString::Printf(TEXT("%s/v1/jobs/definitions/%s"), *Settings->GetServiceURL(), *JobDefId);
 
