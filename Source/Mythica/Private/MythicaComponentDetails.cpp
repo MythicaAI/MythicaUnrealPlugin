@@ -190,6 +190,7 @@ void FMythicaComponentDetails::CustomizeDetails(IDetailLayoutBuilder& DetailBuil
                                                                 .Text(FText::FromString(FString::Printf(TEXT("%s - %s"), *Data.Owner, *Data.AssetName)))
                                                                 .Font(SubtitleFontInfo)
                                                                 .ColorAndOpacity(FSlateColor(FLinearColor::Gray))
+                                                                .Visibility(!Data.AssetName.IsEmpty() ? EVisibility::Visible : EVisibility::Hidden)
                                                         ]
                                                 ]
                                                 + SHorizontalBox::Slot()
@@ -201,6 +202,7 @@ void FMythicaComponentDetails::CustomizeDetails(IDetailLayoutBuilder& DetailBuil
                                                     SNew(STextBlock)
                                                         .Text(FText::FromString(FString::Printf(TEXT("v%s"), *Data.Version)))
                                                         .ColorAndOpacity(FSlateColor(FLinearColor::Gray))
+                                                        .Visibility(!Data.Version.IsEmpty() ? EVisibility::Visible : EVisibility::Hidden)
                                                 ];
                                         })
                                         .Content()
@@ -289,9 +291,9 @@ void FMythicaComponentDetails::PopulateToolOptions()
         FMythicaToolOptionData Data;
         Data.JobDefId = JobDefinition.JobDefId;
         Data.Name = JobDefinition.Name;
-        Data.Owner = "Mythica";
-        Data.AssetName = "Example Package";
-        Data.Version = "1.0.0";
+        Data.Owner = JobDefinition.SourceAssetOwner;
+        Data.AssetName = JobDefinition.SourceAssetName;
+        Data.Version = JobDefinition.Source.Version.ToString();
 
         FString SearchString = FString::Printf(TEXT("%s %s %s"), *Data.Owner, *Data.AssetName, *Data.Name);
 

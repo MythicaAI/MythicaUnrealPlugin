@@ -74,6 +74,16 @@ bool FMythicaAssetVersion::operator<(const FMythicaAssetVersion& Other) const
         || (Major == Other.Major && Minor == Other.Minor && Patch < Other.Patch);
 }
 
+bool FMythicaAssetVersion::IsValid() const
+{
+    return Major > 0 || Minor > 0 || Patch > 0;
+}
+
+FString FMythicaAssetVersion::ToString() const
+{
+    return IsValid() ? FString::Printf(TEXT("%d.%d.%d"), Major, Minor, Patch) : "";
+}
+
 void UMythicaEditorSubsystem::Initialize(FSubsystemCollectionBase& Collection)
 {
     Super::Initialize(Collection);
@@ -710,7 +720,7 @@ void UMythicaEditorSubsystem::OnJobDefinitionResponse(FHttpRequestPtr Request, F
     FMythicaParameters Params;
     Mythica::ReadParameters(ParamsSet, Params);
 
-    JobDefinitionList.Push({ JobDefId, JobType, Name, Description, Params });
+    JobDefinitionList.Push({ JobDefId, JobType, Name, Description, Params, {}, {}, {} });
 }
 
 bool UMythicaEditorSubsystem::PrepareInputFiles(const FMythicaParameters& Params, TMap<int, FString>& InputFiles, FString& ExportDirectory, const FVector& Origin)
