@@ -157,12 +157,7 @@ TArray<FMythicaJobDefinition> UMythicaEditorSubsystem::GetJobDefinitionList(cons
     TArray<FMythicaJobDefinition> Definitions;
     for (const FMythicaJobDefinition& Definition : JobDefinitionList)
     {
-        if (Definition.JobType != JobType)
-        {
-            continue;
-        }
-
-        if (!Settings->UseToolWhitelist || Settings->JobDefIdWhitelist.Contains(Definition.JobDefId))
+        if (Definition.JobType == JobType)
         {
             Definitions.Add(Definition);
         }
@@ -645,28 +640,33 @@ void UMythicaEditorSubsystem::UninstallAsset(const FString& PackageId)
 
 void UMythicaEditorSubsystem::UpdateJobDefinitionList()
 {
+    JobDefinitionList.Reset();
+
     const UMythicaDeveloperSettings* Settings = GetDefault<UMythicaDeveloperSettings>();
 
-    FString Url = FString::Printf(TEXT("%s/v1/jobs/definitions"), *Settings->GetServiceURL());
-
-    auto Callback = [this](FHttpRequestPtr Request, FHttpResponsePtr Response, bool bConnectedSuccessfully)
+    for (const FString& JobDefId : Settings->JobDefIdWhitelist)
     {
-        OnJobDefinitionsResponse(Request, Response, bConnectedSuccessfully);
-    };
+        FString Url = FString::Printf(TEXT("%s/v1/jobs/definitions/%s"), *Settings->GetServiceURL(), *JobDefId);
 
-    TSharedRef<IHttpRequest, ESPMode::ThreadSafe> Request = FHttpModule::Get().CreateRequest();
-    Request->SetURL(Url);
-    Request->SetVerb("Get");
-    Request->OnProcessRequestComplete().BindLambda(Callback);
+        auto Callback = [this](FHttpRequestPtr Request, FHttpResponsePtr Response, bool bConnectedSuccessfully)
+        {
+            OnJobDefinitionResponse(Request, Response, bConnectedSuccessfully);
+        };
 
-    Request->ProcessRequest();
+        TSharedRef<IHttpRequest, ESPMode::ThreadSafe> Request = FHttpModule::Get().CreateRequest();
+        Request->SetURL(Url);
+        Request->SetVerb("Get");
+        Request->OnProcessRequestComplete().BindLambda(Callback);
+
+        Request->ProcessRequest();
+    }
 }
 
-void UMythicaEditorSubsystem::OnJobDefinitionsResponse(FHttpRequestPtr Request, FHttpResponsePtr Response, bool bWasSuccessful)
+void UMythicaEditorSubsystem::OnJobDefinitionResponse(FHttpRequestPtr Request, FHttpResponsePtr Response, bool bWasSuccessful)
 {
     if (!bWasSuccessful || !Response.IsValid())
     {
-        UE_LOG(LogMythica, Error, TEXT("Failed to get job definitions"));
+        UE_LOG(LogMythica, Error, TEXT("Failed to get job definition"));
         return;
     }
 
@@ -676,44 +676,41 @@ void UMythicaEditorSubsystem::OnJobDefinitionsResponse(FHttpRequestPtr Request, 
     TSharedPtr<FJsonValue> JsonValue;
     if (!FJsonSerializer::Deserialize(Reader, JsonValue) || !JsonValue.IsValid())
     {
-        UE_LOG(LogMythica, Error, TEXT("Failed to parse job definitions JSON string"));
+        UE_LOG(LogMythica, Error, TEXT("Failed to parse job definition JSON string"));
         return;
     }
 
-    if (JsonValue->Type != EJson::Array)
+    TSharedPtr<FJsonObject> JsonObject = JsonValue->AsObject();
+    if (!JsonObject.IsValid())
     {
-        UE_LOG(LogMythica, Error, TEXT("JSON value is not an array"));
+        UE_LOG(LogMythica, Error, TEXT("Failed to parse job definition object"));
         return;
     }
 
-    const UMythicaDeveloperSettings* Settings = GetDefault<UMythicaDeveloperSettings>();
-
-    JobDefinitionList.Reset();
-
-    const TArray<TSharedPtr<FJsonValue>>& Array = JsonValue->AsArray();
-    for (TSharedPtr<FJsonValue> Value : Array)
+    FString JobDefId = JsonObject->GetStringField(TEXT("job_def_id"));
+    if (JobDefId.IsEmpty())
     {
-        TSharedPtr<FJsonObject> JsonObject = Value->AsObject();
-        if (!JsonObject.IsValid())
-        {
-            continue;
-        }
-
-        FString JobDefId = JsonObject->GetStringField(TEXT("job_def_id"));
-        FString JobType = JsonObject->GetStringField(TEXT("job_type"));
-        FString Name = JsonObject->GetStringField(TEXT("name"));
-        FString Description = JsonObject->GetStringField(TEXT("description"));
-
-        TSharedPtr<FJsonObject> ParamsSchema = JsonObject->GetObjectField(TEXT("params_schema"));
-        TSharedPtr<FJsonObject> ParamsSet = ParamsSchema->GetObjectField(TEXT("params"));
-
-        FMythicaParameters Params;
-        Mythica::ReadParameters(ParamsSet, Params);
-
-        JobDefinitionList.Push({ JobDefId, JobType, Name, Description, Params });
+        UE_LOG(LogMythica, Error, TEXT("Failed to get job definition ID"));
+        return;
     }
 
-    OnJobDefinitionListUpdated.Broadcast();
+    auto MatchJobDefId = [JobDefId](const FMythicaJobDefinition& Definition) { return Definition.JobDefId == JobDefId; };
+    if (JobDefinitionList.ContainsByPredicate(MatchJobDefId))
+    {
+        return;
+    }
+
+    FString JobType = JsonObject->GetStringField(TEXT("job_type"));
+    FString Name = JsonObject->GetStringField(TEXT("name"));
+    FString Description = JsonObject->GetStringField(TEXT("description"));
+
+    TSharedPtr<FJsonObject> ParamsSchema = JsonObject->GetObjectField(TEXT("params_schema"));
+    TSharedPtr<FJsonObject> ParamsSet = ParamsSchema->GetObjectField(TEXT("params"));
+
+    FMythicaParameters Params;
+    Mythica::ReadParameters(ParamsSet, Params);
+
+    JobDefinitionList.Push({ JobDefId, JobType, Name, Description, Params });
 }
 
 bool UMythicaEditorSubsystem::PrepareInputFiles(const FMythicaParameters& Params, TMap<int, FString>& InputFiles, FString& ExportDirectory, const FVector& Origin)
