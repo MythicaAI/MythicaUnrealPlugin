@@ -289,9 +289,9 @@ void FMythicaComponentDetails::PopulateToolOptions()
         FMythicaToolOptionData Data;
         Data.JobDefId = JobDefinition.JobDefId;
         Data.Name = JobDefinition.Name;
-        Data.Owner = "Mythica";
-        Data.AssetName = "Example Package";
-        Data.Version = "1.0.0";
+        Data.Owner = JobDefinition.SourceAssetOwner;
+        Data.AssetName = JobDefinition.SourceAssetName;
+        Data.Version = JobDefinition.Source.Version.ToString();
 
         FString SearchString = FString::Printf(TEXT("%s %s %s"), *Data.Owner, *Data.AssetName, *Data.Name);
 

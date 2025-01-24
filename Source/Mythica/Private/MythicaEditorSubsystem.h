@@ -64,6 +64,25 @@ struct FMythicaAssetVersion
     int32 Patch = 0;
 
     bool operator<(const FMythicaAssetVersion& Other) const;
+    FString ToString() const;
+};
+
+USTRUCT(BlueprintType)
+struct FMythicaAssetVersionEntryPointReference
+{
+    GENERATED_BODY()
+
+    UPROPERTY(BlueprintReadOnly, Category = "Data")
+    FString AssetId;
+
+    UPROPERTY(BlueprintReadOnly, Category = "Data")
+    FMythicaAssetVersion Version;
+
+    UPROPERTY(BlueprintReadOnly, Category = "Data")
+    FString FileId;
+
+    UPROPERTY(BlueprintReadOnly, Category = "Data")
+    FString EntryPoint;
 };
 
 USTRUCT(BlueprintType)
@@ -94,6 +113,15 @@ struct FMythicaJobDefinition
 
     UPROPERTY(BlueprintReadOnly, Category = "Data")
     FMythicaParameters Parameters;
+
+    UPROPERTY(BlueprintReadOnly, Category = "Data")
+    FMythicaAssetVersionEntryPointReference Source;
+ 
+    UPROPERTY(BlueprintReadOnly, Category = "Data")
+    FString SourceAssetName;
+
+    UPROPERTY(BlueprintReadOnly, Category = "Data")
+    FString SourceAssetOwner;
 };
 
 USTRUCT(BlueprintType)
