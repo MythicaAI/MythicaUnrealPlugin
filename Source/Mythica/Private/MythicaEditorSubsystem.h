@@ -227,7 +227,7 @@ public:
     int ExecuteJob(
         const FString& JobDefId, 
         const FMythicaParameters& Params, 
-        const FString& ImportName, 
+        const FString& ImportPath, 
         const FVector& Origin);
 
     // Delegates

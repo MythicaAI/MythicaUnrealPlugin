@@ -919,19 +919,12 @@ void UMythicaEditorSubsystem::OnUploadInputFilesResponse(FHttpRequestPtr Request
 int UMythicaEditorSubsystem::ExecuteJob(
     const FString& JobDefId, 
     const FMythicaParameters& Params, 
-    const FString& ImportName, 
+    const FString& ImportPath,
     const FVector& Origin
 ) {
     if (SessionState != EMythicaSessionState::SessionCreated)
     {
         UE_LOG(LogMythica, Error, TEXT("Unable to create job due to session not created"));
-        return -1;
-    }
-
-    FMythicaJobDefinition Definition = GetJobDefinitionById(JobDefId);
-    if (Definition.JobDefId != JobDefId)
-    {
-        UE_LOG(LogMythica, Error, TEXT("Unknown job definition %s"), *JobDefId);
         return -1;
     }
 
@@ -943,10 +936,6 @@ int UMythicaEditorSubsystem::ExecuteJob(
         UE_LOG(LogMythica, Error, TEXT("Failed to prepare job input files"));
         return -1;
     }
-
-    FString ImportFolderClean = ObjectTools::SanitizeObjectName(Definition.Name);
-    FString ImportNameClean = ObjectTools::SanitizeObjectName(ImportName);
-    FString ImportPath = FPaths::Combine(ImportFolderClean, ImportNameClean);
 
     int RequestId = CreateJob(JobDefId, Params, ImportPath);
 
