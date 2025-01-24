@@ -45,9 +45,6 @@ public:
     UPROPERTY(Config, EditAnywhere, BlueprintReadOnly, Category = Tools)
     float JobTimeoutSeconds = 120.0f;
 
-    UPROPERTY(Config, EditAnywhere, BlueprintReadOnly, Category = Tools)
-    bool UseToolWhitelist = true;
-
     UPROPERTY(Config, EditAnywhere, BlueprintReadOnly, Category = Tools, meta = (EditCondition = "UseToolWhitelist", EditConditionHides))
     TArray<FString> JobDefIdWhitelist;
 };

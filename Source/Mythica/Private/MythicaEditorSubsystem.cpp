@@ -157,12 +157,7 @@ TArray<FMythicaJobDefinition> UMythicaEditorSubsystem::GetJobDefinitionList(cons
     TArray<FMythicaJobDefinition> Definitions;
     for (const FMythicaJobDefinition& Definition : JobDefinitionList)
     {
-        if (Definition.JobType != JobType)
-        {
-            continue;
-        }
-
-        if (!Settings->UseToolWhitelist || Settings->JobDefIdWhitelist.Contains(Definition.JobDefId))
+        if (Definition.JobType == JobType)
         {
             Definitions.Add(Definition);
         }
