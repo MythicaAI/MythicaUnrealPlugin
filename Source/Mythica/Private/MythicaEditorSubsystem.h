@@ -89,6 +89,7 @@ struct FMythicaAssetVersionEntryPointReference
     FString EntryPoint;
 
     bool IsValid() const;
+    bool Compare(const FMythicaAssetVersionEntryPointReference& Other) const;
 };
 
 USTRUCT(BlueprintType)

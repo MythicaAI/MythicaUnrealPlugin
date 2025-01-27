@@ -89,6 +89,13 @@ bool FMythicaAssetVersionEntryPointReference::IsValid() const
     return !AssetId.IsEmpty();
 }
 
+bool FMythicaAssetVersionEntryPointReference::Compare(const FMythicaAssetVersionEntryPointReference& Other) const
+{
+    return AssetId == Other.AssetId 
+        && FileName == Other.FileName
+        && EntryPoint == Other.EntryPoint;
+}
+
 void UMythicaEditorSubsystem::Initialize(FSubsystemCollectionBase& Collection)
 {
     Super::Initialize(Collection);
@@ -200,17 +207,16 @@ FMythicaJobDefinition UMythicaEditorSubsystem::GetJobDefinitionLatest(const FMyt
         return {};
     }
 
-    FMythicaAssetVersion LatestVersion = {};
+    FMythicaJobDefinition LatestDefinition = {};
     for (const FMythicaJobDefinition& Definition : JobDefinitionList)
     {
-        if (Definition.Source.AssetId == EntryPointReference.AssetId 
-            && Definition.Source.EntryPoint)
+        if (EntryPointReference.Compare(Definition.Source) && LatestDefinition.Source.Version < Definition.Source.Version)
         {
-            return Definition;
+            return LatestDefinition = Definition;
         }
     }
 
-    return {};
+    return LatestDefinition;
 }
 
 bool UMythicaEditorSubsystem::IsAssetInstalled(const FString& PackageId)
