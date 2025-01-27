@@ -87,6 +87,9 @@ struct FMythicaAssetVersionEntryPointReference
 
     UPROPERTY(BlueprintReadOnly, Category = "Data")
     FString EntryPoint;
+
+    bool IsValid() const;
+    bool Compare(const FMythicaAssetVersionEntryPointReference& Other) const;
 };
 
 USTRUCT(BlueprintType)
@@ -225,6 +228,9 @@ public:
 
     UFUNCTION(BlueprintCallable, Category = "Mythica")
     FMythicaJobDefinition GetJobDefinitionById(const FString& JobDefId);
+
+    UFUNCTION(BlueprintCallable, Category = "Mythica")
+    FMythicaJobDefinition GetJobDefinitionLatest(const FMythicaAssetVersionEntryPointReference& EntryPointReference);
 
     UFUNCTION(BlueprintPure, Category = "Mythica")
     bool IsAssetInstalled(const FString& PackageId);

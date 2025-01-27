@@ -200,6 +200,7 @@ void UMythicaComponent::OnJobDefIdChanged()
     FMythicaJobDefinition Definition = MythicaEditorSubsystem->GetJobDefinitionById(JobDefId.JobDefId);
     ToolName = Definition.Name;
     Parameters = Definition.Parameters;
+    Source = Definition.Source;
 
     State = EMythicaJobState::Invalid;
     StateDurations.Reset();
