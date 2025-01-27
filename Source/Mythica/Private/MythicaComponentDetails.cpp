@@ -378,7 +378,8 @@ FString FMythicaComponentDetails::GetComboBoxDisplayString(TWeakObjectPtr<class 
 
         if (OptionData.IsValidIndex(SelectedIndex))
         {
-            return *OptionData[SelectedIndex].Name;
+            const FMythicaToolOptionData& Data = OptionData[SelectedIndex];
+            return !Data.Version.IsEmpty() ? FString::Printf(TEXT("%s - %s"), *Data.Name, *Data.Version) : Data.Name;
         }
     }
 
