@@ -83,6 +83,9 @@ struct FMythicaAssetVersionEntryPointReference
     FString FileId;
 
     UPROPERTY(BlueprintReadOnly, Category = "Data")
+    FString FileName;
+
+    UPROPERTY(BlueprintReadOnly, Category = "Data")
     FString EntryPoint;
 };
 
@@ -285,7 +288,7 @@ private:
 
     void OnJobDefinitionResponse(FHttpRequestPtr Request, FHttpResponsePtr Response, bool bWasSuccessful);
     void OnAssetResponse(FHttpRequestPtr Request, FHttpResponsePtr Response, bool bWasSuccessful);
-    void OnAssetJobDefsResponse(FHttpRequestPtr Request, FHttpResponsePtr Response, bool bWasSuccessful, const FString& SourceName, const FString& SourceOwner);
+    void OnAssetJobDefsResponse(FHttpRequestPtr Request, FHttpResponsePtr Response, bool bWasSuccessful, const FString& SourceName, const FString& SourceOwner, const TMap<FString, FString>& FileNames);
 
     bool PrepareInputFiles(const FMythicaParameters& Params, TMap<int, FString>& InputFiles, FString& ExportDirectory, const FVector& Origin);
     void UploadInputFiles(int RequestId, const TMap<int, FString>& InputFiles);

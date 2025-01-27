@@ -777,13 +777,30 @@ void UMythicaEditorSubsystem::OnAssetResponse(FHttpRequestPtr Request, FHttpResp
     int32 Minor = Version[1]->AsNumber();
     int32 Patch = Version[2]->AsNumber();
 
+    TMap<FString, FString> FileNames;
+
+    TSharedPtr<FJsonObject> ContentsObject = VersionObject->GetObjectField(TEXT("contents"));
+    const TArray<TSharedPtr<FJsonValue>>* FileArray = nullptr;
+    ContentsObject->TryGetArrayField(TEXT("files"), FileArray);
+    if (FileArray)
+    {
+        for (const TSharedPtr<FJsonValue>& FileValue : *FileArray)
+        {
+            TSharedPtr<FJsonObject> FileObject = FileValue->AsObject();
+
+            FString FileId = FileObject->GetStringField(TEXT("file_id"));
+            FString FileName = FileObject->GetStringField(TEXT("file_name"));
+            FileNames.Add(FileId, FileName);
+        }
+    }
+
     const UMythicaDeveloperSettings* Settings = GetDefault<UMythicaDeveloperSettings>();
 
     FString Url = FString::Printf(TEXT("%s/v1/jobs/definitions/by_asset/%s/versions/%d/%d/%d"), *Settings->GetServiceURL(), *AssetId, Major, Minor, Patch);
 
-    auto Callback = [this, AssetId, Name, Owner](FHttpRequestPtr Request, FHttpResponsePtr Response, bool bConnectedSuccessfully)
+    auto Callback = [this, AssetId, Name, Owner, FileNames](FHttpRequestPtr Request, FHttpResponsePtr Response, bool bConnectedSuccessfully)
     {
-        OnAssetJobDefsResponse(Request, Response, bConnectedSuccessfully, Name, Owner);
+        OnAssetJobDefsResponse(Request, Response, bConnectedSuccessfully, Name, Owner, FileNames);
     };
 
     TSharedRef<IHttpRequest, ESPMode::ThreadSafe> AssetJobDefsRequest = FHttpModule::Get().CreateRequest();
@@ -794,7 +811,7 @@ void UMythicaEditorSubsystem::OnAssetResponse(FHttpRequestPtr Request, FHttpResp
     AssetJobDefsRequest->ProcessRequest();
 }
 
-void UMythicaEditorSubsystem::OnAssetJobDefsResponse(FHttpRequestPtr Request, FHttpResponsePtr Response, bool bWasSuccessful, const FString& SourceName, const FString& SourceOwner)
+void UMythicaEditorSubsystem::OnAssetJobDefsResponse(FHttpRequestPtr Request, FHttpResponsePtr Response, bool bWasSuccessful, const FString& SourceName, const FString& SourceOwner, const TMap<FString, FString>& FileNames)
 {
     if (!bWasSuccessful || !Response.IsValid())
     {
@@ -846,12 +863,22 @@ void UMythicaEditorSubsystem::OnAssetJobDefsResponse(FHttpRequestPtr Request, FH
         Mythica::ReadParameters(ParamsSet, Params);
 
         TSharedPtr<FJsonObject> SourceObject = JsonObject->GetObjectField(TEXT("source"));
+        FString FileId = SourceObject->GetStringField(TEXT("file_id"));
+
+        const FString* FileName = FileNames.Find(FileId);
+        if (!FileName)
+        {
+            UE_LOG(LogMythica, Error, TEXT("Asset contains job with invalid source file_id"));
+            continue;
+        }
+
         FMythicaAssetVersionEntryPointReference Source;
         Source.AssetId = SourceObject->GetStringField(TEXT("asset_id"));
         Source.Version.Major = SourceObject->GetNumberField(TEXT("major"));
         Source.Version.Minor = SourceObject->GetNumberField(TEXT("minor"));
         Source.Version.Patch = SourceObject->GetNumberField(TEXT("patch"));
-        Source.FileId = SourceObject->GetStringField(TEXT("file_id"));
+        Source.FileId = FileId;
+        Source.FileName = *FileName;
         Source.EntryPoint = SourceObject->GetStringField(TEXT("entry_point"));
 
         JobDefinitionList.Push({ JobDefId, JobType, Name, Description, Params, Source, SourceName, SourceOwner });
