@@ -81,3 +81,19 @@ const TArray<FString>& UMythicaDeveloperSettings::GetJobDefIdWhitelist() const
     static const TArray<FString> EmptyArray;
     return EmptyArray;
 }
+
+const TArray<FString>& UMythicaDeveloperSettings::GetAssetWhitelist() const
+{
+    switch (Environment)
+    {
+        case EMythicaEnvironment::Production:
+            return ProductionAssetIdWhitelist;
+        case EMythicaEnvironment::Staging:
+            return StagingAssetIdWhitelist;
+        case EMythicaEnvironment::Local:
+            return LocalAssetIdWhitelist;
+    }
+
+    static const TArray<FString> EmptyArray;
+    return EmptyArray;
+}
