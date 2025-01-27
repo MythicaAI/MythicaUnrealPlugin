@@ -369,17 +369,15 @@ void FMythicaComponentDetails::SelectTool(const FString& JobDefId, TWeakObjectPt
 
 FString FMythicaComponentDetails::GetComboBoxDisplayString(TWeakObjectPtr<class UMythicaComponent> ComponentWeak) const
 {
-    if (ComponentWeak.IsValid())
+    if (ComponentWeak.IsValid() && !ComponentWeak->JobDefId.JobDefId.IsEmpty())
     {
-        int32 SelectedIndex = OptionData.IndexOfByPredicate([ComponentWeak](const FMythicaToolOptionData& Data)
+        if (ComponentWeak->Source.IsValid())
         {
-            return Data.JobDefId == ComponentWeak->JobDefId.JobDefId;
-        });
-
-        if (OptionData.IsValidIndex(SelectedIndex))
+            return FString::Printf(TEXT("%s - v%s"), *ComponentWeak->ToolName, *ComponentWeak->Source.Version.ToString());
+        }
+        else
         {
-            const FMythicaToolOptionData& Data = OptionData[SelectedIndex];
-            return !Data.Version.IsEmpty() ? FString::Printf(TEXT("%s - %s"), *Data.Name, *Data.Version) : Data.Name;
+            return ComponentWeak->ToolName;
         }
     }
 
