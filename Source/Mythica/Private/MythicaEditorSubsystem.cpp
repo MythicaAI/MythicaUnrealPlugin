@@ -670,6 +670,23 @@ void UMythicaEditorSubsystem::UpdateJobDefinitionList()
 
         Request->ProcessRequest();
     }
+
+    for (const FString& AssetId : Settings->GetAssetWhitelist())
+    {
+        FString Url = FString::Printf(TEXT("%s/v1/assets/%s"), *Settings->GetServiceURL(), *AssetId);
+
+        auto Callback = [this](FHttpRequestPtr Request, FHttpResponsePtr Response, bool bConnectedSuccessfully)
+        {
+            OnAssetResponse(Request, Response, bConnectedSuccessfully);
+        };
+
+        TSharedRef<IHttpRequest, ESPMode::ThreadSafe> Request = FHttpModule::Get().CreateRequest();
+        Request->SetURL(Url);
+        Request->SetVerb("Get");
+        Request->OnProcessRequestComplete().BindLambda(Callback);
+
+        Request->ProcessRequest();
+    }
 }
 
 void UMythicaEditorSubsystem::OnJobDefinitionResponse(FHttpRequestPtr Request, FHttpResponsePtr Response, bool bWasSuccessful)
@@ -721,6 +738,124 @@ void UMythicaEditorSubsystem::OnJobDefinitionResponse(FHttpRequestPtr Request, F
     Mythica::ReadParameters(ParamsSet, Params);
 
     JobDefinitionList.Push({ JobDefId, JobType, Name, Description, Params, {}, {}, {} });
+}
+
+void UMythicaEditorSubsystem::OnAssetResponse(FHttpRequestPtr Request, FHttpResponsePtr Response, bool bWasSuccessful)
+{
+    if (!bWasSuccessful || !Response.IsValid())
+    {
+        UE_LOG(LogMythica, Error, TEXT("Failed to get asset"));
+        return;
+    }
+
+    FString ResponseContent = Response->GetContentAsString();
+    TSharedRef<TJsonReader<>> Reader = TJsonReaderFactory<>::Create(ResponseContent);
+
+    TSharedPtr<FJsonValue> JsonValue;
+    if (!FJsonSerializer::Deserialize(Reader, JsonValue) || !JsonValue.IsValid())
+    {
+        UE_LOG(LogMythica, Error, TEXT("Failed to parse asset JSON string"));
+        return;
+    }
+
+    const TArray<TSharedPtr<FJsonValue>>& Array = JsonValue->AsArray();
+    if (Array.Num() == 0)
+    {
+        UE_LOG(LogMythica, Error, TEXT("Failed to get asset version"));
+        return;
+    }
+
+    TSharedPtr<FJsonValue> VersionValue = Array[0];
+    TSharedPtr<FJsonObject> VersionObject = VersionValue->AsObject();
+
+    FString AssetId = VersionObject->GetStringField(TEXT("asset_id"));
+    FString Name = VersionObject->GetStringField(TEXT("name"));
+    FString Owner = VersionObject->GetStringField(TEXT("owner_name"));
+
+    TArray<TSharedPtr<FJsonValue>> Version = VersionObject->GetArrayField(TEXT("version"));
+    int32 Major = Version[0]->AsNumber();
+    int32 Minor = Version[1]->AsNumber();
+    int32 Patch = Version[2]->AsNumber();
+
+    const UMythicaDeveloperSettings* Settings = GetDefault<UMythicaDeveloperSettings>();
+
+    FString Url = FString::Printf(TEXT("%s/v1/jobs/definitions/by_asset/%s/versions/%d/%d/%d"), *Settings->GetServiceURL(), *AssetId, Major, Minor, Patch);
+
+    auto Callback = [this, AssetId, Name, Owner](FHttpRequestPtr Request, FHttpResponsePtr Response, bool bConnectedSuccessfully)
+    {
+        OnAssetJobDefsResponse(Request, Response, bConnectedSuccessfully, Name, Owner);
+    };
+
+    TSharedRef<IHttpRequest, ESPMode::ThreadSafe> AssetJobDefsRequest = FHttpModule::Get().CreateRequest();
+    AssetJobDefsRequest->SetURL(Url);
+    AssetJobDefsRequest->SetVerb("Get");
+    AssetJobDefsRequest->OnProcessRequestComplete().BindLambda(Callback);
+
+    AssetJobDefsRequest->ProcessRequest();
+}
+
+void UMythicaEditorSubsystem::OnAssetJobDefsResponse(FHttpRequestPtr Request, FHttpResponsePtr Response, bool bWasSuccessful, const FString& SourceName, const FString& SourceOwner)
+{
+    if (!bWasSuccessful || !Response.IsValid())
+    {
+        UE_LOG(LogMythica, Error, TEXT("Failed to get asset job definitions"));
+        return;
+    }
+
+    FString ResponseContent = Response->GetContentAsString();
+    TSharedRef<TJsonReader<>> Reader = TJsonReaderFactory<>::Create(ResponseContent);
+
+    TSharedPtr<FJsonValue> JsonValue;
+    if (!FJsonSerializer::Deserialize(Reader, JsonValue) || !JsonValue.IsValid())
+    {
+        UE_LOG(LogMythica, Error, TEXT("Failed to parse asset job definition JSON string"));
+        return;
+    }
+
+    const TArray<TSharedPtr<FJsonValue>>& Array = JsonValue->AsArray();
+    for (TSharedPtr<FJsonValue> Value : Array)
+    {
+        TSharedPtr<FJsonObject> JsonObject = Value->AsObject();
+        if (!JsonObject.IsValid())
+        {
+            UE_LOG(LogMythica, Error, TEXT("Failed to parse asset job definition object"));
+            return;
+        }
+
+        FString JobDefId = JsonObject->GetStringField(TEXT("job_def_id"));
+        if (JobDefId.IsEmpty())
+        {
+            UE_LOG(LogMythica, Error, TEXT("Failed to get asset job definition ID"));
+            return;
+        }
+
+        auto MatchJobDefId = [JobDefId](const FMythicaJobDefinition& Definition) { return Definition.JobDefId == JobDefId; };
+        if (JobDefinitionList.ContainsByPredicate(MatchJobDefId))
+        {
+            return;
+        }
+
+        FString JobType = JsonObject->GetStringField(TEXT("job_type"));
+        FString Name = JsonObject->GetStringField(TEXT("name"));
+        FString Description = JsonObject->GetStringField(TEXT("description"));
+
+        TSharedPtr<FJsonObject> ParamsSchema = JsonObject->GetObjectField(TEXT("params_schema"));
+        TSharedPtr<FJsonObject> ParamsSet = ParamsSchema->GetObjectField(TEXT("params"));
+
+        FMythicaParameters Params;
+        Mythica::ReadParameters(ParamsSet, Params);
+
+        TSharedPtr<FJsonObject> SourceObject = JsonObject->GetObjectField(TEXT("source"));
+        FMythicaAssetVersionEntryPointReference Source;
+        Source.AssetId = SourceObject->GetStringField(TEXT("asset_id"));
+        Source.Version.Major = SourceObject->GetNumberField(TEXT("major"));
+        Source.Version.Minor = SourceObject->GetNumberField(TEXT("minor"));
+        Source.Version.Patch = SourceObject->GetNumberField(TEXT("patch"));
+        Source.FileId = SourceObject->GetStringField(TEXT("file_id"));
+        Source.EntryPoint = SourceObject->GetStringField(TEXT("entry_point"));
+
+        JobDefinitionList.Push({ JobDefId, JobType, Name, Description, Params, Source, SourceName, SourceOwner });
+    }
 }
 
 bool UMythicaEditorSubsystem::PrepareInputFiles(const FMythicaParameters& Params, TMap<int, FString>& InputFiles, FString& ExportDirectory, const FVector& Origin)
