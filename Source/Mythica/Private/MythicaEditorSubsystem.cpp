@@ -819,20 +819,20 @@ void UMythicaEditorSubsystem::OnAssetJobDefsResponse(FHttpRequestPtr Request, FH
         if (!JsonObject.IsValid())
         {
             UE_LOG(LogMythica, Error, TEXT("Failed to parse asset job definition object"));
-            return;
+            continue;
         }
 
         FString JobDefId = JsonObject->GetStringField(TEXT("job_def_id"));
         if (JobDefId.IsEmpty())
         {
             UE_LOG(LogMythica, Error, TEXT("Failed to get asset job definition ID"));
-            return;
+            continue;
         }
 
         auto MatchJobDefId = [JobDefId](const FMythicaJobDefinition& Definition) { return Definition.JobDefId == JobDefId; };
         if (JobDefinitionList.ContainsByPredicate(MatchJobDefId))
         {
-            return;
+            continue;
         }
 
         FString JobType = JsonObject->GetStringField(TEXT("job_type"));
