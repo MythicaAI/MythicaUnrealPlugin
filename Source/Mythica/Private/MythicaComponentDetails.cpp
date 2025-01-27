@@ -278,6 +278,56 @@ void FMythicaComponentDetails::CustomizeDetails(IDetailLayoutBuilder& DetailBuil
                         })
                         .ColorAndOpacity(FLinearColor::Red)
                 ]
+                + SVerticalBox::Slot()
+                .AutoHeight()
+                .Padding(FMargin(0.0f, 0.0f, 0.0f, 5.0f))
+                .HAlign(HAlign_Center)
+                [
+                    SNew(SHorizontalBox)
+                        .Visibility_Lambda([ComponentWeak]()
+                        {
+                            if (ComponentWeak.IsValid() && ComponentWeak->Source.IsValid())
+                            {
+                                UMythicaEditorSubsystem* MythicaEditorSubsystem = GEditor->GetEditorSubsystem<UMythicaEditorSubsystem>();
+                                FMythicaJobDefinition LatestDefinition = MythicaEditorSubsystem->GetJobDefinitionLatest(ComponentWeak->Source);
+
+                                if (ComponentWeak->Source.Version < LatestDefinition.Source.Version)
+                                {
+                                    return EVisibility::Visible;
+                                }
+                            }
+
+                            return EVisibility::Collapsed;
+                        })
+                        + SHorizontalBox::Slot()
+                        .AutoWidth()
+                        .VAlign(VAlign_Center)
+                        [
+                            SNew(STextBlock)
+                                .Text(FText::FromString(TEXT("New version of tool available")))
+                                        .ColorAndOpacity(FLinearColor::Yellow)
+                        ]
+                        + SHorizontalBox::Slot()
+                        .AutoWidth()
+                        .Padding(FMargin(5.0f, 0.0f, 0.0f, 0.0f))
+                        .VAlign(VAlign_Center)
+                        [
+                            SNew(SButton)
+                                .Text(FText::FromString(TEXT("Update")))
+                                .OnClicked_Lambda([this, ComponentWeak]() -> FReply
+                                {
+                                    if (ComponentWeak.IsValid() && ComponentWeak->Source.IsValid())
+                                    {
+                                        UMythicaEditorSubsystem* MythicaEditorSubsystem = GEditor->GetEditorSubsystem<UMythicaEditorSubsystem>();
+                                        FMythicaJobDefinition LatestDefinition = MythicaEditorSubsystem->GetJobDefinitionLatest(ComponentWeak->Source);
+
+                                        SelectTool(LatestDefinition.JobDefId, ComponentWeak);
+                                    }
+                                        
+                                    return FReply::Handled();
+                                })
+                        ]
+                ]
         ];
 }
 
