@@ -84,6 +84,11 @@ FString FMythicaAssetVersion::ToString() const
     return IsValid() ? FString::Printf(TEXT("%d.%d.%d"), Major, Minor, Patch) : "";
 }
 
+bool FMythicaAssetVersionEntryPointReference::IsValid() const
+{
+    return !AssetId.IsEmpty();
+}
+
 void UMythicaEditorSubsystem::Initialize(FSubsystemCollectionBase& Collection)
 {
     Super::Initialize(Collection);
@@ -180,6 +185,26 @@ FMythicaJobDefinition UMythicaEditorSubsystem::GetJobDefinitionById(const FStrin
     for (const FMythicaJobDefinition& Definition : JobDefinitionList)
     {
         if (Definition.JobDefId == JobDefId)
+        {
+            return Definition;
+        }
+    }
+
+    return {};
+}
+
+FMythicaJobDefinition UMythicaEditorSubsystem::GetJobDefinitionLatest(const FMythicaAssetVersionEntryPointReference& EntryPointReference)
+{
+    if (!EntryPointReference.IsValid())
+    {
+        return {};
+    }
+
+    FMythicaAssetVersion LatestVersion = {};
+    for (const FMythicaJobDefinition& Definition : JobDefinitionList)
+    {
+        if (Definition.Source.AssetId == EntryPointReference.AssetId 
+            && Definition.Source.EntryPoint)
         {
             return Definition;
         }

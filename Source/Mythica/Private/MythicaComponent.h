@@ -64,6 +64,9 @@ public:
     FMythicaJobDefinitionId JobDefId;
 
     UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Mythica", meta = (EditCondition = "false", EditConditionHides))
+    FMythicaAssetVersionEntryPointReference Source;
+
+    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Mythica", meta = (EditCondition = "false", EditConditionHides))
     FString ToolName;
 
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Mythica")
