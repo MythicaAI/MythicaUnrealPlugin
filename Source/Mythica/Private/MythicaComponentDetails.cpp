@@ -291,7 +291,8 @@ void FMythicaComponentDetails::CustomizeDetails(IDetailLayoutBuilder& DetailBuil
                                 UMythicaEditorSubsystem* MythicaEditorSubsystem = GEditor->GetEditorSubsystem<UMythicaEditorSubsystem>();
                                 FMythicaJobDefinition LatestDefinition = MythicaEditorSubsystem->GetJobDefinitionLatest(ComponentWeak->Source);
 
-                                if (ComponentWeak->Source.Version < LatestDefinition.Source.Version)
+                                if (ComponentWeak->Source.Version < LatestDefinition.Source.Version
+                                    || ComponentWeak->Source.Version == LatestDefinition.Source.Version && ComponentWeak->JobDefId.JobDefId != LatestDefinition.JobDefId)
                                 {
                                     return EVisibility::Visible;
                                 }
