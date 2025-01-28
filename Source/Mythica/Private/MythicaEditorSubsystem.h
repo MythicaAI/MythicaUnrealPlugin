@@ -64,6 +64,7 @@ struct FMythicaAssetVersion
     int32 Patch = 0;
 
     bool operator<(const FMythicaAssetVersion& Other) const;
+    bool operator==(const FMythicaAssetVersion& Other) const;
     bool IsValid() const;
     FString ToString() const;
 };

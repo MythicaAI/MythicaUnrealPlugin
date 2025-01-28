@@ -74,6 +74,11 @@ bool FMythicaAssetVersion::operator<(const FMythicaAssetVersion& Other) const
         || (Major == Other.Major && Minor == Other.Minor && Patch < Other.Patch);
 }
 
+bool FMythicaAssetVersion::operator==(const FMythicaAssetVersion& Other) const
+{
+    return Major == Other.Major && Minor == Other.Minor && Patch == Other.Patch;
+}
+
 bool FMythicaAssetVersion::IsValid() const
 {
     return Major > 0 || Minor > 0 || Patch > 0;
