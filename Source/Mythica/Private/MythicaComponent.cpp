@@ -197,10 +197,19 @@ void UMythicaComponent::OnJobDefIdChanged()
 {
     UMythicaEditorSubsystem* MythicaEditorSubsystem = GEditor->GetEditorSubsystem<UMythicaEditorSubsystem>();
 
+    FMythicaParameters OldParameters = Parameters;
+    FMythicaAssetVersionEntryPointReference OldSource = Source;
+
     FMythicaJobDefinition Definition = MythicaEditorSubsystem->GetJobDefinitionById(JobDefId.JobDefId);
     ToolName = Definition.Name;
     Parameters = Definition.Parameters;
     Source = Definition.Source;
+
+    // Keep existing paramater values when updating to new version of same tool
+    if (Source.IsValid() && OldSource.IsValid() && Source.Compare(OldSource))
+    {
+        Mythica::CopyParameterValues(OldParameters, Parameters);
+    }
 
     State = EMythicaJobState::Invalid;
     StateDurations.Reset();
