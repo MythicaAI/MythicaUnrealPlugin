@@ -205,4 +205,5 @@ namespace Mythica
 
     void ReadParameters(const TSharedPtr<FJsonObject>& ParamsSchema, FMythicaParameters& OutParameters);
     void WriteParameters(const TArray<FString>& InputFileIds, const FMythicaParameters& Parameters, const TSharedPtr<FJsonObject>& ParameterSet);
+    void CopyParameterValues(const FMythicaParameters& Source, FMythicaParameters& Target);
 }

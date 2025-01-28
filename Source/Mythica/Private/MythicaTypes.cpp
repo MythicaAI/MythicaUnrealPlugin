@@ -208,3 +208,78 @@ void Mythica::WriteParameters(const TArray<FString>& InputFileIds, const FMythic
         }
     }
 }
+
+void Mythica::CopyParameterValues(const FMythicaParameters& Source, FMythicaParameters& Target)
+{
+    for (const FMythicaParameter& SourceParam : Source.Parameters)
+    {
+        if (Mythica::IsSystemParameter(SourceParam.Name))
+        {
+            continue;
+        }
+
+        auto MatchParameter = [&](const FMythicaParameter& P) 
+        { 
+            return P.Name == SourceParam.Name && P.Type == SourceParam.Type; 
+        };
+        FMythicaParameter* TargetParam = Target.Parameters.FindByPredicate(MatchParameter);
+        if (!TargetParam)
+        {
+            continue;
+        }
+
+        switch (SourceParam.Type)
+        {
+            case EMythicaParameterType::Int:
+            {
+                if (SourceParam.ValueInt.Values != SourceParam.ValueInt.DefaultValues)
+                {
+                    TargetParam->ValueInt.Values = SourceParam.ValueInt.Values;
+                }
+                break;
+            }
+            case EMythicaParameterType::Float:
+            {
+                if (SourceParam.ValueFloat.Values != SourceParam.ValueFloat.DefaultValues)
+                {
+                    TargetParam->ValueFloat.Values = SourceParam.ValueFloat.Values;
+                }
+                break;
+            }
+            case EMythicaParameterType::Bool:
+            {
+                if (SourceParam.ValueBool.Value != SourceParam.ValueBool.DefaultValue)
+                {
+                    TargetParam->ValueBool.Value = SourceParam.ValueBool.Value;
+                }
+                break;
+            }
+            case EMythicaParameterType::String:
+            {
+                if (SourceParam.ValueString.Value != SourceParam.ValueString.DefaultValue)
+                {
+                    TargetParam->ValueString.Value = SourceParam.ValueString.Value;
+                }
+                break;
+            }
+            case EMythicaParameterType::Enum:
+            {
+                if (SourceParam.ValueEnum.Value != SourceParam.ValueEnum.DefaultValue)
+                {
+                    TargetParam->ValueEnum.Value = SourceParam.ValueEnum.Value;
+                }
+                break;
+            }
+            case EMythicaParameterType::File:
+            {
+                TargetParam->ValueFile.Type = SourceParam.ValueFile.Type;
+                TargetParam->ValueFile.Mesh = SourceParam.ValueFile.Mesh;
+                TargetParam->ValueFile.Actors = SourceParam.ValueFile.Actors;
+                TargetParam->ValueFile.SplineActor = SourceParam.ValueFile.SplineActor;
+                TargetParam->ValueFile.VolumeActor = SourceParam.ValueFile.VolumeActor;
+                TargetParam->ValueFile.Settings = SourceParam.ValueFile.Settings;
+                break;
+            }
+        }
+    }
+}
