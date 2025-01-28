@@ -44,6 +44,10 @@ struct FMythicaParameterInt
 
     UPROPERTY(VisibleAnywhere, Category = "Parameter")
     TOptional<int> MaxValue;
+
+    bool IsDefault() const;
+    bool Validate(const TArray<int>& Value) const;
+    void Copy(const FMythicaParameterInt& Source);
 };
 
 USTRUCT()
@@ -62,6 +66,10 @@ struct FMythicaParameterFloat
 
     UPROPERTY(VisibleAnywhere, Category = "Parameter")
     TOptional<float> MaxValue;
+
+    bool IsDefault() const;
+    bool Validate(const TArray<float>& Value) const;
+    void Copy(const FMythicaParameterFloat& Source);
 };
 
 USTRUCT()
@@ -74,6 +82,9 @@ struct FMythicaParameterBool
 
     UPROPERTY(VisibleAnywhere, Category = "Parameter")
     bool DefaultValue = false;
+
+    bool IsDefault() const;
+    void Copy(const FMythicaParameterBool& Source);
 };
 
 USTRUCT()
@@ -86,6 +97,9 @@ struct FMythicaParameterString
 
     UPROPERTY(VisibleAnywhere, Category = "Parameter")
     FString DefaultValue;
+
+    bool IsDefault() const;
+    void Copy(const FMythicaParameterString& Source);
 };
 
 USTRUCT()
@@ -113,6 +127,10 @@ struct FMythicaParameterEnum
 
     UPROPERTY(VisibleAnywhere, Category = "Parameter")
     TArray<FMythicaParameterEnumValue> Values;
+
+    bool IsDefault() const;
+    bool Validate(const FString& Value) const;
+    void Copy(const FMythicaParameterEnum& Source);
 };
 
 USTRUCT()
@@ -146,6 +164,8 @@ struct FMythicaParameterFile
 
     UPROPERTY(EditAnywhere, Category = "Parameter", meta = (EditCondition = "Type != EMythicaInputType::Mesh", EditConditionHides))
     FMythicaParameterFileSettings Settings;
+
+    void Copy(const FMythicaParameterFile& Source);
 };
 
 USTRUCT(BlueprintType)

@@ -2,6 +2,133 @@
 
 #include "MythicaTypes.h"
 
+bool FMythicaParameterInt::IsDefault() const
+{
+    return Values == DefaultValues;
+}
+
+bool FMythicaParameterInt::Validate(const TArray<int>& InValue) const
+{
+    if (InValue.Num() != DefaultValues.Num())
+    {
+        return false;
+    }
+
+    for (int i = 0; i < InValue.Num(); ++i)
+    {
+        if (MinValue.IsSet() && InValue[i] < MinValue.GetValue())
+        {
+            return false;
+        }
+        if (MaxValue.IsSet() && InValue[i] > MaxValue.GetValue())
+        {
+            return false;
+        }
+    }
+    
+    return true;
+}
+
+void FMythicaParameterInt::Copy(const FMythicaParameterInt& Source)
+{
+    if (!Source.IsDefault() && Validate(Source.Values))
+    {
+        Values = Source.Values;
+    }
+}
+
+bool FMythicaParameterFloat::IsDefault() const
+{
+    return Values == DefaultValues;
+}
+
+bool FMythicaParameterFloat::Validate(const TArray<float>& InValue) const
+{
+    if (InValue.Num() != DefaultValues.Num())
+    {
+        return false;
+    }
+
+    for (int i = 0; i < InValue.Num(); ++i)
+    {
+        if (MinValue.IsSet() && InValue[i] < MinValue.GetValue())
+        {
+            return false;
+        }
+        if (MaxValue.IsSet() && InValue[i] > MaxValue.GetValue())
+        {
+            return false;
+        }
+    }
+
+    return true;
+}
+
+void FMythicaParameterFloat::Copy(const FMythicaParameterFloat& Source)
+{
+    if (!Source.IsDefault() && Validate(Source.Values))
+    {
+        Values = Source.Values;
+    }
+}
+
+bool FMythicaParameterBool::IsDefault() const
+{
+    return Value == DefaultValue;
+}
+
+void FMythicaParameterBool::Copy(const FMythicaParameterBool& Source)
+{
+    if (!Source.IsDefault())
+    {
+        Value = Source.Value;
+    }
+}
+
+bool FMythicaParameterString::IsDefault() const
+{
+    return Value == DefaultValue;
+}
+
+void FMythicaParameterString::Copy(const FMythicaParameterString& Source)
+{
+    if (!Source.IsDefault())
+    {
+        Value = Source.Value;
+    }
+}
+
+bool FMythicaParameterEnum::IsDefault() const
+{
+    return Value == DefaultValue;
+}
+
+bool FMythicaParameterEnum::Validate(const FString& InValue) const
+{
+    for (const FMythicaParameterEnumValue& EnumValue : Values)
+    {
+        if (EnumValue.Name == InValue)
+        {
+            return true;
+        }
+    }
+
+    return false;
+}   
+
+void FMythicaParameterEnum::Copy(const FMythicaParameterEnum& Source)
+{
+    if (!Source.IsDefault() && Validate(Source.Value))
+    {
+        Value = Source.Value;
+    }
+}
+
+void FMythicaParameterFile::Copy(const FMythicaParameterFile& Source)
+{
+    *this = Source;
+}
+
 const TCHAR* SystemParameters[] =
 {
     TEXT("format")
@@ -232,52 +359,32 @@ void Mythica::CopyParameterValues(const FMythicaParameters& Source, FMythicaPara
         {
             case EMythicaParameterType::Int:
             {
-                if (SourceParam.ValueInt.Values != SourceParam.ValueInt.DefaultValues)
-                {
-                    TargetParam->ValueInt.Values = SourceParam.ValueInt.Values;
-                }
+                TargetParam->ValueInt.Copy(SourceParam.ValueInt);
                 break;
             }
             case EMythicaParameterType::Float:
             {
-                if (SourceParam.ValueFloat.Values != SourceParam.ValueFloat.DefaultValues)
-                {
-                    TargetParam->ValueFloat.Values = SourceParam.ValueFloat.Values;
-                }
+                TargetParam->ValueFloat.Copy(SourceParam.ValueFloat);
                 break;
             }
             case EMythicaParameterType::Bool:
             {
-                if (SourceParam.ValueBool.Value != SourceParam.ValueBool.DefaultValue)
-                {
-                    TargetParam->ValueBool.Value = SourceParam.ValueBool.Value;
-                }
+                TargetParam->ValueBool.Copy(SourceParam.ValueBool);
                 break;
             }
             case EMythicaParameterType::String:
             {
-                if (SourceParam.ValueString.Value != SourceParam.ValueString.DefaultValue)
-                {
-                    TargetParam->ValueString.Value = SourceParam.ValueString.Value;
-                }
+                TargetParam->ValueString.Copy(SourceParam.ValueString);
                 break;
             }
             case EMythicaParameterType::Enum:
             {
-                if (SourceParam.ValueEnum.Value != SourceParam.ValueEnum.DefaultValue)
-                {
-                    TargetParam->ValueEnum.Value = SourceParam.ValueEnum.Value;
-                }
+                TargetParam->ValueEnum.Copy(SourceParam.ValueEnum);
                 break;
             }
             case EMythicaParameterType::File:
             {
-                TargetParam->ValueFile.Type = SourceParam.ValueFile.Type;
-                TargetParam->ValueFile.Mesh = SourceParam.ValueFile.Mesh;
-                TargetParam->ValueFile.Actors = SourceParam.ValueFile.Actors;
-                TargetParam->ValueFile.SplineActor = SourceParam.ValueFile.SplineActor;
-                TargetParam->ValueFile.VolumeActor = SourceParam.ValueFile.VolumeActor;
-                TargetParam->ValueFile.Settings = SourceParam.ValueFile.Settings;
+                TargetParam->ValueFile.Copy(SourceParam.ValueFile);
                 break;
             }
         }
