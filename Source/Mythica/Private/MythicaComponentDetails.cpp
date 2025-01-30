@@ -163,11 +163,12 @@ void FMythicaComponentDetails::CustomizeDetails(IDetailLayoutBuilder& DetailBuil
                                             return SNew(SHorizontalBox)
                                                 + SHorizontalBox::Slot()
                                                 .AutoWidth()
-                                                .Padding(FMargin(5.0f))
+                                                .Padding(FMargin(0.0f, 0.0f, 3.0f, 0.0f))
                                                 [
                                                     SNew(SImage)
-                                                        .Image(FCoreStyle::Get().GetBrush("DefaultIcon"))
-                                                        .DesiredSizeOverride(FVector2D(32.0f, 32.0f))
+                                                        .Image(FAppStyle::GetBrush("GenericWhiteBox"))
+                                                        .ColorAndOpacity(FLinearColor(0.0f, 0.25f, 0.0f))
+                                                        .DesiredSizeOverride(FVector2D(3.0f, 40.0f))
                                                 ]
                                                 + SHorizontalBox::Slot()
                                                 .FillWidth(1.0f)
