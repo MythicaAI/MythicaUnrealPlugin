@@ -13,7 +13,8 @@ public:
     virtual void StartupModule() override;
     virtual void ShutdownModule() override;
 
+    void OpenPackageManager();
+
 private:
     void AddMenu(FMenuBuilder& MenuBuilder);
-    void OpenPackageManager();
 };

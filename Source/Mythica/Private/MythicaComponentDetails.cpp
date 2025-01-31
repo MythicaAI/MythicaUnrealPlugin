@@ -3,6 +3,7 @@
 #include "DetailCategoryBuilder.h"
 #include "DetailLayoutBuilder.h"
 #include "DetailWidgetRow.h"
+#include "Mythica.h"
 #include "MythicaComponent.h"
 #include "MythicaDeveloperSettings.h"
 #include "SSearchableComboBox.h"
@@ -148,13 +149,36 @@ void FMythicaComponentDetails::CustomizeDetails(IDetailLayoutBuilder& DetailBuil
                                             check(OptionData.IsValidIndex(SelectedIndex));
                                             const FMythicaToolOptionData& Data = OptionData[SelectedIndex];
 
-                                            SelectTool(Data.JobDefId, ComponentWeak);
+                                            if (Data.JobDefId.IsEmpty())
+                                            {
+                                                FMythicaModule& MythicaModule = FModuleManager::GetModuleChecked<FMythicaModule>("Mythica");
+                                                MythicaModule.OpenPackageManager();
+                                            }
+                                            else
+                                            {
+                                                SelectTool(Data.JobDefId, ComponentWeak);
+                                            }
                                         })
                                         .OnGenerateWidget_Lambda([this](TSharedPtr<FString> InOption)
                                         {
                                             int32 SelectedIndex = Options.IndexOfByKey(InOption);
                                             check(OptionData.IsValidIndex(SelectedIndex));
                                             const FMythicaToolOptionData& Data = OptionData[SelectedIndex];
+
+                                            if (Data.JobDefId.IsEmpty())
+                                            {
+                                                return SNew(SHorizontalBox)
+                                                    + SHorizontalBox::Slot()
+                                                    .FillWidth(1.0f)
+                                                    .HAlign(HAlign_Center)
+                                                    .VAlign(VAlign_Center)
+                                                    .Padding(FMargin(0.0f, 0.0f, 3.0f, 0.0f))
+                                                    [
+                                                        SNew(STextBlock)
+                                                            .Text(FText::FromString("+ Add favorites"))
+                                                            .ColorAndOpacity(FSlateColor(FLinearColor::White))
+                                                    ];
+                                            }
 
                                             FSlateFontInfo TitleFontInfo = IDetailLayoutBuilder::GetDetailFont();
                                             FSlateFontInfo SubtitleFontInfo = IDetailLayoutBuilder::GetDetailFont();
@@ -352,6 +376,9 @@ void FMythicaComponentDetails::PopulateToolOptions()
         Options.Add(MakeShared<FString>(SearchString));
         OptionData.Add(Data);
     }
+
+    Options.Add(MakeShared<FString>("Add new favorites"));
+    OptionData.Add({});
 }
 
 void FMythicaComponentDetails::SelectTool(const FString& JobDefId, TWeakObjectPtr<class UMythicaComponent> ComponentWeak)
