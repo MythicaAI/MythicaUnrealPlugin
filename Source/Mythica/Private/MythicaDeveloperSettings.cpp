@@ -2,7 +2,7 @@
 
 const TCHAR* DefaultAssetIdIdWhitelist[] =
 {
-    TEXT("asset_3C2f7w6zV8CcJ4EBALkDu9NzHaEH")  // Rockify
+    TEXT("asset_2gcVbJghPhWLznuAxXeiapVKvQQi")  // Rockify
 };
 
 UMythicaDeveloperSettings::UMythicaDeveloperSettings(const FObjectInitializer& ObjectInitializer)
