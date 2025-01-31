@@ -688,6 +688,7 @@ void UMythicaEditorSubsystem::UpdateJobDefinitionList()
 {
     JobDefinitionList.Reset();
 
+    // Whitelist job definitions
     const UMythicaDeveloperSettings* Settings = GetDefault<UMythicaDeveloperSettings>();
 
     for (const FString& JobDefId : Settings->GetJobDefIdWhitelist())
@@ -707,6 +708,7 @@ void UMythicaEditorSubsystem::UpdateJobDefinitionList()
         Request->ProcessRequest();
     }
 
+    // Whitelist assets
     for (const FString& AssetId : Settings->GetAssetWhitelist())
     {
         FString Url = FString::Printf(TEXT("%s/v1/assets/%s"), *Settings->GetServiceURL(), *AssetId);
@@ -723,6 +725,22 @@ void UMythicaEditorSubsystem::UpdateJobDefinitionList()
 
         Request->ProcessRequest();
     }
+
+    // Asset group assets
+    FString Url = FString::Printf(TEXT("%s/v1/assets/g/unreal"), *Settings->GetServiceURL());
+
+    auto Callback = [this](FHttpRequestPtr Request, FHttpResponsePtr Response, bool bConnectedSuccessfully)
+    {
+        OnAssetGroupResponse(Request, Response, bConnectedSuccessfully);
+    };
+
+    TSharedRef<IHttpRequest, ESPMode::ThreadSafe> Request = FHttpModule::Get().CreateRequest();
+    Request->SetURL(Url);
+    Request->SetVerb("Get");
+    Request->SetHeader("Authorization", FString::Printf(TEXT("Bearer %s"), *AuthToken));
+    Request->OnProcessRequestComplete().BindLambda(Callback);
+
+    Request->ProcessRequest();
 }
 
 void UMythicaEditorSubsystem::OnJobDefinitionResponse(FHttpRequestPtr Request, FHttpResponsePtr Response, bool bWasSuccessful)
@@ -804,18 +822,23 @@ void UMythicaEditorSubsystem::OnAssetResponse(FHttpRequestPtr Request, FHttpResp
     TSharedPtr<FJsonValue> VersionValue = Array[0];
     TSharedPtr<FJsonObject> VersionObject = VersionValue->AsObject();
 
-    FString AssetId = VersionObject->GetStringField(TEXT("asset_id"));
-    FString Name = VersionObject->GetStringField(TEXT("name"));
-    FString Owner = VersionObject->GetStringField(TEXT("owner_name"));
+    RequestJobDefsForAssetVersion(VersionObject);
+}
 
-    TArray<TSharedPtr<FJsonValue>> Version = VersionObject->GetArrayField(TEXT("version"));
+void UMythicaEditorSubsystem::RequestJobDefsForAssetVersion(TSharedPtr<FJsonObject> AssetVersion)
+{
+    FString AssetId = AssetVersion->GetStringField(TEXT("asset_id"));
+    FString Name = AssetVersion->GetStringField(TEXT("name"));
+    FString Owner = AssetVersion->GetStringField(TEXT("owner_name"));
+
+    TArray<TSharedPtr<FJsonValue>> Version = AssetVersion->GetArrayField(TEXT("version"));
     int32 Major = Version[0]->AsNumber();
     int32 Minor = Version[1]->AsNumber();
     int32 Patch = Version[2]->AsNumber();
 
     TMap<FString, FString> FileNames;
 
-    TSharedPtr<FJsonObject> ContentsObject = VersionObject->GetObjectField(TEXT("contents"));
+    TSharedPtr<FJsonObject> ContentsObject = AssetVersion->GetObjectField(TEXT("contents"));
     const TArray<TSharedPtr<FJsonValue>>* FileArray = nullptr;
     ContentsObject->TryGetArrayField(TEXT("files"), FileArray);
     if (FileArray)
@@ -918,6 +941,38 @@ void UMythicaEditorSubsystem::OnAssetJobDefsResponse(FHttpRequestPtr Request, FH
         Source.EntryPoint = SourceObject->GetStringField(TEXT("entry_point"));
 
         JobDefinitionList.Push({ JobDefId, JobType, Name, Description, Params, Source, SourceName, SourceOwner });
+    }
+}
+
+void UMythicaEditorSubsystem::OnAssetGroupResponse(FHttpRequestPtr Request, FHttpResponsePtr Response, bool bWasSuccessful)
+{
+    if (!bWasSuccessful || !Response.IsValid())
+    {
+        UE_LOG(LogMythica, Error, TEXT("Failed to get asset group"));
+        return;
+    }
+
+    FString ResponseContent = Response->GetContentAsString();
+    TSharedRef<TJsonReader<>> Reader = TJsonReaderFactory<>::Create(ResponseContent);
+
+    TSharedPtr<FJsonValue> JsonValue;
+    if (!FJsonSerializer::Deserialize(Reader, JsonValue) || !JsonValue.IsValid())
+    {
+        UE_LOG(LogMythica, Error, TEXT("Failed to parse asset group JSON string"));
+        return;
+    }
+
+    const TArray<TSharedPtr<FJsonValue>>& Array = JsonValue->AsArray();
+    for (TSharedPtr<FJsonValue> Value : Array)
+    {
+        TSharedPtr<FJsonObject> JsonObject = Value->AsObject();
+        if (!JsonObject.IsValid())
+        {
+            UE_LOG(LogMythica, Error, TEXT("Failed to parse asset group object"));
+            continue;
+        }
+
+        RequestJobDefsForAssetVersion(JsonObject);
     }
 }
 
