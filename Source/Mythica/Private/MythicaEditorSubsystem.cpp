@@ -229,6 +229,11 @@ bool UMythicaEditorSubsystem::IsAssetInstalled(const FString& PackageId)
     return InstalledAssets.Contains(PackageId);
 }
 
+bool UMythicaEditorSubsystem::IsAssetFavorite(const FString& AssetId)
+{
+    return FavoriteAssetIds.Contains(AssetId);
+}
+
 UTexture2D* UMythicaEditorSubsystem::GetThumbnail(const FString& PackageId)
 {
     UTexture2D** Texture = ThumbnailCache.Find(PackageId);
@@ -684,9 +689,51 @@ void UMythicaEditorSubsystem::UninstallAsset(const FString& PackageId)
     OnAssetUninstalled.Broadcast(PackageId);
 }
 
+void UMythicaEditorSubsystem::FavoriteAsset(const FString& AssetId)
+{
+    ExecuteFavoriteAsset(AssetId, true);
+}
+
+void UMythicaEditorSubsystem::UnfavoriteAsset(const FString& AssetId)
+{
+    ExecuteFavoriteAsset(AssetId, false);
+}
+
+void UMythicaEditorSubsystem::ExecuteFavoriteAsset(const FString& AssetId, bool State)
+{
+    const UMythicaDeveloperSettings* Settings = GetDefault<UMythicaDeveloperSettings>();
+
+    FString Url = FString::Printf(TEXT("%s/v1/assets/g/unreal/%s/versions/0.0.0"), *Settings->GetServiceURL(), *AssetId);
+
+    auto Callback = [this](FHttpRequestPtr Request, FHttpResponsePtr Response, bool bConnectedSuccessfully)
+    {
+        OnFavortiteAssetResponse(Request, Response, bConnectedSuccessfully);
+    };
+
+    TSharedRef<IHttpRequest, ESPMode::ThreadSafe> Request = FHttpModule::Get().CreateRequest();
+    Request->SetURL(Url);
+    Request->SetVerb(State ? "Post" : "Delete");
+    Request->SetHeader("Authorization", FString::Printf(TEXT("Bearer %s"), *AuthToken));
+    Request->OnProcessRequestComplete().BindLambda(Callback);
+
+    Request->ProcessRequest();
+}
+
+void UMythicaEditorSubsystem::OnFavortiteAssetResponse(FHttpRequestPtr Request, FHttpResponsePtr Response, bool bWasSuccessful)
+{
+    if (!bWasSuccessful || !Response.IsValid())
+    {
+        UE_LOG(LogMythica, Error, TEXT("Failed to change asset group"));
+        return;
+    }
+
+    UpdateJobDefinitionList();
+}
+
 void UMythicaEditorSubsystem::UpdateJobDefinitionList()
 {
     JobDefinitionList.Reset();
+    FavoriteAssetIds.Reset();
 
     // Whitelist job definitions
     const UMythicaDeveloperSettings* Settings = GetDefault<UMythicaDeveloperSettings>();
@@ -972,8 +1019,13 @@ void UMythicaEditorSubsystem::OnAssetGroupResponse(FHttpRequestPtr Request, FHtt
             continue;
         }
 
+        FString AssetId = JsonObject->GetStringField(TEXT("asset_id"));
+        FavoriteAssetIds.Add(AssetId);
+
         RequestJobDefsForAssetVersion(JsonObject);
     }
+
+    OnFavoriteAssetsUpdated.Broadcast();
 }
 
 bool UMythicaEditorSubsystem::PrepareInputFiles(const FMythicaParameters& Params, TMap<int, FString>& InputFiles, FString& ExportDirectory, const FVector& Origin)

@@ -32,6 +32,7 @@ enum class EMythicaJobState : uint8
 
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnSessionStateChanged, EMythicaSessionState, State);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnAssetListUpdated);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnFavoriteAssetsUpdated);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnThumbnailLoaded, const FString&, PackageId);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnAssetInstalled, const FString&, PackageId);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnAssetUninstalled, const FString&, PackageId);
@@ -237,6 +238,9 @@ public:
     bool IsAssetInstalled(const FString& PackageId);
 
     UFUNCTION(BlueprintPure, Category = "Mythica")
+    bool IsAssetFavorite(const FString& AssetId);
+
+    UFUNCTION(BlueprintPure, Category = "Mythica")
     UTexture2D* GetThumbnail(const FString& PackageId);
 
     UFUNCTION(BlueprintPure, Category = "Mythica")
@@ -259,6 +263,12 @@ public:
     void UninstallAsset(const FString& PackageId);
 
     UFUNCTION(BlueprintCallable, Category = "Mythica")
+    void FavoriteAsset(const FString& AssetId);
+
+    UFUNCTION(BlueprintCallable, Category = "Mythica")
+    void UnfavoriteAsset(const FString& AssetId);
+
+    UFUNCTION(BlueprintCallable, Category = "Mythica")
     void UpdateJobDefinitionList();
 
     UFUNCTION(BlueprintCallable, Category = "Mythica")
@@ -274,6 +284,9 @@ public:
 
     UPROPERTY(BlueprintAssignable, Category = "Mythica")
     FOnAssetListUpdated OnAssetListUpdated;
+
+    UPROPERTY(BlueprintAssignable, Category = "Mythica")
+    FOnFavoriteAssetsUpdated OnFavoriteAssetsUpdated;
 
     UPROPERTY(BlueprintAssignable, Category = "Mythica")
     FOnThumbnailLoaded OnThumbnailLoaded;
@@ -298,6 +311,9 @@ private:
     void RequestJobDefsForAssetVersion(TSharedPtr<FJsonObject> AssetVersion);
     void OnAssetJobDefsResponse(FHttpRequestPtr Request, FHttpResponsePtr Response, bool bWasSuccessful, const FString& SourceName, const FString& SourceOwner, const TMap<FString, FString>& FileNames);
     void OnAssetGroupResponse(FHttpRequestPtr Request, FHttpResponsePtr Response, bool bWasSuccessful);
+
+    void ExecuteFavoriteAsset(const FString& AssetId, bool State);
+    void OnFavortiteAssetResponse(FHttpRequestPtr Request, FHttpResponsePtr Response, bool bWasSuccessful);
 
     bool PrepareInputFiles(const FMythicaParameters& Params, TMap<int, FString>& InputFiles, FString& ExportDirectory, const FVector& Origin);
     void UploadInputFiles(int RequestId, const TMap<int, FString>& InputFiles);
@@ -330,6 +346,7 @@ private:
     FString AuthToken;
 
     TArray<FMythicaJobDefinition> JobDefinitionList;
+    TArray<FString> FavoriteAssetIds;
 
     UPROPERTY()
     TMap<int, FMythicaJob> Jobs;
