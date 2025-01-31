@@ -2,6 +2,8 @@
 
 #include "IDetailCustomization.h"
 
+class SSearchableComboBox;
+
 struct FMythicaToolOptionData
 {
     FString JobDefId;
@@ -21,6 +23,7 @@ public:
 private:
     TArray<TSharedPtr<FString>> Options;
     TArray<FMythicaToolOptionData> OptionData;
+    TSharedPtr<SSearchableComboBox> SearchableComboBox;
 
     void PopulateToolOptions();
     void SelectTool(const FString& JobDefId, TWeakObjectPtr<class UMythicaComponent> ComponentWeak);

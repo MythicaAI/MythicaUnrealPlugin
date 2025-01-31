@@ -31,9 +31,6 @@ void FMythicaComponentDetails::CustomizeDetails(IDetailLayoutBuilder& DetailBuil
     UMythicaComponent* Component = Cast<UMythicaComponent>(ObjectsBeingCustomized[0].Get());
     TWeakObjectPtr<class UMythicaComponent> ComponentWeak = Component;
 
-    // Gather options
-    PopulateToolOptions();
-
     // Create widget
     IDetailCategoryBuilder& MyCategory = DetailBuilder.EditCategory("Mythica", FText::FromString("Mythica"), ECategoryPriority::Important);
 
@@ -141,8 +138,9 @@ void FMythicaComponentDetails::CustomizeDetails(IDetailLayoutBuilder& DetailBuil
                         [
                             SNew(SBox)
                                 [
-                                    SNew(SSearchableComboBox)
+                                    SAssignNew(SearchableComboBox, SSearchableComboBox)
                                         .OptionsSource(&Options)
+                                        .OnComboBoxOpening(this, &FMythicaComponentDetails::PopulateToolOptions)
                                         .OnSelectionChanged_Lambda([this, ComponentWeak](TSharedPtr<FString> NewValue, ESelectInfo::Type SelectInfo)
                                         {
                                             int32 SelectedIndex = Options.IndexOfByKey(NewValue);
@@ -359,6 +357,9 @@ void FMythicaComponentDetails::CustomizeDetails(IDetailLayoutBuilder& DetailBuil
 
 void FMythicaComponentDetails::PopulateToolOptions()
 {
+    Options.Reset();
+    OptionData.Reset();
+
     UMythicaEditorSubsystem* MythicaEditorSubsystem = GEditor->GetEditorSubsystem<UMythicaEditorSubsystem>();
     TArray<FMythicaJobDefinition> JobDefinitions = MythicaEditorSubsystem->GetJobDefinitionList("houdini::/mythica/generate_mesh");
 
@@ -379,6 +380,8 @@ void FMythicaComponentDetails::PopulateToolOptions()
 
     Options.Add(MakeShared<FString>("Add new favorites"));
     OptionData.Add({});
+
+    SearchableComboBox->RefreshOptions();
 }
 
 void FMythicaComponentDetails::SelectTool(const FString& JobDefId, TWeakObjectPtr<class UMythicaComponent> ComponentWeak)
