@@ -689,6 +689,47 @@ void UMythicaEditorSubsystem::UninstallAsset(const FString& PackageId)
     OnAssetUninstalled.Broadcast(PackageId);
 }
 
+void UMythicaEditorSubsystem::FavoriteAsset(const FString& AssetId)
+{
+    ExecuteFavoriteAsset(AssetId, true);
+}
+
+void UMythicaEditorSubsystem::UnfavoriteAsset(const FString& AssetId)
+{
+    ExecuteFavoriteAsset(AssetId, false);
+}
+
+void UMythicaEditorSubsystem::ExecuteFavoriteAsset(const FString& AssetId, bool State)
+{
+    const UMythicaDeveloperSettings* Settings = GetDefault<UMythicaDeveloperSettings>();
+
+    FString Url = FString::Printf(TEXT("%s/v1/assets/g/unreal/%s/versions/0.0.0"), *Settings->GetServiceURL(), *AssetId);
+
+    auto Callback = [this](FHttpRequestPtr Request, FHttpResponsePtr Response, bool bConnectedSuccessfully)
+    {
+        OnFavortiteAssetResponse(Request, Response, bConnectedSuccessfully);
+    };
+
+    TSharedRef<IHttpRequest, ESPMode::ThreadSafe> Request = FHttpModule::Get().CreateRequest();
+    Request->SetURL(Url);
+    Request->SetVerb(State ? "Post" : "Delete");
+    Request->SetHeader("Authorization", FString::Printf(TEXT("Bearer %s"), *AuthToken));
+    Request->OnProcessRequestComplete().BindLambda(Callback);
+
+    Request->ProcessRequest();
+}
+
+void UMythicaEditorSubsystem::OnFavortiteAssetResponse(FHttpRequestPtr Request, FHttpResponsePtr Response, bool bWasSuccessful)
+{
+    if (!bWasSuccessful || !Response.IsValid())
+    {
+        UE_LOG(LogMythica, Error, TEXT("Failed to change asset group"));
+        return;
+    }
+
+    UpdateJobDefinitionList();
+}
+
 void UMythicaEditorSubsystem::UpdateJobDefinitionList()
 {
     JobDefinitionList.Reset();

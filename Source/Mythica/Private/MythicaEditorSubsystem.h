@@ -263,6 +263,12 @@ public:
     void UninstallAsset(const FString& PackageId);
 
     UFUNCTION(BlueprintCallable, Category = "Mythica")
+    void FavoriteAsset(const FString& AssetId);
+
+    UFUNCTION(BlueprintCallable, Category = "Mythica")
+    void UnfavoriteAsset(const FString& AssetId);
+
+    UFUNCTION(BlueprintCallable, Category = "Mythica")
     void UpdateJobDefinitionList();
 
     UFUNCTION(BlueprintCallable, Category = "Mythica")
@@ -305,6 +311,9 @@ private:
     void RequestJobDefsForAssetVersion(TSharedPtr<FJsonObject> AssetVersion);
     void OnAssetJobDefsResponse(FHttpRequestPtr Request, FHttpResponsePtr Response, bool bWasSuccessful, const FString& SourceName, const FString& SourceOwner, const TMap<FString, FString>& FileNames);
     void OnAssetGroupResponse(FHttpRequestPtr Request, FHttpResponsePtr Response, bool bWasSuccessful);
+
+    void ExecuteFavoriteAsset(const FString& AssetId, bool State);
+    void OnFavortiteAssetResponse(FHttpRequestPtr Request, FHttpResponsePtr Response, bool bWasSuccessful);
 
     bool PrepareInputFiles(const FMythicaParameters& Params, TMap<int, FString>& InputFiles, FString& ExportDirectory, const FVector& Origin);
     void UploadInputFiles(int RequestId, const TMap<int, FString>& InputFiles);
