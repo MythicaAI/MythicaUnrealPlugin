@@ -1,12 +1,8 @@
 #include "MythicaDeveloperSettings.h"
 
-const TCHAR* DefaultJobDefIdWhitelist[] =
+const TCHAR* DefaultAssetIdIdWhitelist[] =
 {
-    TEXT("jobdef_2crsbDnsSuFXgZouExzetpMDyDNq"),    // Crystal
-    TEXT("jobdef_4Cf9gnbAjoTKdRsavFGAEXeDSLF9"),    // MeanderingVine
-    TEXT("jobdef_36esG96RhZBu4R7bMXAkKNnjKtrE"),    // Rockify
-    TEXT("jobdef_4V1RAwMKKbtbdqaZYVqAjCRWGdH8"),    // CrystalCluster
-    TEXT("jobdef_44tBgRfFD49UiSKhcKotnD2SGrqc"),    // MossGrowth
+    TEXT("asset_2gcVbJghPhWLznuAxXeiapVKvQQi")  // Rockify
 };
 
 UMythicaDeveloperSettings::UMythicaDeveloperSettings(const FObjectInitializer& ObjectInitializer)
@@ -15,9 +11,9 @@ UMythicaDeveloperSettings::UMythicaDeveloperSettings(const FObjectInitializer& O
     CategoryName = TEXT("Plugins");
     SectionName = TEXT("Mythica");
 
-    for (const TCHAR* JobDefId : DefaultJobDefIdWhitelist)
+    for (const TCHAR* AssetId : DefaultAssetIdIdWhitelist)
     {
-        ProductionJobDefIdWhitelist.Add(JobDefId);
+        ProductionAssetIdWhitelist.Add(AssetId);
     }
 }
 
