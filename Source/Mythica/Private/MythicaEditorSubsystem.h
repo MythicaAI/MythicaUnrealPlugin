@@ -32,6 +32,7 @@ enum class EMythicaJobState : uint8
 
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnSessionStateChanged, EMythicaSessionState, State);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnAssetListUpdated);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnFavoriteAssetsUpdated);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnThumbnailLoaded, const FString&, PackageId);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnAssetInstalled, const FString&, PackageId);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnAssetUninstalled, const FString&, PackageId);
@@ -237,6 +238,9 @@ public:
     bool IsAssetInstalled(const FString& PackageId);
 
     UFUNCTION(BlueprintPure, Category = "Mythica")
+    bool IsAssetFavorite(const FString& AssetId);
+
+    UFUNCTION(BlueprintPure, Category = "Mythica")
     UTexture2D* GetThumbnail(const FString& PackageId);
 
     UFUNCTION(BlueprintPure, Category = "Mythica")
@@ -274,6 +278,9 @@ public:
 
     UPROPERTY(BlueprintAssignable, Category = "Mythica")
     FOnAssetListUpdated OnAssetListUpdated;
+
+    UPROPERTY(BlueprintAssignable, Category = "Mythica")
+    FOnFavoriteAssetsUpdated OnFavoriteAssetsUpdated;
 
     UPROPERTY(BlueprintAssignable, Category = "Mythica")
     FOnThumbnailLoaded OnThumbnailLoaded;
@@ -330,6 +337,7 @@ private:
     FString AuthToken;
 
     TArray<FMythicaJobDefinition> JobDefinitionList;
+    TArray<FString> FavoriteAssetIds;
 
     UPROPERTY()
     TMap<int, FMythicaJob> Jobs;
