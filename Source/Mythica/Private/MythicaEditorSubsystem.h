@@ -4,6 +4,7 @@
 #include "EditorSubsystem.h"
 #include "Interfaces/IHttpRequest.h"
 #include "Interfaces/IHttpResponse.h"
+#include "IWebSocket.h"
 #include "MythicaTypes.h"
 #include "MythicaEditorSubsystem.generated.h"
 
@@ -331,6 +332,14 @@ private:
     void OnJobTimeout(int RequestId);
     void ClearJobs();
 
+    void CreateSessionWebSocket();
+    void DestroySessionWebSocket();
+    void OnConnected();
+    void OnConnectionError(const FString& Error);
+    void OnClosed(int32 StatusCode, const FString& Reason, bool bWasClean);
+    void OnMessage(const FString& Msg);
+    void OnBinaryMessage(const void* Data, SIZE_T Length, bool bIsLastFragment);
+
     void SetSessionState(EMythicaSessionState NewState);
 
     void LoadInstalledAssetList();
@@ -344,6 +353,7 @@ private:
 
     EMythicaSessionState SessionState = EMythicaSessionState::None;
     FString AuthToken;
+    TSharedPtr<IWebSocket> WebSocket;
 
     TArray<FMythicaJobDefinition> JobDefinitionList;
     TArray<FString> FavoriteAssetIds;

@@ -17,6 +17,7 @@
 #include "MythicaUSDUtil.h"
 #include "ObjectTools.h"
 #include "UObject/SavePackage.h"
+#include "WebSocketsModule.h"
 
 #define MYTHICA_CLEAN_TEMP_FILES 1
 
@@ -134,6 +135,7 @@ void UMythicaEditorSubsystem::ResetSession()
 {
     ClearJobs();
 
+    DestroySessionWebSocket();
     AuthToken.Empty();
     SetSessionState(EMythicaSessionState::None);
 
@@ -312,6 +314,7 @@ void UMythicaEditorSubsystem::OnCreateSessionResponse(FHttpRequestPtr Request, F
 
     SetSessionState(EMythicaSessionState::SessionCreated);
 
+    CreateSessionWebSocket();
     UpdateJobDefinitionList();
 }
 
@@ -1629,6 +1632,66 @@ void UMythicaEditorSubsystem::OnMeshDownloadResponse(FHttpRequestPtr Request, FH
     {
         IFileManager::Get().Delete(*CacheImportFile);
     }
+}
+
+void UMythicaEditorSubsystem::CreateSessionWebSocket()
+{
+    const UMythicaDeveloperSettings* Settings = GetDefault<UMythicaDeveloperSettings>();
+
+    FString ServiceURL = Settings->GetServiceURL().Replace(TEXT("http"), TEXT("wss"), ESearchCase::CaseSensitive);
+    FString Url = FString::Printf(TEXT("%s/readers/connect"), *ServiceURL);
+
+    WebSocket = FWebSocketsModule::Get().CreateWebSocket(Url);
+
+    WebSocket->OnConnected().AddUObject(this, &UMythicaEditorSubsystem::OnConnected);
+    WebSocket->OnConnectionError().AddUObject(this, &UMythicaEditorSubsystem::OnConnectionError);
+    WebSocket->OnMessage().AddUObject(this, &UMythicaEditorSubsystem::OnMessage);
+    WebSocket->OnClosed().AddUObject(this, &UMythicaEditorSubsystem::OnClosed);
+    WebSocket->OnBinaryMessage().AddUObject(this, &UMythicaEditorSubsystem::OnBinaryMessage);
+
+    WebSocket->Connect();
+}
+
+void UMythicaEditorSubsystem::DestroySessionWebSocket()
+{
+    if (!WebSocket)
+    {
+        return;
+    }
+
+    WebSocket->OnConnected().RemoveAll(this);
+    WebSocket->OnConnectionError().RemoveAll(this);
+    WebSocket->OnMessage().RemoveAll(this);
+    WebSocket->OnClosed().RemoveAll(this);
+    WebSocket->OnBinaryMessage().RemoveAll(this);
+
+    WebSocket->Close();
+    WebSocket.Reset();
+}
+
+void UMythicaEditorSubsystem::OnConnected()
+{
+    UE_LOG(LogMythica, Error, TEXT("WebSocket: Connected"));
+}
+
+void UMythicaEditorSubsystem::OnConnectionError(const FString& Error)
+{
+    UE_LOG(LogMythica, Error, TEXT("WebSocket: Connection Error %s"), *Error);
+}
+
+void UMythicaEditorSubsystem::OnClosed(int32 StatusCode, const FString& Reason, bool bWasClean)
+{
+    UE_LOG(LogMythica, Error, TEXT("WebSocket: Closed %d %s"), StatusCode, *Reason);
+}
+
+void UMythicaEditorSubsystem::OnMessage(const FString& Msg)
+{
+    UE_LOG(LogMythica, Error, TEXT("WebSocket: Message %s"), *Msg);
+}
+
+void UMythicaEditorSubsystem::OnBinaryMessage(const void* Data, SIZE_T Length, bool bIsLastFragment)
+{
+    UE_LOG(LogMythica, Error, TEXT("WebSocket: BinaryMessage %d"), Length);
 }
 
 void UMythicaEditorSubsystem::SetSessionState(EMythicaSessionState NewState)
