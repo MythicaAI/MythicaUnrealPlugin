@@ -32,6 +32,21 @@ FString UMythicaDeveloperSettings::GetServiceURL() const
     return TEXT("");
 }
 
+FString UMythicaDeveloperSettings::GetWebSocketURL() const
+{
+    switch (Environment)
+    {
+        case EMythicaEnvironment::Production:
+            return TEXT("wss://api.mythica.gg");
+        case EMythicaEnvironment::Staging:
+            return TEXT("wss://api-staging.mythica.gg");
+        case EMythicaEnvironment::Local:
+            return TEXT("ws://localhost:8080");
+    }
+
+    return TEXT("");
+}
+
 FString UMythicaDeveloperSettings::GetImagesURL() const
 {
     switch (Environment)
