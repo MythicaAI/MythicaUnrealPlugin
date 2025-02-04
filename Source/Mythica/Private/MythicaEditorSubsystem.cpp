@@ -1638,10 +1638,13 @@ void UMythicaEditorSubsystem::CreateSessionWebSocket()
 {
     const UMythicaDeveloperSettings* Settings = GetDefault<UMythicaDeveloperSettings>();
 
-    FString ServiceURL = Settings->GetServiceURL().Replace(TEXT("http"), TEXT("wss"), ESearchCase::CaseSensitive);
-    FString Url = FString::Printf(TEXT("%s/readers/connect"), *ServiceURL);
+    FString ServiceURL = Settings->GetServiceURL().Replace(TEXT("http"), TEXT("ws"), ESearchCase::CaseSensitive);
+    FString Url = FString::Printf(TEXT("%s/v1/readers/connect"), *ServiceURL);
 
-    WebSocket = FWebSocketsModule::Get().CreateWebSocket(Url);
+    TMap<FString, FString> Headers;
+    Headers.Add("Authorization", FString::Printf(TEXT("Bearer %s"), *AuthToken));
+
+    WebSocket = FWebSocketsModule::Get().CreateWebSocket(Url, FString(), Headers);
 
     WebSocket->OnConnected().AddUObject(this, &UMythicaEditorSubsystem::OnConnected);
     WebSocket->OnConnectionError().AddUObject(this, &UMythicaEditorSubsystem::OnConnectionError);
