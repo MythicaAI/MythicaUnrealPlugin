@@ -20,7 +20,7 @@
 #include "WebSocketsModule.h"
 
 #define MYTHICA_CLEAN_TEMP_FILES 1
-#define ENABLE_WEBSOCKETS 0
+#define MYTHICA_ENABLE_WEBSOCKETS 0
 
 DEFINE_LOG_CATEGORY(LogMythica);
 
@@ -1637,7 +1637,7 @@ void UMythicaEditorSubsystem::OnMeshDownloadResponse(FHttpRequestPtr Request, FH
 
 void UMythicaEditorSubsystem::CreateSessionWebSocket()
 {
-    if (!ENABLE_WEBSOCKETS)
+    if (!MYTHICA_ENABLE_WEBSOCKETS)
     {
         return;
     }
