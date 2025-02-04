@@ -20,6 +20,7 @@
 #include "WebSocketsModule.h"
 
 #define MYTHICA_CLEAN_TEMP_FILES 1
+#define ENABLE_WEBSOCKETS 0
 
 DEFINE_LOG_CATEGORY(LogMythica);
 
@@ -1636,6 +1637,11 @@ void UMythicaEditorSubsystem::OnMeshDownloadResponse(FHttpRequestPtr Request, FH
 
 void UMythicaEditorSubsystem::CreateSessionWebSocket()
 {
+    if (!ENABLE_WEBSOCKETS)
+    {
+        return;
+    }
+
     const UMythicaDeveloperSettings* Settings = GetDefault<UMythicaDeveloperSettings>();
 
     FString Url = FString::Printf(TEXT("%s/v1/readers/connect"), *Settings->GetWebSocketURL());
