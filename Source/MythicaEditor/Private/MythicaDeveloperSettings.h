@@ -13,7 +13,7 @@ enum class EMythicaEnvironment : uint8
 };
 
 UCLASS(config = Plugins, defaultconfig, meta = (DisplayName = "Mythica"))
-class MYTHICA_API UMythicaDeveloperSettings : public UDeveloperSettings
+class MYTHICAEDITOR_API UMythicaDeveloperSettings : public UDeveloperSettings
 {
     GENERATED_BODY()
 

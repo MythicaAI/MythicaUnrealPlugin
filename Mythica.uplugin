@@ -15,11 +15,20 @@
 	"IsExperimentalVersion": false,
 	"Installed": false,
 	"Modules": [
-		{
-			"Name": "Mythica",
-			"Type": "Editor",
-			"LoadingPhase": "Default"
-		}
+        {
+            "Name": "MythicaEditor",
+            "Type": "Editor",
+            "LoadingPhase": "Default",
+            "AdditionalDependencies": [
+                "Engine",
+                "UMG"
+            ]
+        },
+        {
+            "Name": "MythicaRuntime",
+            "Type": "Runtime",
+            "LoadingPhase": "Default"
+        }
 	],
 	"Plugins": [
 		{
