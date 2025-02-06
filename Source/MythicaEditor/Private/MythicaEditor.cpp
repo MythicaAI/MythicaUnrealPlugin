@@ -10,7 +10,7 @@
 #include "MythicaComponentDetails.h"
 #include "MythicaParametersDetails.h"
 
-#define LOCTEXT_NAMESPACE "MythicaEditorModule"
+#define LOCTEXT_NAMESPACE "MythicaEditor"
 
 #define PACKAGE_MANAGER_WIDGET_ASSET TEXT("/Mythica/UI/WBP_PackageManager.WBP_PackageManager")
 
