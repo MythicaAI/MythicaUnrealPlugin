@@ -41,7 +41,16 @@ void UMythicaComponent::OnRegister()
     if (RequestId > 0)
     {
         UMythicaEditorSubsystem* MythicaEditorSubsystem = GEditor->GetEditorSubsystem<UMythicaEditorSubsystem>();
-        MythicaEditorSubsystem->OnJobStateChange.AddDynamic(this, &UMythicaComponent::OnJobStateChanged);
+
+        State = MythicaEditorSubsystem->GetRequestState(RequestId);
+        if (IsJobProcessing())
+        {
+            MythicaEditorSubsystem->OnJobStateChange.AddDynamic(this, &UMythicaComponent::OnJobStateChanged);
+        }
+        else
+        {
+            RequestId = -1;
+        }
     }
 }
 

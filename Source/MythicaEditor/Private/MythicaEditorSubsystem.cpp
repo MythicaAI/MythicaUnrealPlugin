@@ -248,6 +248,12 @@ FMythicaStats UMythicaEditorSubsystem::GetStats()
     return Stats;
 }
 
+EMythicaJobState UMythicaEditorSubsystem::GetRequestState(int RequestId)
+{
+    FMythicaJob* RequestData = Jobs.Find(RequestId);
+    return RequestData ? RequestData->State : EMythicaJobState::Invalid;
+}
+
 FString UMythicaEditorSubsystem::GetImportDirectory(int RequestId)
 {
     FMythicaJob* RequestData = Jobs.Find(RequestId);
