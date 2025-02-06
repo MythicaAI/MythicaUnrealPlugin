@@ -248,6 +248,9 @@ public:
     FMythicaStats GetStats();
 
     UFUNCTION(BlueprintPure, Category = "Mythica")
+    EMythicaJobState GetRequestState(int RequestId);
+
+    UFUNCTION(BlueprintPure, Category = "Mythica")
     FString GetImportDirectory(int RequestId);
 
     // Requests
