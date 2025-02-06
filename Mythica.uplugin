@@ -18,16 +18,16 @@
         {
             "Name": "MythicaEditor",
             "Type": "Editor",
-            "LoadingPhase": "Default",
-            "AdditionalDependencies": [
-                "Engine",
-                "UMG"
-            ]
+            "LoadingPhase": "Default"
         },
         {
             "Name": "MythicaRuntime",
             "Type": "Runtime",
-            "LoadingPhase": "Default"
+            "LoadingPhase": "Default",
+            "AdditionalDependencies": [
+                "DeveloperSettings",
+                "Engine"
+            ]
         }
 	],
 	"Plugins": [
