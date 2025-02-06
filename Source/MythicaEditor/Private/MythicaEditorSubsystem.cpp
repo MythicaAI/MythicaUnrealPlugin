@@ -34,6 +34,11 @@ const TCHAR* ImportableFileExtensions[] =
     TEXT("otl"), TEXT("otllc"), TEXT("otlnc")
 };
 
+static bool JobWaitingForStreamItems(EMythicaJobState State)
+{
+    return State == EMythicaJobState::Queued || State == EMythicaJobState::Processing;
+}
+
 static bool CanImportAsset(const FString& FilePath)
 {
     FString Extension = FPaths::GetExtension(FilePath);
@@ -1409,12 +1414,17 @@ void UMythicaEditorSubsystem::ClearJobs()
 
 void UMythicaEditorSubsystem::PollJobStatus()
 {
+    if (MYTHICA_ENABLE_WEBSOCKETS)
+    {
+        return;
+    }
+
     for (const TTuple<int, FMythicaJob>& JobEntry : Jobs)
     {
         int RequestId = JobEntry.Key;
         const FMythicaJob& JobData = JobEntry.Value;
 
-        if (JobData.State != EMythicaJobState::Queued && JobData.State != EMythicaJobState::Processing)
+        if (!JobWaitingForStreamItems(JobData.State))
         {
             continue;
         }
@@ -1447,7 +1457,7 @@ void UMythicaEditorSubsystem::OnJobTimeout(int RequestId)
         return;
     }
 
-    check(JobData->State == EMythicaJobState::Queued || JobData->State == EMythicaJobState::Processing);
+    check(JobWaitingForStreamItems(JobData->State));
     SetJobState(RequestId, EMythicaJobState::Failed, FText::FromString("Timed out"));
 }
 
@@ -1465,8 +1475,8 @@ void UMythicaEditorSubsystem::OnJobResultsResponse(FHttpRequestPtr Request, FHtt
         return;
     }
     
-    // Job may already have been marked as failed by timeout
-    if (RequestData->State == EMythicaJobState::Failed)
+    // Request may have already been completed for other reasons like timeout
+    if (!JobWaitingForStreamItems(RequestData->State))
     {
         return;
     }
@@ -1493,53 +1503,102 @@ void UMythicaEditorSubsystem::OnJobResultsResponse(FHttpRequestPtr Request, FHtt
         return;
     }
 
-    FString FileId;
-
     TArray<TSharedPtr<FJsonValue>> Results = JsonObject->GetArrayField(TEXT("results"));
     for (TSharedPtr<FJsonValue> Value : Results)
     {
         TSharedPtr<FJsonObject> ResultObject = Value->AsObject();
         TSharedPtr<FJsonObject> ResultDataObject = ResultObject->GetObjectField(TEXT("result_data"));
 
-        FString ItemType = ResultDataObject->GetStringField(TEXT("item_type"));
-        if (ItemType == "file")
+        OnStreamItem(ResultDataObject);
+        if (!JobWaitingForStreamItems(RequestData->State))
         {
-            TSharedPtr<FJsonObject> FilesObject = ResultDataObject->GetObjectField(TEXT("files"));
-            TArray<TSharedPtr<FJsonValue>> FilesArray = FilesObject->GetArrayField(TEXT("mesh"));
-            if (FilesArray.Num() > 0)
-            {
-                FileId = FilesArray[0]->AsString();
-                break;
-            }
+            break;
         }
     }
-
-    if (FileId.IsEmpty())
+ 
+    // Verify request is satisfied if no additional stream items are expected
+    if (JobWaitingForStreamItems(RequestData->State))
     {
         UE_LOG(LogMythica, Error, TEXT("Job failed %d"), RequestId);
         SetJobState(RequestId, EMythicaJobState::Failed, FText::FromString("Failed to produce result mesh"));
-        return;
+    }
+}
 
+void UMythicaEditorSubsystem::OnStreamItem(TSharedPtr<FJsonObject> StreamItem)
+{
+    // Find associated job request
+    FString JobId;
+    if (!StreamItem->TryGetStringField(TEXT("job_id"), JobId))
+    {
+        return;
     }
 
-    const UMythicaDeveloperSettings* Settings = GetDefault<UMythicaDeveloperSettings>();
-
-    FString Url = FString::Printf(TEXT("%s/v1/download/info/%s"), *Settings->GetServiceURL(), *FileId);
-
-    auto Callback = [this, FileId, RequestId](FHttpRequestPtr Request, FHttpResponsePtr Response, bool bConnectedSuccessfully)
+    int RequestId = -1;
+    FMythicaJob* RequestData = nullptr;
+    for (TTuple<int, FMythicaJob>& JobEntry : Jobs)
     {
-        OnMeshDownloadInfoResponse(Request, Response, bConnectedSuccessfully, RequestId);
-    };
+        if (JobEntry.Value.JobId == JobId)
+        {
+            RequestId = JobEntry.Key;
+            RequestData = &JobEntry.Value;
+            break;
+        }
+    }
+    if (!RequestData)
+    {
+        return;
+    }
 
-    TSharedRef<IHttpRequest, ESPMode::ThreadSafe> DownloadInfoRequest = FHttpModule::Get().CreateRequest();
-    DownloadInfoRequest->SetURL(Url);
-    DownloadInfoRequest->SetVerb("GET");
-    DownloadInfoRequest->SetHeader("Content-Type", "application/octet-stream");
-    DownloadInfoRequest->OnProcessRequestComplete().BindLambda(Callback);
+    if (!JobWaitingForStreamItems(RequestData->State))
+    {
+        return;
+    }
 
-    DownloadInfoRequest->ProcessRequest();
+    // Process stram item
+    FString ItemType = StreamItem->GetStringField(TEXT("item_type"));
+    if (ItemType == "progress")
+    {
+        if (RequestData->State == EMythicaJobState::Queued)
+        {
+            SetJobState(RequestId, EMythicaJobState::Processing);
+        }
+    }
+    else if (ItemType == "file")
+    {
+        TSharedPtr<FJsonObject> FilesObject = StreamItem->GetObjectField(TEXT("files"));
+        TArray<TSharedPtr<FJsonValue>> FilesArray = FilesObject->GetArrayField(TEXT("mesh"));
+        if (FilesArray.Num() == 0)
+        {
+            UE_LOG(LogMythica, Error, TEXT("File result contains no mesh data"));
+            return;
+        }
 
-    SetJobState(RequestId, EMythicaJobState::Importing);
+        FString FileId = FilesArray[0]->AsString();
+
+        const UMythicaDeveloperSettings* Settings = GetDefault<UMythicaDeveloperSettings>();
+
+        FString Url = FString::Printf(TEXT("%s/v1/download/info/%s"), *Settings->GetServiceURL(), *FileId);
+
+        auto Callback = [this, FileId, RequestId](FHttpRequestPtr Request, FHttpResponsePtr Response, bool bConnectedSuccessfully)
+        {
+            OnMeshDownloadInfoResponse(Request, Response, bConnectedSuccessfully, RequestId);
+        };
+
+        TSharedRef<IHttpRequest, ESPMode::ThreadSafe> DownloadInfoRequest = FHttpModule::Get().CreateRequest();
+        DownloadInfoRequest->SetURL(Url);
+        DownloadInfoRequest->SetVerb("GET");
+        DownloadInfoRequest->SetHeader("Content-Type", "application/octet-stream");
+        DownloadInfoRequest->OnProcessRequestComplete().BindLambda(Callback);
+
+        DownloadInfoRequest->ProcessRequest();
+
+        SetJobState(RequestId, EMythicaJobState::Importing);
+    }
+    else if (ItemType == "completed")
+    {
+        UE_LOG(LogMythica, Error, TEXT("Job failed %d"), RequestId);
+        SetJobState(RequestId, EMythicaJobState::Failed, FText::FromString("Failed to produce result mesh"));
+    }
 }
 
 void UMythicaEditorSubsystem::OnMeshDownloadInfoResponse(FHttpRequestPtr Request, FHttpResponsePtr Response, bool bWasSuccessful, int RequestId)
