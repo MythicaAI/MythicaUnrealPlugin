@@ -5,10 +5,12 @@
 #include "EditorUtilitySubsystem.h"
 #include "EditorUtilityWidgetBlueprint.h"
 #include "LevelEditor.h"
+#include "ToolMenus.h"
+
 #include "MythicaComponentDetails.h"
 #include "MythicaParametersDetails.h"
 
-#define LOCTEXT_NAMESPACE "FMythicaEditorModule"
+#define LOCTEXT_NAMESPACE "MythicaEditorModule"
 
 #define PACKAGE_MANAGER_WIDGET_ASSET TEXT("/Mythica/UI/WBP_PackageManager.WBP_PackageManager")
 
@@ -55,6 +57,15 @@ void FMythicaEditorModule::AddMenu(FMenuBuilder& MenuBuilder)
         FSlateIcon(),
         FUIAction(FExecuteAction::CreateRaw(this, &FMythicaEditorModule::OpenPackageManager))
     );
+}
+
+void FMythicaEditorModule::RegisterMenus()
+{
+}
+
+TSharedRef<class SDockTab> FMythicaEditorModule::OnSpawnPluginTab(const FSpawnTabArgs& SpawnTabArgs)
+{
+    return TSharedRef<class SDockTab>();
 }
 
 void FMythicaEditorModule::OpenPackageManager()
