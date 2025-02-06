@@ -10,9 +10,9 @@ public class MythicaEditor : ModuleRules
         
         PublicIncludePaths.AddRange(
             new string[] {
-                // ... add public include paths required here ...
+                "MythicaEditor"
             }
-            );
+        );
                 
         
         PrivateIncludePaths.AddRange(
@@ -26,7 +26,12 @@ public class MythicaEditor : ModuleRules
             new string[]
             {
                 "Core",
-                "UMG"
+                "CoreUObject",
+                "Engine",
+                "EditorFramework",
+                "UnrealEd",
+                "UMG",
+                "MythicaRuntime"
                 // ... add other public dependencies that you statically link with here ...
             }
             );
@@ -39,10 +44,8 @@ public class MythicaEditor : ModuleRules
                 "AssetTools",
                 "Blutility",
                 "Boost",
-                "CoreUObject",
                 "DeveloperSettings",
                 "EditorSubsystem",
-                "Engine",
                 "FileUtilities",
                 "HTTP",
                 "ImageCore",
@@ -56,7 +59,6 @@ public class MythicaEditor : ModuleRules
                 "SlateCore",
                 "ToolWidgets",
                 "UMGEditor",
-                "UnrealEd",
                 "UnrealUSDWrapper",
                 "USDClasses",
                 "USDExporter",
