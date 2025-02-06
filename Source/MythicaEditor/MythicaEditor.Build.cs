@@ -63,7 +63,8 @@ public class MythicaEditor : ModuleRules
                 "USDClasses",
                 "USDExporter",
                 "USDStageImporter",
-                "USDUtilities"
+                "USDUtilities",
+                "WebSockets"
                 // ... add private dependencies that you statically link with here ...    
             }
             );

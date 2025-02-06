@@ -21,6 +21,7 @@ public:
     UMythicaDeveloperSettings(const FObjectInitializer& ObjectInitializer);
 
     FString GetServiceURL() const;
+    FString GetWebSocketURL() const;
     FString GetImagesURL() const;
     FString GetAPIKey() const;
     const TArray<FString>& GetJobDefIdWhitelist() const;
