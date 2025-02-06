@@ -5,7 +5,7 @@
 #include "MythicaInputSelectionVolume.generated.h"
 
 UCLASS()
-class MYTHICA_API AMythicaInputSelectionVolume : public AVolume
+class MYTHICAEDITOR_API AMythicaInputSelectionVolume : public AVolume
 {
     GENERATED_BODY()
 public:

@@ -3,14 +3,14 @@
 #include "DetailCategoryBuilder.h"
 #include "DetailLayoutBuilder.h"
 #include "DetailWidgetRow.h"
-#include "Mythica.h"
+#include "MythicaEditor.h"
 #include "MythicaComponent.h"
 #include "MythicaDeveloperSettings.h"
 #include "SSearchableComboBox.h"
 #include "Widgets/Notifications/SProgressBar.h"
 #include "Widgets/Text/STextBlock.h"
 
-#define LOCTEXT_NAMESPACE "Mythica"
+#define LOCTEXT_NAMESPACE "MythicaEditor"
 
 const float ProgressBarHeight = 3.0f;
 
@@ -149,7 +149,7 @@ void FMythicaComponentDetails::CustomizeDetails(IDetailLayoutBuilder& DetailBuil
 
                                             if (Data.JobDefId.IsEmpty())
                                             {
-                                                FMythicaModule& MythicaModule = FModuleManager::GetModuleChecked<FMythicaModule>("Mythica");
+                                                FMythicaEditorModule& MythicaModule = FModuleManager::GetModuleChecked<FMythicaEditorModule>("MythicaEditor");
                                                 MythicaModule.OpenPackageManager();
                                             }
                                             else

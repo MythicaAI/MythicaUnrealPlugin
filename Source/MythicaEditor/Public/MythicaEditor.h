@@ -2,10 +2,9 @@
 
 #pragma once
 
-#include "CoreMinimal.h"
 #include "Modules/ModuleManager.h"
 
-class FMythicaModule : public IModuleInterface
+class FMythicaEditorModule : public IModuleInterface
 {
 public:
 

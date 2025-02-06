@@ -1,6 +1,6 @@
 // Copyright Epic Games, Inc. All Rights Reserved.
 
-#include "Mythica.h"
+#include "MythicaEditor.h"
 
 #include "EditorUtilitySubsystem.h"
 #include "EditorUtilityWidgetBlueprint.h"
@@ -8,18 +8,18 @@
 #include "MythicaComponentDetails.h"
 #include "MythicaParametersDetails.h"
 
-#define LOCTEXT_NAMESPACE "FMythicaModule"
+#define LOCTEXT_NAMESPACE "MythicaEditor"
 
 #define PACKAGE_MANAGER_WIDGET_ASSET TEXT("/Mythica/UI/WBP_PackageManager.WBP_PackageManager")
 
-void FMythicaModule::StartupModule()
+void FMythicaEditorModule::StartupModule()
 {
     TSharedPtr<FExtender> MenuExtender = MakeShareable(new FExtender);
     MenuExtender->AddMenuExtension(
         "GetContent",
         EExtensionHook::After,
         nullptr,
-        FMenuExtensionDelegate::CreateRaw(this, &FMythicaModule::AddMenu));
+        FMenuExtensionDelegate::CreateRaw(this, &FMythicaEditorModule::AddMenu));
 
     FLevelEditorModule& LevelEditorModule = FModuleManager::LoadModuleChecked<FLevelEditorModule>("LevelEditor");
     LevelEditorModule.GetMenuExtensibilityManager()->AddExtender(MenuExtender);
@@ -36,7 +36,7 @@ void FMythicaModule::StartupModule()
     PropertyModule.NotifyCustomizationModuleChanged();
 }
 
-void FMythicaModule::ShutdownModule()
+void FMythicaEditorModule::ShutdownModule()
 {
     if (FModuleManager::Get().IsModuleLoaded("PropertyEditor"))
     {
@@ -47,23 +47,23 @@ void FMythicaModule::ShutdownModule()
     }
 }
 
-void FMythicaModule::AddMenu(FMenuBuilder& MenuBuilder)
+void FMythicaEditorModule::AddMenu(FMenuBuilder& MenuBuilder)
 {
     MenuBuilder.AddMenuEntry(
         FText::FromString("Mythica Package Manager"),
         FText::FromString("Opens the Mythica Package Manager"),
         FSlateIcon(),
-        FUIAction(FExecuteAction::CreateRaw(this, &FMythicaModule::OpenPackageManager))
+        FUIAction(FExecuteAction::CreateRaw(this, &FMythicaEditorModule::OpenPackageManager))
     );
 }
 
-void FMythicaModule::OpenPackageManager()
+void FMythicaEditorModule::OpenPackageManager()
 {
     UEditorUtilitySubsystem* EditorUtilitySubsystem = GEditor->GetEditorSubsystem<UEditorUtilitySubsystem>();
     UEditorUtilityWidgetBlueprint* UtilityWidgetBlueprint = LoadObject<UEditorUtilityWidgetBlueprint>(NULL, PACKAGE_MANAGER_WIDGET_ASSET, NULL, LOAD_None, NULL);
     EditorUtilitySubsystem->SpawnAndRegisterTab(UtilityWidgetBlueprint);
 }
 
+IMPLEMENT_MODULE(FMythicaEditorModule, MythicaEditor)
+
 #undef LOCTEXT_NAMESPACE
-    
-IMPLEMENT_MODULE(FMythicaModule, Mythica)
