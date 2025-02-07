@@ -15,9 +15,6 @@ public:
     virtual void StartupModule() override;
     virtual void ShutdownModule() override;
 
-    /** This is stored on the module so that it can be accessed by other UI */
-    void OpenPackageManager();
-
 private:
 
     /** This is called on the module so that we register the editor windows with it */

@@ -2,21 +2,18 @@
 
 #include "MythicaEditor.h"
 
-#include "EditorUtilitySubsystem.h"
 #include "Editor/UnrealEdEngine.h"
-#include "EditorUtilityWidgetBlueprint.h"
 #include "LevelEditor.h"
 #include "ToolMenu.h"
 #include "ToolMenus.h"
 #include "UnrealEdGlobals.h"
 
+#include "Libraries/MythicaEditorUtilityLibrary.h"
 #include "MythicaEditorStyle.h"
 #include "MythicaComponentDetails.h"
 #include "MythicaParametersDetails.h"
 
 #define LOCTEXT_NAMESPACE "MythicaEditor"
-
-#define PACKAGE_MANAGER_WIDGET_ASSET TEXT("/Mythica/UI/WBP_PackageManager.WBP_PackageManager")
 
 DEFINE_LOG_CATEGORY(LogMythicaEditor)
 
@@ -33,18 +30,6 @@ static bool HasNoPlayWorld()
 static bool HasPlayWorldAndRunning()
 {
     return HasPlayWorld() && !GUnrealEd->PlayWorld->bDebugPauseExecution;
-}
-
-static void OpenEditorUtilityWidgetAsTab(const TCHAR* Name)
-{
-    UEditorUtilitySubsystem* EditorUtilitySubsystem = GEditor->GetEditorSubsystem<UEditorUtilitySubsystem>();
-    UEditorUtilityWidgetBlueprint* UtilityWidgetBlueprint = LoadObject<UEditorUtilityWidgetBlueprint>(NULL, Name, NULL, LOAD_None, NULL);
-    EditorUtilitySubsystem->SpawnAndRegisterTab(UtilityWidgetBlueprint);
-}
-
-static void OpenMythicaHub_Clicked()
-{
-    OpenEditorUtilityWidgetAsTab(PACKAGE_MANAGER_WIDGET_ASSET);
 }
 
 void FMythicaEditorModule::StartupModule()
@@ -90,11 +75,6 @@ void FMythicaEditorModule::ShutdownModule()
     }
 }
 
-void FMythicaEditorModule::OpenPackageManager()
-{
-    OpenEditorUtilityWidgetAsTab(PACKAGE_MANAGER_WIDGET_ASSET);
-}
-
 void FMythicaEditorModule::RegisterEditorMenus()
 {
     // Owner will be used for cleanup in call to UToolMenus::UnregisterOwner
@@ -103,24 +83,24 @@ void FMythicaEditorModule::RegisterEditorMenus()
     // Note: Liam - If you need to view what you want to extend use `ToolMenus.Edit 1`
     
     // Extending the Asset Tool Bar to add a quick menu and hub option
-    {
-        UToolMenu* AssetToolBarMenu = UToolMenus::Get()->ExtendMenu("LevelEditor.LevelEditorToolBar.AssetsToolBar");
-        FToolMenuSection& ContentSection = AssetToolBarMenu->FindOrAddSection("Content");
+    //{
+    //    UToolMenu* AssetToolBarMenu = UToolMenus::Get()->ExtendMenu("LevelEditor.LevelEditorToolBar.AssetsToolBar");
+    //    FToolMenuSection& ContentSection = AssetToolBarMenu->FindOrAddSection("Content");
 
-        FToolMenuEntry OpenMythicaHubEntry = FToolMenuEntry::InitToolBarButton(
-            "OpenMythicaHUB",
-            FUIAction(
-                FExecuteAction::CreateStatic(&OpenMythicaHub_Clicked),
-                FCanExecuteAction::CreateStatic(&HasNoPlayWorld),
-                FIsActionChecked(),
-                FIsActionButtonVisible()
-            ),
-            LOCTEXT("OpenMythicaHubButton", "Mythica HUB"),
-            LOCTEXT("OpenMythicaHubDescription", "Opens the Mythica HUB. Where you can find all plugin information, documentation, and tweak settings in one window."),
-            FSlateIcon(FMythicaEditorStyle::GetStyleSetName(), "MythicaEditor.MythicaLogo")
-        );
-        ContentSection.AddEntry(OpenMythicaHubEntry);
-    }
+    //    FToolMenuEntry OpenMythicaHubEntry = FToolMenuEntry::InitToolBarButton(
+    //        "OpenMythicaHUB",
+    //        FUIAction(
+    //            FExecuteAction::CreateStatic(&OpenMythicaHub_Clicked),
+    //            FCanExecuteAction::CreateStatic(&HasNoPlayWorld),
+    //            FIsActionChecked(),
+    //            FIsActionButtonVisible()
+    //        ),
+    //        LOCTEXT("OpenMythicaHubButton", "Mythica HUB"),
+    //        LOCTEXT("OpenMythicaHubDescription", "Opens the Mythica HUB. Where you can find all plugin information, documentation, and tweak settings in one window."),
+    //        FSlateIcon(FMythicaEditorStyle::GetStyleSetName(), "MythicaEditor.MythicaLogo")
+    //    );
+    //    ContentSection.AddEntry(OpenMythicaHubEntry);
+    //}
 
     // Add an extension to the Main Menu > Windows drop down
     {
@@ -135,7 +115,7 @@ void FMythicaEditorModule::RegisterEditorMenus()
             FSlateIcon(FMythicaEditorStyle::GetStyleSetName(), "MythicaEditor.MythicaLogo"),
             FToolUIActionChoice(
                 FUIAction(
-                    FExecuteAction::CreateRaw(this, &FMythicaEditorModule::OpenPackageManager),
+                    FExecuteAction::CreateStatic(&UMythicaEditorUtilityLibrary::OpenPackageManager),
                     FCanExecuteAction(),
                     FIsActionChecked(),
                     FIsActionButtonVisible()
