@@ -10,7 +10,7 @@ public class MythicaEditor : ModuleRules
         
         PublicIncludePaths.AddRange(
             new string[] {
-                "MythicaEditor"
+                // "MythicaEditor"
             }
         );
                 
@@ -57,6 +57,7 @@ public class MythicaEditor : ModuleRules
                 "PythonScriptPlugin",
                 "Slate",
                 "SlateCore",
+                "ToolMenus",
                 "ToolWidgets",
                 "UMGEditor",
                 "UnrealUSDWrapper",

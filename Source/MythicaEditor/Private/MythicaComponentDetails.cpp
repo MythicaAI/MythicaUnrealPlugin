@@ -3,6 +3,7 @@
 #include "DetailCategoryBuilder.h"
 #include "DetailLayoutBuilder.h"
 #include "DetailWidgetRow.h"
+#include "Libraries/MythicaEditorUtilityLibrary.h"
 #include "MythicaEditor.h"
 #include "MythicaComponent.h"
 #include "MythicaDeveloperSettings.h"
@@ -149,8 +150,7 @@ void FMythicaComponentDetails::CustomizeDetails(IDetailLayoutBuilder& DetailBuil
 
                                             if (Data.JobDefId.IsEmpty())
                                             {
-                                                FMythicaEditorModule& MythicaModule = FModuleManager::GetModuleChecked<FMythicaEditorModule>("MythicaEditor");
-                                                MythicaModule.OpenPackageManager();
+                                                UMythicaEditorUtilityLibrary::OpenPackageManager();
                                             }
                                             else
                                             {
