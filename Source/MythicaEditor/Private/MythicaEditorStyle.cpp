@@ -9,7 +9,7 @@
 #include "Interfaces/IPluginManager.h"
 #include "Styling/SlateStyleMacros.h"
 
-#define RootToContentDir style->RootToContentDir
+#define RootToContentDir Style->RootToContentDir
 
 TSharedPtr<FSlateStyleSet> FMythicaEditorStyle::StyleInstance = nullptr;
 
@@ -56,9 +56,9 @@ const FVector2D Icon128x128(128.0f, 128.0f);
 
 TSharedRef<class FSlateStyleSet> FMythicaEditorStyle::Create()
 {
-    TSharedRef<FSlateStyleSet> style = MakeShareable(new FSlateStyleSet(GetStyleSetName()));
-    style->SetContentRoot(IPluginManager::Get().FindPlugin("Mythica")->GetBaseDir() / TEXT("Resources"));
-    style->Set("MythicaEditor.MythicaLogo", new IMAGE_BRUSH(TEXT("Icon128"), Icon128x128));
+    TSharedRef<FSlateStyleSet> Style = MakeShareable(new FSlateStyleSet(GetStyleSetName()));
+    Style->SetContentRoot(IPluginManager::Get().FindPlugin("Mythica")->GetBaseDir() / TEXT("Resources"));
+    Style->Set("MythicaEditor.MythicaLogo", new IMAGE_BRUSH(TEXT("Icon128"), Icon128x128));
 
-    return style;
+    return Style;
 }

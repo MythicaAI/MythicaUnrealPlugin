@@ -83,24 +83,24 @@ void FMythicaEditorModule::RegisterEditorMenus()
     // Note: Liam - If you need to view what you want to extend use `ToolMenus.Edit 1`
     
     // Extending the Asset Tool Bar to add a quick menu and hub option
-    //{
-    //    UToolMenu* AssetToolBarMenu = UToolMenus::Get()->ExtendMenu("LevelEditor.LevelEditorToolBar.AssetsToolBar");
-    //    FToolMenuSection& ContentSection = AssetToolBarMenu->FindOrAddSection("Content");
+    {
+        UToolMenu* AssetToolBarMenu = UToolMenus::Get()->ExtendMenu("LevelEditor.LevelEditorToolBar.AssetsToolBar");
+        FToolMenuSection& ContentSection = AssetToolBarMenu->FindOrAddSection("Content");
 
-    //    FToolMenuEntry OpenMythicaHubEntry = FToolMenuEntry::InitToolBarButton(
-    //        "OpenMythicaHUB",
-    //        FUIAction(
-    //            FExecuteAction::CreateStatic(&OpenMythicaHub_Clicked),
-    //            FCanExecuteAction::CreateStatic(&HasNoPlayWorld),
-    //            FIsActionChecked(),
-    //            FIsActionButtonVisible()
-    //        ),
-    //        LOCTEXT("OpenMythicaHubButton", "Mythica HUB"),
-    //        LOCTEXT("OpenMythicaHubDescription", "Opens the Mythica HUB. Where you can find all plugin information, documentation, and tweak settings in one window."),
-    //        FSlateIcon(FMythicaEditorStyle::GetStyleSetName(), "MythicaEditor.MythicaLogo")
-    //    );
-    //    ContentSection.AddEntry(OpenMythicaHubEntry);
-    //}
+        FToolMenuEntry OpenMythicaHubEntry = FToolMenuEntry::InitToolBarButton(
+            "OpenMythicaHUB",
+            FUIAction(
+                FExecuteAction::CreateStatic(&UMythicaEditorUtilityLibrary::OpenPackageManager),
+                FCanExecuteAction::CreateStatic(&HasNoPlayWorld),
+                FIsActionChecked(),
+                FIsActionButtonVisible()
+            ),
+            LOCTEXT("OpenMythicaHubButton", "Mythica HUB"),
+            LOCTEXT("OpenMythicaHubDescription", "Opens the Mythica HUB. Where you can find all plugin information, documentation, and tweak settings in one window."),
+            FSlateIcon(FMythicaEditorStyle::GetStyleSetName(), "MythicaEditor.MythicaLogo")
+        );
+        ContentSection.AddEntry(OpenMythicaHubEntry);
+    }
 
     // Add an extension to the Main Menu > Windows drop down
     {
