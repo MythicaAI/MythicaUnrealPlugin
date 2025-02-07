@@ -2,7 +2,7 @@
 
 #include "Modules/ModuleManager.h"
 
-#define LOCTEXT_NAMESPACE "FMythicaRuntimeModule"
+#define LOCTEXT_NAMESPACE "MythicaRuntime"
 
 class FMythicaRuntimeModule : public IModuleInterface
 {

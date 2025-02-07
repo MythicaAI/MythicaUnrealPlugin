@@ -10,7 +10,7 @@ public class MythicaRuntime : ModuleRules
         
         PublicIncludePaths.AddRange(
             new string[] {
-                "MythicaRuntime"
+                //"MythicaRuntime"
             }
         );
                 

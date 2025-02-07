@@ -3,10 +3,14 @@
 #include "MythicaEditor.h"
 
 #include "EditorUtilitySubsystem.h"
+#include "Editor/UnrealEdEngine.h"
 #include "EditorUtilityWidgetBlueprint.h"
 #include "LevelEditor.h"
+#include "ToolMenu.h"
 #include "ToolMenus.h"
+#include "UnrealEdGlobals.h"
 
+#include "MythicaEditorStyle.h"
 #include "MythicaComponentDetails.h"
 #include "MythicaParametersDetails.h"
 
@@ -14,32 +18,69 @@
 
 #define PACKAGE_MANAGER_WIDGET_ASSET TEXT("/Mythica/UI/WBP_PackageManager.WBP_PackageManager")
 
+DEFINE_LOG_CATEGORY(LogMythicaEditor)
+
+static bool HasPlayWorld()
+{
+    return GEditor->PlayWorld != nullptr;
+}
+
+static bool HasNoPlayWorld()
+{
+    return !HasPlayWorld();
+}
+
+static bool HasPlayWorldAndRunning()
+{
+    return HasPlayWorld() && !GUnrealEd->PlayWorld->bDebugPauseExecution;
+}
+
+static void OpenEditorUtilityWidgetAsTab(const TCHAR* Name)
+{
+    UEditorUtilitySubsystem* EditorUtilitySubsystem = GEditor->GetEditorSubsystem<UEditorUtilitySubsystem>();
+    UEditorUtilityWidgetBlueprint* UtilityWidgetBlueprint = LoadObject<UEditorUtilityWidgetBlueprint>(NULL, Name, NULL, LOAD_None, NULL);
+    EditorUtilitySubsystem->SpawnAndRegisterTab(UtilityWidgetBlueprint);
+}
+
+static void OpenMythicaHub_Clicked()
+{
+    OpenEditorUtilityWidgetAsTab(PACKAGE_MANAGER_WIDGET_ASSET);
+}
+
 void FMythicaEditorModule::StartupModule()
 {
-    TSharedPtr<FExtender> MenuExtender = MakeShareable(new FExtender);
-    MenuExtender->AddMenuExtension(
-        "GetContent",
-        EExtensionHook::After,
-        nullptr,
-        FMenuExtensionDelegate::CreateRaw(this, &FMythicaEditorModule::AddMenu));
+    FMythicaEditorStyle::Initialize();
+    FMythicaEditorStyle::ReloadTextures();
 
-    FLevelEditorModule& LevelEditorModule = FModuleManager::LoadModuleChecked<FLevelEditorModule>("LevelEditor");
-    LevelEditorModule.GetMenuExtensibilityManager()->AddExtender(MenuExtender);
+    UToolMenus::RegisterStartupCallback(FSimpleMulticastDelegate::FDelegate::CreateRaw(this, &FMythicaEditorModule::RegisterEditorMenus));
 
-    FPropertyEditorModule& PropertyModule = FModuleManager::LoadModuleChecked<FPropertyEditorModule>("PropertyEditor");
-    PropertyModule.RegisterCustomClassLayout(
-        "MythicaComponent", 
-        FOnGetDetailCustomizationInstance::CreateStatic(&FMythicaComponentDetails::MakeInstance)
-    );
-    PropertyModule.RegisterCustomPropertyTypeLayout(
-        "MythicaParameters",
-        FOnGetPropertyTypeCustomizationInstance::CreateStatic(&FMythicaParametersDetails::MakeInstance)
-    );
-    PropertyModule.NotifyCustomizationModuleChanged();
+    // Setting up custom property editors
+    {
+        FPropertyEditorModule& PropertyModule = FModuleManager::LoadModuleChecked<FPropertyEditorModule>("PropertyEditor");
+
+        PropertyModule.RegisterCustomClassLayout(
+            "MythicaComponent",
+            FOnGetDetailCustomizationInstance::CreateStatic(&FMythicaComponentDetails::MakeInstance)
+        );
+
+        PropertyModule.RegisterCustomPropertyTypeLayout(
+            "MythicaParameters",
+            FOnGetPropertyTypeCustomizationInstance::CreateStatic(&FMythicaParametersDetails::MakeInstance)
+        );
+
+        PropertyModule.NotifyCustomizationModuleChanged();
+    }
 }
 
 void FMythicaEditorModule::ShutdownModule()
 {
+    UToolMenus::UnRegisterStartupCallback(this);
+
+    UToolMenus::UnregisterOwner(this);
+
+    FMythicaEditorStyle::Shutdown();
+
+    // Removing custom property editors
     if (FModuleManager::Get().IsModuleLoaded("PropertyEditor"))
     {
         FPropertyEditorModule& PropertyModule = FModuleManager::GetModuleChecked<FPropertyEditorModule>("PropertyEditor");
@@ -49,30 +90,60 @@ void FMythicaEditorModule::ShutdownModule()
     }
 }
 
-void FMythicaEditorModule::AddMenu(FMenuBuilder& MenuBuilder)
-{
-    MenuBuilder.AddMenuEntry(
-        FText::FromString("Mythica Package Manager"),
-        FText::FromString("Opens the Mythica Package Manager"),
-        FSlateIcon(),
-        FUIAction(FExecuteAction::CreateRaw(this, &FMythicaEditorModule::OpenPackageManager))
-    );
-}
-
-void FMythicaEditorModule::RegisterMenus()
-{
-}
-
-TSharedRef<class SDockTab> FMythicaEditorModule::OnSpawnPluginTab(const FSpawnTabArgs& SpawnTabArgs)
-{
-    return TSharedRef<class SDockTab>();
-}
-
 void FMythicaEditorModule::OpenPackageManager()
 {
-    UEditorUtilitySubsystem* EditorUtilitySubsystem = GEditor->GetEditorSubsystem<UEditorUtilitySubsystem>();
-    UEditorUtilityWidgetBlueprint* UtilityWidgetBlueprint = LoadObject<UEditorUtilityWidgetBlueprint>(NULL, PACKAGE_MANAGER_WIDGET_ASSET, NULL, LOAD_None, NULL);
-    EditorUtilitySubsystem->SpawnAndRegisterTab(UtilityWidgetBlueprint);
+    OpenEditorUtilityWidgetAsTab(PACKAGE_MANAGER_WIDGET_ASSET);
+}
+
+void FMythicaEditorModule::RegisterEditorMenus()
+{
+    // Owner will be used for cleanup in call to UToolMenus::UnregisterOwner
+    FToolMenuOwnerScoped OwnerScoped(this);
+
+    // Note: Liam - If you need to view what you want to extend use `ToolMenus.Edit 1`
+    
+    // Extending the Asset Tool Bar to add a quick menu and hub option
+    {
+        UToolMenu* AssetToolBarMenu = UToolMenus::Get()->ExtendMenu("LevelEditor.LevelEditorToolBar.AssetsToolBar");
+        FToolMenuSection& ContentSection = AssetToolBarMenu->FindOrAddSection("Content");
+
+        FToolMenuEntry OpenMythicaHubEntry = FToolMenuEntry::InitToolBarButton(
+            "OpenMythicaHUB",
+            FUIAction(
+                FExecuteAction::CreateStatic(&OpenMythicaHub_Clicked),
+                FCanExecuteAction::CreateStatic(&HasNoPlayWorld),
+                FIsActionChecked(),
+                FIsActionButtonVisible()
+            ),
+            LOCTEXT("OpenMythicaHubButton", "Mythica HUB"),
+            LOCTEXT("OpenMythicaHubDescription", "Opens the Mythica HUB. Where you can find all plugin information, documentation, and tweak settings in one window."),
+            FSlateIcon(FMythicaEditorStyle::GetStyleSetName(), "MythicaEditor.MythicaLogo")
+        );
+        ContentSection.AddEntry(OpenMythicaHubEntry);
+    }
+
+    // Add an extension to the Main Menu > Windows drop down
+    {
+        UToolMenu* MainMenuWindowMenu = UToolMenus::Get()->ExtendMenu("LevelEditor.MainMenu.Window");
+        FToolMenuSection& GetContentSection = MainMenuWindowMenu->FindOrAddSection("GetContent");
+
+        // const FName InName, const TAttribute<FText>& InLabel, const TAttribute<FText>& InToolTip, const TAttribute<FSlateIcon>& InIcon, const FToolUIActionChoice& InAction, const EUserInterfaceActionType InUserInterfaceActionType, const FName InTutorialHighlightName
+        FToolMenuEntry OpenPackageManagerEntry = FToolMenuEntry::InitMenuEntry(
+            "OpenPackageManager",
+            LOCTEXT("OpenMythicaPackageManagerButton", "Mythica Package Manager"),
+            LOCTEXT("OpenMythicaPackageManagerDescription", "Opens the Mythica Package Manager."),
+            FSlateIcon(FMythicaEditorStyle::GetStyleSetName(), "MythicaEditor.MythicaLogo"),
+            FToolUIActionChoice(
+                FUIAction(
+                    FExecuteAction::CreateRaw(this, &FMythicaEditorModule::OpenPackageManager),
+                    FCanExecuteAction(),
+                    FIsActionChecked(),
+                    FIsActionButtonVisible()
+                )
+            )
+        );
+        GetContentSection.AddEntry(OpenPackageManagerEntry);
+    }
 }
 
 IMPLEMENT_MODULE(FMythicaEditorModule, MythicaEditor)
