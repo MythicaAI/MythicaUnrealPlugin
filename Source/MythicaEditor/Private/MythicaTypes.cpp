@@ -131,7 +131,8 @@ void FMythicaParameterFile::Copy(const FMythicaParameterFile& Source)
 
 const TCHAR* SystemParameters[] =
 {
-    TEXT("format")
+    TEXT("format"),
+    TEXT("record_profile")
 };
 
 bool Mythica::IsSystemParameter(const FString& Name)
