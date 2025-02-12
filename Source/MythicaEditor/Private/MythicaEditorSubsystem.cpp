@@ -1573,26 +1573,41 @@ void UMythicaEditorSubsystem::OnStreamItem(TSharedPtr<FJsonObject> StreamItem)
             return;
         }
 
-        FString FileId = FilesArray[0]->AsString();
-
-        const UMythicaDeveloperSettings* Settings = GetDefault<UMythicaDeveloperSettings>();
-
-        FString Url = FString::Printf(TEXT("%s/v1/download/info/%s"), *Settings->GetServiceURL(), *FileId);
-
-        auto Callback = [this, FileId, RequestId](FHttpRequestPtr Request, FHttpResponsePtr Response, bool bConnectedSuccessfully)
+        FString FileValue = FilesArray[0]->AsString();  
+        if (FileValue.StartsWith("file_"))
         {
-            OnMeshDownloadInfoResponse(Request, Response, bConnectedSuccessfully, RequestId);
-        };
+            const UMythicaDeveloperSettings* Settings = GetDefault<UMythicaDeveloperSettings>();
 
-        TSharedRef<IHttpRequest, ESPMode::ThreadSafe> DownloadInfoRequest = FHttpModule::Get().CreateRequest();
-        DownloadInfoRequest->SetURL(Url);
-        DownloadInfoRequest->SetVerb("GET");
-        DownloadInfoRequest->SetHeader("Content-Type", "application/octet-stream");
-        DownloadInfoRequest->OnProcessRequestComplete().BindLambda(Callback);
+            FString Url = FString::Printf(TEXT("%s/v1/download/info/%s"), *Settings->GetServiceURL(), *FileValue);
 
-        DownloadInfoRequest->ProcessRequest();
+            auto Callback = [this, FileValue, RequestId](FHttpRequestPtr Request, FHttpResponsePtr Response, bool bConnectedSuccessfully)
+            {
+                OnMeshDownloadInfoResponse(Request, Response, bConnectedSuccessfully, RequestId);
+            };
 
-        SetJobState(RequestId, EMythicaJobState::Importing);
+            TSharedRef<IHttpRequest, ESPMode::ThreadSafe> DownloadInfoRequest = FHttpModule::Get().CreateRequest();
+            DownloadInfoRequest->SetURL(Url);
+            DownloadInfoRequest->SetVerb("GET");
+            DownloadInfoRequest->SetHeader("Content-Type", "application/octet-stream");
+            DownloadInfoRequest->OnProcessRequestComplete().BindLambda(Callback);
+
+            DownloadInfoRequest->ProcessRequest();
+
+            SetJobState(RequestId, EMythicaJobState::Importing);
+        }
+        else
+        {
+            TArray<uint8> FileData;
+            bool Success = FBase64::Decode(FileValue, FileData);
+            if (!Success)
+            {
+                UE_LOG(LogMythica, Error, TEXT("Failed to decode result mesh data"));
+                SetJobState(RequestId, EMythicaJobState::Failed, FText::FromString("Failed to decode result mesh data"));
+                return;
+            }
+
+            OnResultMeshData(FileData, RequestId);
+        }
     }
     else if (ItemType == "completed")
     {
