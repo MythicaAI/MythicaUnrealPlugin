@@ -1646,16 +1646,22 @@ void UMythicaEditorSubsystem::OnMeshDownloadInfoResponse(FHttpRequestPtr Request
 
 void UMythicaEditorSubsystem::OnMeshDownloadResponse(FHttpRequestPtr Request, FHttpResponsePtr Response, bool bWasSuccessful, int RequestId)
 {
-    FMythicaJob* RequestData = Jobs.Find(RequestId);
-    if (!RequestData)
-    {
-        return;
-    }
-
     if (!bWasSuccessful || !Response.IsValid())
     {
         UE_LOG(LogMythica, Error, TEXT("Failed to download asset"));
         SetJobState(RequestId, EMythicaJobState::Failed, FText::FromString("Failed to download result mesh 4"));
+        return;
+    }
+
+    TArray<uint8> FileData = Response->GetContent();
+    OnResultMeshData(FileData, RequestId);
+}
+
+void UMythicaEditorSubsystem::OnResultMeshData(const TArray<uint8>& FileData, int RequestId)
+{
+    FMythicaJob* RequestData = Jobs.Find(RequestId);
+    if (!RequestData)
+    {
         return;
     }
 
@@ -1673,8 +1679,7 @@ void UMythicaEditorSubsystem::OnMeshDownloadResponse(FHttpRequestPtr Request, FH
     FString CacheImportFile = FPaths::Combine(UniqueCacheImportDirectory, ImportName + ".usdz");
 
     // Save package to disk
-    TArray<uint8> PackageData = Response->GetContent();
-    bool PackageWritten = FFileHelper::SaveArrayToFile(PackageData, *CacheImportFile);
+    bool PackageWritten = FFileHelper::SaveArrayToFile(FileData, *CacheImportFile);
     if (!PackageWritten)
     {
         UE_LOG(LogMythica, Error, TEXT("Failed to write mesh file %s"), *CacheImportFile);
