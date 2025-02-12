@@ -7,7 +7,9 @@
 class ISlateStyle;
 
 /**
- * Slate style used by the Mythica Plugin
+ * Mythica Editor Style
+ * 
+ * Slate style used by the Mythica Plugin.
  */
 class FMythicaEditorStyle
 {

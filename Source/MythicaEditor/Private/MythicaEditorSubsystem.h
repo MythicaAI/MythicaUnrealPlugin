@@ -170,30 +170,30 @@ struct FMythicaAsset
     int32 DigitalAssetCount;
 };
 
-USTRUCT()
+USTRUCT(BlueprintType)
 struct FMythicaJob
 {
     GENERATED_BODY()
 
-    UPROPERTY()
+    UPROPERTY(BlueprintReadOnly, Category = "Data")
     FString JobDefId;
 
-    UPROPERTY()
+    UPROPERTY(BlueprintReadOnly, Category = "Data")
     TArray<FString> InputFileIds;
 
-    UPROPERTY()
+    UPROPERTY(BlueprintReadOnly, Category = "Data")
     FMythicaParameters Params;
 
-    UPROPERTY()
+    UPROPERTY(BlueprintReadOnly, Category = "Data")
     FString ImportPath;
 
-    UPROPERTY()
+    UPROPERTY(BlueprintReadOnly, Category = "Data")
     EMythicaJobState State = EMythicaJobState::Requesting;
 
-    UPROPERTY()
+    UPROPERTY(BlueprintReadOnly, Category = "Data")
     FTimerHandle TimeoutTimer;
 
-    UPROPERTY()
+    UPROPERTY(BlueprintReadOnly, Category = "Data")
     FString JobId;
 
     UPROPERTY()
@@ -225,6 +225,9 @@ public:
 
     UFUNCTION(BlueprintCallable, Category = "Mythica")
     TArray<FMythicaAsset> GetAssetList();
+
+    UFUNCTION(BlueprintPure, Category = "Mythica")
+    TMap<int, FMythicaJob> GetActiveJobsList() const;
 
     UFUNCTION(BlueprintCallable, Category = "Mythica")
     TArray<FMythicaJobDefinition> GetJobDefinitionList(const FString& JobType);

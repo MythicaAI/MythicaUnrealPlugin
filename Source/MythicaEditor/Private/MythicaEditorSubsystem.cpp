@@ -232,6 +232,11 @@ FMythicaJobDefinition UMythicaEditorSubsystem::GetJobDefinitionLatest(const FMyt
     return LatestDefinition;
 }
 
+TMap<int, FMythicaJob> UMythicaEditorSubsystem::GetActiveJobsList() const
+{
+    return Jobs;
+}
+
 bool UMythicaEditorSubsystem::IsAssetInstalled(const FString& PackageId)
 {
     return InstalledAssets.Contains(PackageId);
