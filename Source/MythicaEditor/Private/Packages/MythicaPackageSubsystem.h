@@ -92,7 +92,7 @@ public:
     UPROPERTY(BlueprintAssignable, Category = "Mythica|Packages")
     FOnFavoriteAssetUpdated OnFavoriteAssetsUpdated;
 
-    //UPROPERTY(BlueprintAssignable, Category = "Mythica")
+    //UPROPERTY(BlueprintAssignable, Category = "Mythica|Packages")
     //FOnThumbnailLoaded OnThumbnailLoaded;
 
     UPROPERTY(BlueprintAssignable, Category = "Mythica|Packages")

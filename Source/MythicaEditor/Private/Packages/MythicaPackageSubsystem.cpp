@@ -11,31 +11,34 @@
 
 DEFINE_LOG_CATEGORY(LogMythicaPackages)
 
-const TCHAR* ImportableFileExtensions[] =
+namespace MythicaPackages
 {
-    TEXT("hda"), TEXT("hdalc"), TEXT("hdanc"),
-    TEXT("otl"), TEXT("otllc"), TEXT("otlnc")
-};
-
-static bool CanImportAsset(const FString& FilePath)
-{
-    FString Extension = FPaths::GetExtension(FilePath);
-
-    for (const TCHAR* ImportableExtension : ImportableFileExtensions)
+    const TCHAR* ImportableFileExtensions[] =
     {
-        if (Extension == ImportableExtension)
-        {
-            return true;
-        }
-    }
-    return false;
-}
+        TEXT("hda"), TEXT("hdalc"), TEXT("hdanc"),
+        TEXT("otl"), TEXT("otllc"), TEXT("otlnc")
+    };
 
-static bool CanDisplayImage(const FString& FileName)
-{
-    IImageWrapperModule& ImageWrapperModule = FModuleManager::LoadModuleChecked<IImageWrapperModule>(FName("ImageWrapper"));
-    EImageFormat ImageFormat = ImageWrapperModule.GetImageFormatFromExtension(*FileName);
-    return ImageFormat != EImageFormat::Invalid;
+    static bool CanImportAsset(const FString & FilePath)
+    {
+        FString Extension = FPaths::GetExtension(FilePath);
+
+        for (const TCHAR* ImportableExtension : ImportableFileExtensions)
+        {
+            if (Extension == ImportableExtension)
+            {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    static bool CanDisplayImage(const FString & FileName)
+    {
+        IImageWrapperModule& ImageWrapperModule = FModuleManager::LoadModuleChecked<IImageWrapperModule>(FName("ImageWrapper"));
+        EImageFormat ImageFormat = ImageWrapperModule.GetImageFormatFromExtension(*FileName);
+        return ImageFormat != EImageFormat::Invalid;
+    }
 }
 
 void UMythicaPackageSubsystem::Initialize(FSubsystemCollectionBase& Collection)
@@ -118,10 +121,27 @@ void UMythicaPackageSubsystem::OnGetAssetsResponse(FHttpRequestPtr Request, FHtt
     {
         EHttpFailureReason Reason = Response->GetFailureReason();
 
-        FText ReasonAsText;
-        UEnum::GetDisplayValueAsText(Reason, ReasonAsText);
+        FString ReasonAsString;
+        switch (Reason)
+        {
+        case EHttpFailureReason::ConnectionError:
+            ReasonAsString = TEXT("Connection Error");
+            break;
+        case EHttpFailureReason::Cancelled:
+            ReasonAsString = TEXT("Cancelled");
+            break;
+        case EHttpFailureReason::TimedOut:
+            ReasonAsString = TEXT("Timed Out");
+            break;
+        case EHttpFailureReason::Other:
+            ReasonAsString = TEXT("Other");
+            break;
+        default:
+            ReasonAsString = TEXT("");
+            break;
+        }
 
-        UE_LOG(LogMythicaPackages, Error, TEXT("Failed to get assets because %s"), *ReasonAsText.ToString());
+        UE_LOG(LogMythicaPackages, Error, TEXT("Failed to get assets because %s"), *ReasonAsString);
         return;
     }
 
@@ -195,7 +215,7 @@ void UMythicaPackageSubsystem::OnGetAssetsResponse(FHttpRequestPtr Request, FHtt
                 TSharedPtr<FJsonObject> FileObject = FileValue->AsObject();
 
                 FString FileName = FileObject->GetStringField(TEXT("file_name"));
-                if (CanImportAsset(FileName))
+                if (MythicaPackages::CanImportAsset(FileName))
                 {
                     DigitalAssetCount++;
                 }
@@ -212,7 +232,7 @@ void UMythicaPackageSubsystem::OnGetAssetsResponse(FHttpRequestPtr Request, FHtt
                 TSharedPtr<FJsonObject> ThumbnailObject = ThumbnailValue->AsObject();
 
                 FString FileName = ThumbnailObject->GetStringField(TEXT("file_name"));
-                if (CanDisplayImage(FileName))
+                if (MythicaPackages::CanDisplayImage(FileName))
                 {
                     FString FileExtension = FPaths::GetExtension(FileName);
                     FString ContentHash = ThumbnailObject->GetStringField(TEXT("content_hash"));
