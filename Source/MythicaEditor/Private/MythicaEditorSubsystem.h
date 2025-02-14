@@ -33,7 +33,7 @@ enum class EMythicaJobState : uint8
 
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnSessionStateChanged, EMythicaSessionState, State);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnAssetListUpdated);
-DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnFavoriteAssetsUpdated);
+//DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnFavoriteAssetsUpdated);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnThumbnailLoaded, const FString&, PackageId);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnAssetInstalled, const FString&, PackageId);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnAssetUninstalled, const FString&, PackageId);
@@ -139,6 +139,7 @@ struct FMythicaAsset
 {
     GENERATED_BODY()
 
+    /** The id of the asset in the mythica api. The asset encompasses all versioned packages. */
     UPROPERTY(BlueprintReadOnly, Category = "Data")
     FString AssetId;
 
@@ -292,8 +293,8 @@ public:
     UPROPERTY(BlueprintAssignable, Category = "Mythica")
     FOnAssetListUpdated OnAssetListUpdated;
 
-    UPROPERTY(BlueprintAssignable, Category = "Mythica")
-    FOnFavoriteAssetsUpdated OnFavoriteAssetsUpdated;
+    //UPROPERTY(BlueprintAssignable, Category = "Mythica")
+    //FOnFavoriteAssetsUpdated OnFavoriteAssetsUpdated;
 
     UPROPERTY(BlueprintAssignable, Category = "Mythica")
     FOnThumbnailLoaded OnThumbnailLoaded;
