@@ -1578,26 +1578,41 @@ void UMythicaEditorSubsystem::OnStreamItem(TSharedPtr<FJsonObject> StreamItem)
             return;
         }
 
-        FString FileId = FilesArray[0]->AsString();
-
-        const UMythicaDeveloperSettings* Settings = GetDefault<UMythicaDeveloperSettings>();
-
-        FString Url = FString::Printf(TEXT("%s/v1/download/info/%s"), *Settings->GetServiceURL(), *FileId);
-
-        auto Callback = [this, FileId, RequestId](FHttpRequestPtr Request, FHttpResponsePtr Response, bool bConnectedSuccessfully)
+        FString FileValue = FilesArray[0]->AsString();  
+        if (FileValue.StartsWith("file_"))
         {
-            OnMeshDownloadInfoResponse(Request, Response, bConnectedSuccessfully, RequestId);
-        };
+            const UMythicaDeveloperSettings* Settings = GetDefault<UMythicaDeveloperSettings>();
 
-        TSharedRef<IHttpRequest, ESPMode::ThreadSafe> DownloadInfoRequest = FHttpModule::Get().CreateRequest();
-        DownloadInfoRequest->SetURL(Url);
-        DownloadInfoRequest->SetVerb("GET");
-        DownloadInfoRequest->SetHeader("Content-Type", "application/octet-stream");
-        DownloadInfoRequest->OnProcessRequestComplete().BindLambda(Callback);
+            FString Url = FString::Printf(TEXT("%s/v1/download/info/%s"), *Settings->GetServiceURL(), *FileValue);
 
-        DownloadInfoRequest->ProcessRequest();
+            auto Callback = [this, FileValue, RequestId](FHttpRequestPtr Request, FHttpResponsePtr Response, bool bConnectedSuccessfully)
+            {
+                OnMeshDownloadInfoResponse(Request, Response, bConnectedSuccessfully, RequestId);
+            };
 
-        SetJobState(RequestId, EMythicaJobState::Importing);
+            TSharedRef<IHttpRequest, ESPMode::ThreadSafe> DownloadInfoRequest = FHttpModule::Get().CreateRequest();
+            DownloadInfoRequest->SetURL(Url);
+            DownloadInfoRequest->SetVerb("GET");
+            DownloadInfoRequest->SetHeader("Content-Type", "application/octet-stream");
+            DownloadInfoRequest->OnProcessRequestComplete().BindLambda(Callback);
+
+            DownloadInfoRequest->ProcessRequest();
+
+            SetJobState(RequestId, EMythicaJobState::Importing);
+        }
+        else
+        {
+            TArray<uint8> FileData;
+            bool Success = FBase64::Decode(FileValue, FileData);
+            if (!Success)
+            {
+                UE_LOG(LogMythica, Error, TEXT("Failed to decode result mesh data"));
+                SetJobState(RequestId, EMythicaJobState::Failed, FText::FromString("Failed to decode result mesh data"));
+                return;
+            }
+
+            OnResultMeshData(FileData, RequestId);
+        }
     }
     else if (ItemType == "completed")
     {
@@ -1651,16 +1666,22 @@ void UMythicaEditorSubsystem::OnMeshDownloadInfoResponse(FHttpRequestPtr Request
 
 void UMythicaEditorSubsystem::OnMeshDownloadResponse(FHttpRequestPtr Request, FHttpResponsePtr Response, bool bWasSuccessful, int RequestId)
 {
-    FMythicaJob* RequestData = Jobs.Find(RequestId);
-    if (!RequestData)
-    {
-        return;
-    }
-
     if (!bWasSuccessful || !Response.IsValid())
     {
         UE_LOG(LogMythica, Error, TEXT("Failed to download asset"));
         SetJobState(RequestId, EMythicaJobState::Failed, FText::FromString("Failed to download result mesh 4"));
+        return;
+    }
+
+    TArray<uint8> FileData = Response->GetContent();
+    OnResultMeshData(FileData, RequestId);
+}
+
+void UMythicaEditorSubsystem::OnResultMeshData(const TArray<uint8>& FileData, int RequestId)
+{
+    FMythicaJob* RequestData = Jobs.Find(RequestId);
+    if (!RequestData)
+    {
         return;
     }
 
@@ -1678,8 +1699,7 @@ void UMythicaEditorSubsystem::OnMeshDownloadResponse(FHttpRequestPtr Request, FH
     FString CacheImportFile = FPaths::Combine(UniqueCacheImportDirectory, ImportName + ".usdz");
 
     // Save package to disk
-    TArray<uint8> PackageData = Response->GetContent();
-    bool PackageWritten = FFileHelper::SaveArrayToFile(PackageData, *CacheImportFile);
+    bool PackageWritten = FFileHelper::SaveArrayToFile(FileData, *CacheImportFile);
     if (!PackageWritten)
     {
         UE_LOG(LogMythica, Error, TEXT("Failed to write mesh file %s"), *CacheImportFile);

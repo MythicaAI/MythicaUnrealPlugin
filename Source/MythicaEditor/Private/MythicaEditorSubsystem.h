@@ -333,6 +333,7 @@ private:
     void OnStreamItem(TSharedPtr<FJsonObject> StreamItem);
     void OnMeshDownloadInfoResponse(FHttpRequestPtr Request, FHttpResponsePtr Response, bool bWasSuccessful, int RequestId);
     void OnMeshDownloadResponse(FHttpRequestPtr Request, FHttpResponsePtr Response, bool bWasSuccessful, int RequestId);
+    void OnResultMeshData(const TArray<uint8>& FileData, int RequestId);
 
     int CreateJob(const FString& JobDefId, const FMythicaParameters& Params, const FString& ImportName);
     void SetJobState(int RequestId, EMythicaJobState State, FText Message = FText::GetEmpty());
