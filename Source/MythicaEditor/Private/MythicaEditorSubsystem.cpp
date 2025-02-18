@@ -1372,7 +1372,7 @@ void UMythicaEditorSubsystem::OnExecuteJobResponse(FHttpRequestPtr Request, FHtt
 int UMythicaEditorSubsystem::CreateJob(const FString& JobDefId, const FMythicaParameters& Params, const FString& ImportPath, UMythicaComponent* Component)
 {
     int RequestId = NextRequestId++;
-    FMythicaJob& Job = Jobs.Add(RequestId, { JobDefId, {}, Params, ImportPath, Component, Component->GetReadableName()});
+    FMythicaJob& Job = Jobs.Add(RequestId, { JobDefId, {}, Params, ImportPath, Component, Component->GetReadableName()}); // UKismetSystemLibrary::GetDisplayName(Component) 
 
     Job.StartTime = FDateTime::Now();
 
