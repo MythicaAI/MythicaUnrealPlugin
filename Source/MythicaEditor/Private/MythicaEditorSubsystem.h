@@ -6,6 +6,8 @@
 #include "Interfaces/IHttpResponse.h"
 #include "IWebSocket.h"
 #include "MythicaTypes.h"
+#include "UObject/WeakObjectPtrTemplates.h"
+
 #include "MythicaEditorSubsystem.generated.h"
 
 DECLARE_LOG_CATEGORY_EXTERN(LogMythica, Log, All);
@@ -189,6 +191,9 @@ struct FMythicaJob
     FString ImportPath;
 
     UPROPERTY(BlueprintReadOnly, Category = "Data")
+    TWeakObjectPtr<class UMythicaComponent> OwningComponent;
+
+    UPROPERTY(BlueprintReadOnly, Category = "Data")
     EMythicaJobState State = EMythicaJobState::Requesting;
 
     UPROPERTY(BlueprintReadOnly, Category = "Data")
@@ -199,6 +204,7 @@ struct FMythicaJob
 
     UPROPERTY()
     FString ImportDirectory;
+
 };
 
 UCLASS()
@@ -284,7 +290,8 @@ public:
         const FString& JobDefId, 
         const FMythicaParameters& Params, 
         const FString& ImportPath, 
-        const FVector& Origin);
+        const FVector& Origin,
+        UMythicaComponent* ExecutingComp);
 
     // Delegates
     UPROPERTY(BlueprintAssignable, Category = "Mythica")
@@ -335,7 +342,7 @@ private:
     void OnMeshDownloadResponse(FHttpRequestPtr Request, FHttpResponsePtr Response, bool bWasSuccessful, int RequestId);
     void OnResultMeshData(const TArray<uint8>& FileData, int RequestId);
 
-    int CreateJob(const FString& JobDefId, const FMythicaParameters& Params, const FString& ImportName);
+    int CreateJob(const FString& JobDefId, const FMythicaParameters& Params, const FString& ImportName, UMythicaComponent* Component);
     void SetJobState(int RequestId, EMythicaJobState State, FText Message = FText::GetEmpty());
     void PollJobStatus();
     void OnJobTimeout(int RequestId);

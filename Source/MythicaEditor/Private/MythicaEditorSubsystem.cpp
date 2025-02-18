@@ -12,6 +12,7 @@
 #include "ImageUtils.h"
 #include "Interfaces/IPluginManager.h"
 #include "LevelEditor.h"
+#include "MythicaComponent.h"
 #include "MythicaDeveloperSettings.h"
 #include "MythicaInputSelectionVolume.h"
 #include "MythicaUSDUtil.h"
@@ -1252,7 +1253,8 @@ int UMythicaEditorSubsystem::ExecuteJob(
     const FString& JobDefId, 
     const FMythicaParameters& Params, 
     const FString& ImportPath,
-    const FVector& Origin
+    const FVector& Origin,
+    UMythicaComponent* ExecutingComp
 ) {
     if (SessionState != EMythicaSessionState::SessionCreated)
     {
@@ -1262,14 +1264,14 @@ int UMythicaEditorSubsystem::ExecuteJob(
 
     FString ExportDirectory;
     TMap<int, FString> InputFiles;
-    bool Success = PrepareInputFiles(Params, InputFiles, ExportDirectory, Origin);
-    if (!Success)
+    bool bSuccess = PrepareInputFiles(Params, InputFiles, ExportDirectory, Origin);
+    if (!bSuccess)
     {
         UE_LOG(LogMythica, Error, TEXT("Failed to prepare job input files"));
         return -1;
     }
 
-    int RequestId = CreateJob(JobDefId, Params, ImportPath);
+    int RequestId = CreateJob(JobDefId, Params, ImportPath, ExecutingComp);
 
     if (InputFiles.IsEmpty())
     {
@@ -1367,10 +1369,10 @@ void UMythicaEditorSubsystem::OnExecuteJobResponse(FHttpRequestPtr Request, FHtt
     SetJobState(RequestId, EMythicaJobState::Queued);
 }
 
-int UMythicaEditorSubsystem::CreateJob(const FString& JobDefId, const FMythicaParameters& Params, const FString& ImportPath)
+int UMythicaEditorSubsystem::CreateJob(const FString& JobDefId, const FMythicaParameters& Params, const FString& ImportPath, UMythicaComponent* Component)
 {
     int RequestId = NextRequestId++;
-    Jobs.Add(RequestId, { JobDefId, {}, Params, ImportPath });
+    Jobs.Add(RequestId, { JobDefId, {}, Params, ImportPath, Component });
 
     if (!JobPollTimer.IsValid())
     {
