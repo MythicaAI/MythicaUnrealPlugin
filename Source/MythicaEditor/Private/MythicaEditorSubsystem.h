@@ -145,6 +145,7 @@ struct FMythicaAsset
     UPROPERTY(BlueprintReadOnly, Category = "Data")
     FString AssetId;
 
+    /** The id of the package of files that is versioned and stored under an asset id. */
     UPROPERTY(BlueprintReadOnly, Category = "Data")
     FString PackageId;
     
@@ -178,20 +179,25 @@ struct FMythicaJob
 {
     GENERATED_BODY()
 
-    UPROPERTY(BlueprintReadOnly, Category = "Data")
-    FString JobDefId;
+public:
 
     UPROPERTY(BlueprintReadOnly, Category = "Data")
-    TArray<FString> InputFileIds;
+    FString JobDefId = FString();
 
     UPROPERTY(BlueprintReadOnly, Category = "Data")
-    FMythicaParameters Params;
+    TArray<FString> InputFileIds = TArray<FString>();
 
     UPROPERTY(BlueprintReadOnly, Category = "Data")
-    FString ImportPath;
+    FMythicaParameters Params = FMythicaParameters();
 
     UPROPERTY(BlueprintReadOnly, Category = "Data")
-    TWeakObjectPtr<class UMythicaComponent> OwningComponent;
+    FString ImportPath = FString();
+
+    UPROPERTY(BlueprintReadOnly, Category = "Data")
+    TWeakObjectPtr<class UMythicaComponent> OwningComponent = nullptr;
+
+    UPROPERTY(BlueprintReadOnly, Category = "Data")
+    FString OwningComponentName = FString();
 
     UPROPERTY(BlueprintReadOnly, Category = "Data")
     EMythicaJobState State = EMythicaJobState::Requesting;
@@ -200,10 +206,18 @@ struct FMythicaJob
     FTimerHandle TimeoutTimer;
 
     UPROPERTY(BlueprintReadOnly, Category = "Data")
-    FString JobId;
+    FString JobId = FString();
 
-    UPROPERTY()
-    FString ImportDirectory;
+    UPROPERTY(BlueprintReadOnly, Category = "Data")
+    FString ImportDirectory = FString();
+
+    /** The system time of the machine at the time the job was created */
+    UPROPERTY(BlueprintReadOnly, Category = "Data")
+    FDateTime StartTime = FDateTime();
+
+    /** The system time of the machine at the time the job was completed */
+    UPROPERTY(BlueprintReadOnly, Category = "Data")
+    FDateTime EndTime = FDateTime();
 
 };
 

@@ -113,13 +113,11 @@ void FMythicaEditorModule::RegisterEditorMenus()
             LOCTEXT("OpenMythicaPackageManagerButton", "Mythica Package Manager"),
             LOCTEXT("OpenMythicaPackageManagerDescription", "Opens the Mythica Package Manager."),
             FSlateIcon(FMythicaEditorStyle::GetStyleSetName(), "MythicaEditor.MythicaLogo"),
-            FToolUIActionChoice(
-                FUIAction(
-                    FExecuteAction::CreateStatic(&UMythicaEditorUtilityLibrary::OpenPackageManager),
-                    FCanExecuteAction(),
-                    FIsActionChecked(),
-                    FIsActionButtonVisible()
-                )
+            FUIAction(
+                FExecuteAction::CreateStatic(&UMythicaEditorUtilityLibrary::OpenPackageManager),
+                FCanExecuteAction(),
+                FIsActionChecked(),
+                FIsActionButtonVisible()
             )
         );
         GetContentSection.AddEntry(OpenPackageManagerEntry);

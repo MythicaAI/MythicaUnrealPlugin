@@ -1372,7 +1372,9 @@ void UMythicaEditorSubsystem::OnExecuteJobResponse(FHttpRequestPtr Request, FHtt
 int UMythicaEditorSubsystem::CreateJob(const FString& JobDefId, const FMythicaParameters& Params, const FString& ImportPath, UMythicaComponent* Component)
 {
     int RequestId = NextRequestId++;
-    Jobs.Add(RequestId, { JobDefId, {}, Params, ImportPath, Component });
+    FMythicaJob& Job = Jobs.Add(RequestId, { JobDefId, {}, Params, ImportPath, Component, Component->GetReadableName()});
+
+    Job.StartTime = FDateTime::Now();
 
     if (!JobPollTimer.IsValid())
     {
@@ -1403,6 +1405,10 @@ void UMythicaEditorSubsystem::SetJobState(int RequestId, EMythicaJobState State,
     else if (State == EMythicaJobState::Importing || State == EMythicaJobState::Failed)
     {
         GEditor->GetTimerManager()->ClearTimer(JobData->TimeoutTimer);
+    }
+    else if (State == EMythicaJobState::Completed)
+    {
+        JobData->EndTime = FDateTime::Now();
     }
 
     // TODO: Expire old request data
