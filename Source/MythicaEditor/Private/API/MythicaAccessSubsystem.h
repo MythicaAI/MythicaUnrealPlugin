@@ -9,7 +9,7 @@
 //UENUM(BlueprintType)
 //enum class EMythicaSessionState : uint8
 //{
-//    MSS_None        UMETA(DisplayName="None"),
+//    MSS_None        UMETA(DisplayName = "None"),
 //    MSS_Requesting  UMETA(DisplayName = "Requesting"),
 //    MSS_Failed      UMETA(DisplayName = "Failed"),
 //    MSS_Created     UMETA(DisplayName = "Created")

@@ -23,6 +23,16 @@ public:
 
     static void OpenEditorUtilityWidgetAsTab(UObject* Outer, const TCHAR* Name, const TCHAR* Filename = nullptr, uint32 LoadFlags = LOAD_None, UPackageMap* Sandbox = nullptr, const FLinkerInstancingContext* InstancingContext = nullptr);
 
+    static void OpenEditorUtilityWidgetAsTab(FSoftObjectPath WidgetToLoad, FUObjectSerializeContext* Context = nullptr);
+
     static void OpenPackageManager();
+
+    static void OpenJobDirector();
+
+public:
+
+    static FSoftObjectPath s_PackageManagerWidgetPath;
+
+    static FSoftObjectPath s_JobDirectorWidgetPath;
 
 };

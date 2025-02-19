@@ -44,6 +44,9 @@ public:
 
     virtual void PostEditChangeProperty(FPropertyChangedEvent& PropertyChangedEvent) override;
 
+    UFUNCTION(BlueprintPure, Category="Mythica|Component")
+    TArray<FName> GetMeshComponentNames() const { return MeshComponentNames; }
+
 private:
     void OnJobDefIdChanged();
 

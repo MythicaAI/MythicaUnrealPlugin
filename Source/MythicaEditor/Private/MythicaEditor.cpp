@@ -32,6 +32,47 @@ static bool HasPlayWorldAndRunning()
     return HasPlayWorld() && !GUnrealEd->PlayWorld->bDebugPauseExecution;
 }
 
+static void OpenMythicaPackageManager_Clicked()
+{
+    UMythicaEditorUtilityLibrary::OpenPackageManager();
+}
+
+static void OpenMythicaJobDirector_Clicked()
+{
+    UMythicaEditorUtilityLibrary::OpenJobDirector();
+}
+
+static TSharedRef<SWidget> GetMythicaHubDropDown()
+{
+    FMenuBuilder MenuBuilder(true, nullptr);
+
+    MenuBuilder.AddMenuEntry(
+        LOCTEXT("OpenMythicaPackageManagerButton", "Package Manager"),
+        LOCTEXT("OpenMythicaPackageManagerDescription", "Opens the Mythica Package Manager."),
+        FSlateIcon(FMythicaEditorStyle::GetStyleSetName(), "MythicaEditor.MythicaLogo"),
+        FUIAction(
+            FExecuteAction::CreateStatic(&OpenMythicaPackageManager_Clicked),
+            FCanExecuteAction::CreateStatic(&HasNoPlayWorld),
+            FIsActionChecked(),
+            FIsActionButtonVisible::CreateStatic(&HasNoPlayWorld)
+        )
+    );
+
+    MenuBuilder.AddMenuEntry(
+        LOCTEXT("OpenMythicaJobDirectorButton", "Job Director"),
+        LOCTEXT("OpenMythicaJobDirectorDescription", "The Job Director displays a list of all MythicaComponents in the current scene with their latest jobs status and some quick actions."),
+        FSlateIcon(FMythicaEditorStyle::GetStyleSetName(), "MythicaEditor.MythicaLogo"),
+        FUIAction(
+            FExecuteAction::CreateStatic(&OpenMythicaJobDirector_Clicked),
+            FCanExecuteAction::CreateStatic(&HasNoPlayWorld),
+            FIsActionChecked(),
+            FIsActionButtonVisible::CreateStatic(&HasNoPlayWorld)
+        )
+    );
+
+    return MenuBuilder.MakeWidget();
+}
+
 void FMythicaEditorModule::StartupModule()
 {
     FMythicaEditorStyle::Initialize();
@@ -87,7 +128,7 @@ void FMythicaEditorModule::RegisterEditorMenus()
         UToolMenu* AssetToolBarMenu = UToolMenus::Get()->ExtendMenu("LevelEditor.LevelEditorToolBar.AssetsToolBar");
         FToolMenuSection& ContentSection = AssetToolBarMenu->FindOrAddSection("Content");
 
-        FToolMenuEntry OpenMythicaHubEntry = FToolMenuEntry::InitToolBarButton(
+        FToolMenuEntry OpenMythicaHubEntry = FToolMenuEntry::InitComboButton(
             "OpenMythicaHUB",
             FUIAction(
                 FExecuteAction::CreateStatic(&UMythicaEditorUtilityLibrary::OpenPackageManager),
@@ -95,6 +136,7 @@ void FMythicaEditorModule::RegisterEditorMenus()
                 FIsActionChecked(),
                 FIsActionButtonVisible()
             ),
+            FOnGetContent::CreateStatic(&GetMythicaHubDropDown),
             LOCTEXT("OpenMythicaHubButton", "Mythica HUB"),
             LOCTEXT("OpenMythicaHubDescription", "Opens the Mythica HUB. Where you can find all plugin information, documentation, and tweak settings in one window."),
             FSlateIcon(FMythicaEditorStyle::GetStyleSetName(), "MythicaEditor.MythicaLogo")
@@ -107,20 +149,33 @@ void FMythicaEditorModule::RegisterEditorMenus()
         UToolMenu* MainMenuWindowMenu = UToolMenus::Get()->ExtendMenu("LevelEditor.MainMenu.Window");
         FToolMenuSection& GetContentSection = MainMenuWindowMenu->FindOrAddSection("GetContent");
 
-        // const FName InName, const TAttribute<FText>& InLabel, const TAttribute<FText>& InToolTip, const TAttribute<FSlateIcon>& InIcon, const FToolUIActionChoice& InAction, const EUserInterfaceActionType InUserInterfaceActionType, const FName InTutorialHighlightName
         FToolMenuEntry OpenPackageManagerEntry = FToolMenuEntry::InitMenuEntry(
             "OpenPackageManager",
             LOCTEXT("OpenMythicaPackageManagerButton", "Mythica Package Manager"),
             LOCTEXT("OpenMythicaPackageManagerDescription", "Opens the Mythica Package Manager."),
             FSlateIcon(FMythicaEditorStyle::GetStyleSetName(), "MythicaEditor.MythicaLogo"),
             FUIAction(
-                FExecuteAction::CreateStatic(&UMythicaEditorUtilityLibrary::OpenPackageManager),
-                FCanExecuteAction(),
+                FExecuteAction::CreateStatic(&OpenMythicaPackageManager_Clicked),
+                FCanExecuteAction::CreateStatic(&HasNoPlayWorld),
                 FIsActionChecked(),
-                FIsActionButtonVisible()
+                FIsActionButtonVisible::CreateStatic(&HasNoPlayWorld)
             )
         );
         GetContentSection.AddEntry(OpenPackageManagerEntry);
+
+        FToolMenuEntry OpenJobDirectorEntry = FToolMenuEntry::InitMenuEntry(
+            "OpenJobDirector",
+            LOCTEXT("OpenMythicaJobDirectorButton", "Mythica Job Director"),
+            LOCTEXT("OpenMythicaJobDirectorDescription", "The Job Director displays a list of all MythicaComponents in the current scene with their latest jobs status and some quick actions."),
+            FSlateIcon(FMythicaEditorStyle::GetStyleSetName(), "MythicaEditor.MythicaLogo"),
+            FUIAction(
+                FExecuteAction::CreateStatic(&OpenMythicaJobDirector_Clicked),
+                FCanExecuteAction::CreateStatic(&HasNoPlayWorld),
+                FIsActionChecked(),
+                FIsActionButtonVisible::CreateStatic(&HasNoPlayWorld)
+            )
+        );
+        GetContentSection.AddEntry(OpenJobDirectorEntry);
     }
 }
 
