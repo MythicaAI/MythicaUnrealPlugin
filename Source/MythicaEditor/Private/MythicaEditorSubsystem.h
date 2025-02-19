@@ -171,6 +171,18 @@ struct FMythicaAsset
 };
 
 USTRUCT()
+struct FMythicaStreamFile
+{
+    GENERATED_BODY()
+
+    UPROPERTY()
+    TArray<uint8> FileData;
+
+    UPROPERTY()
+    uint32 ChunksReceived = 0;
+};
+
+USTRUCT()
 struct FMythicaJob
 {
     GENERATED_BODY()
@@ -198,6 +210,9 @@ struct FMythicaJob
 
     UPROPERTY()
     FString ImportDirectory;
+
+    UPROPERTY()
+    FMythicaStreamFile StreamFile;
 };
 
 UCLASS()
