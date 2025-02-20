@@ -225,7 +225,7 @@ FMythicaJobDefinition UMythicaEditorSubsystem::GetJobDefinitionLatest(const FMyt
     {
         if (EntryPointReference.Compare(Definition.Source) && LatestDefinition.Source.Version < Definition.Source.Version)
         {
-            return LatestDefinition = Definition;
+            LatestDefinition = Definition;
         }
     }
 
