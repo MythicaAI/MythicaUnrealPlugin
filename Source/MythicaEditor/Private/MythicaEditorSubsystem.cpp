@@ -1563,6 +1563,70 @@ void UMythicaEditorSubsystem::OnStreamItem(TSharedPtr<FJsonObject> StreamItem)
             SetJobState(RequestId, EMythicaJobState::Processing);
         }
     }
+    else if (ItemType == "file_content_chunk")
+    {
+        FString FileKey = StreamItem->GetStringField(TEXT("file_key"));
+        int32 FileIndex = StreamItem->GetNumberField(TEXT("file_index"));
+        if (FileKey != "mesh" && FileIndex != 0)
+        {
+            UE_LOG(LogMythica, Error, TEXT("Unexpected file chunk with key %s and index %d"), *FileKey, FileIndex);
+            return;
+        }
+
+        FMythicaStreamFile& StreamFile = RequestData->StreamFile;
+
+        int32 ChunkIndex = StreamItem->GetNumberField(TEXT("chunk_index"));
+        if (ChunkIndex != StreamFile.ChunksReceived)
+        {
+            UE_LOG(LogMythica, Error, TEXT("Unexpected chunk index %d"), ChunkIndex);
+            return;
+        }
+
+        FString EncodedData = StreamItem->GetStringField(TEXT("encoded_data"));
+
+        TArray<uint8> FileData;
+        bool Success = FBase64::Decode(EncodedData, FileData);
+        if (!Success)
+        {
+            UE_LOG(LogMythica, Error, TEXT("Failed to decode file chunk data"));
+            return;
+        }
+
+        if (ChunkIndex == 0)
+        {
+            int32 FileSize = StreamItem->GetNumberField(TEXT("file_size"));
+            StreamFile.FileData.Reserve(FileSize);
+            check(StreamFile.FileData.Num() == 0);
+        }
+        else
+        {
+            uint32 Capacity = StreamFile.FileData.GetAllocatedSize();
+            uint32 Size = StreamFile.FileData.Num();
+            if (Size + FileData.Num() > Capacity)
+            {
+                UE_LOG(LogMythica, Error, TEXT("File data exceeded expected file size"));
+                return;
+            }
+        }
+
+        StreamFile.FileData.Append(FileData);
+        StreamFile.ChunksReceived++;
+
+        int32 TotalChunks = StreamItem->GetNumberField(TEXT("total_chunks"));
+        if (StreamFile.ChunksReceived == TotalChunks)
+        {
+            uint32 Capacity = StreamFile.FileData.GetAllocatedSize();
+            uint32 Size = StreamFile.FileData.Num();
+            if (Size != Capacity)
+            {
+                UE_LOG(LogMythica, Error, TEXT("File data didn't match expected size"));
+                return;
+            }
+
+            OnResultMeshData(StreamFile.FileData, RequestId);
+            StreamFile.FileData.Empty();
+        }
+    }
     else if (ItemType == "file")
     {
         TSharedPtr<FJsonObject> FilesObject = StreamItem->GetObjectField(TEXT("files"));
@@ -1573,41 +1637,25 @@ void UMythicaEditorSubsystem::OnStreamItem(TSharedPtr<FJsonObject> StreamItem)
             return;
         }
 
-        FString FileValue = FilesArray[0]->AsString();  
-        if (FileValue.StartsWith("file_"))
+        FString FileValue = FilesArray[0]->AsString();
+
+        const UMythicaDeveloperSettings* Settings = GetDefault<UMythicaDeveloperSettings>();
+        FString Url = FString::Printf(TEXT("%s/v1/download/info/%s"), *Settings->GetServiceURL(), *FileValue);
+
+        auto Callback = [this, FileValue, RequestId](FHttpRequestPtr Request, FHttpResponsePtr Response, bool bConnectedSuccessfully)
         {
-            const UMythicaDeveloperSettings* Settings = GetDefault<UMythicaDeveloperSettings>();
+            OnMeshDownloadInfoResponse(Request, Response, bConnectedSuccessfully, RequestId);
+        };
 
-            FString Url = FString::Printf(TEXT("%s/v1/download/info/%s"), *Settings->GetServiceURL(), *FileValue);
+        TSharedRef<IHttpRequest, ESPMode::ThreadSafe> DownloadInfoRequest = FHttpModule::Get().CreateRequest();
+        DownloadInfoRequest->SetURL(Url);
+        DownloadInfoRequest->SetVerb("GET");
+        DownloadInfoRequest->SetHeader("Content-Type", "application/octet-stream");
+        DownloadInfoRequest->OnProcessRequestComplete().BindLambda(Callback);
 
-            auto Callback = [this, FileValue, RequestId](FHttpRequestPtr Request, FHttpResponsePtr Response, bool bConnectedSuccessfully)
-            {
-                OnMeshDownloadInfoResponse(Request, Response, bConnectedSuccessfully, RequestId);
-            };
+        DownloadInfoRequest->ProcessRequest();
 
-            TSharedRef<IHttpRequest, ESPMode::ThreadSafe> DownloadInfoRequest = FHttpModule::Get().CreateRequest();
-            DownloadInfoRequest->SetURL(Url);
-            DownloadInfoRequest->SetVerb("GET");
-            DownloadInfoRequest->SetHeader("Content-Type", "application/octet-stream");
-            DownloadInfoRequest->OnProcessRequestComplete().BindLambda(Callback);
-
-            DownloadInfoRequest->ProcessRequest();
-
-            SetJobState(RequestId, EMythicaJobState::Importing);
-        }
-        else
-        {
-            TArray<uint8> FileData;
-            bool Success = FBase64::Decode(FileValue, FileData);
-            if (!Success)
-            {
-                UE_LOG(LogMythica, Error, TEXT("Failed to decode result mesh data"));
-                SetJobState(RequestId, EMythicaJobState::Failed, FText::FromString("Failed to decode result mesh data"));
-                return;
-            }
-
-            OnResultMeshData(FileData, RequestId);
-        }
+        SetJobState(RequestId, EMythicaJobState::Importing);
     }
     else if (ItemType == "completed")
     {
