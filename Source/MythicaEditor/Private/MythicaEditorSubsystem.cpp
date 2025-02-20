@@ -1656,7 +1656,6 @@ void UMythicaEditorSubsystem::OnStreamItem(TSharedPtr<FJsonObject> StreamItem)
         DownloadInfoRequest->ProcessRequest();
 
         SetJobState(RequestId, EMythicaJobState::Importing);
-
     }
     else if (ItemType == "completed")
     {
