@@ -11,6 +11,7 @@
 #include "ImageCoreUtils.h"
 #include "ImageUtils.h"
 #include "Interfaces/IPluginManager.h"
+#include "Kismet\KismetSystemLibrary.h"
 #include "LevelEditor.h"
 #include "MythicaComponent.h"
 #include "MythicaDeveloperSettings.h"
@@ -236,6 +237,11 @@ FMythicaJobDefinition UMythicaEditorSubsystem::GetJobDefinitionLatest(const FMyt
 TMap<int, FMythicaJob> UMythicaEditorSubsystem::GetActiveJobsList() const
 {
     return Jobs;
+}
+
+TMap<FString, FMythicaRequestIdList> UMythicaEditorSubsystem::GetJobsToComponentList() const
+{
+    return ComponentToJobs;
 }
 
 bool UMythicaEditorSubsystem::IsAssetInstalled(const FString& PackageId)
@@ -1372,15 +1378,22 @@ void UMythicaEditorSubsystem::OnExecuteJobResponse(FHttpRequestPtr Request, FHtt
 int UMythicaEditorSubsystem::CreateJob(const FString& JobDefId, const FMythicaParameters& Params, const FString& ImportPath, UMythicaComponent* Component)
 {
     int RequestId = NextRequestId++;
-    FMythicaJob& Job = Jobs.Add(RequestId, { JobDefId, {}, Params, ImportPath, Component, Component->GetReadableName()}); // UKismetSystemLibrary::GetDisplayName(Component) 
+    FString DisplayName = UKismetSystemLibrary::GetDisplayName(Component);
+
+    FMythicaJob& Job = Jobs.Add(RequestId, { JobDefId, {}, Params, ImportPath, Component, DisplayName });
 
     Job.StartTime = FDateTime::Now();
+
+    FMythicaRequestIdList& RequestList = ComponentToJobs.FindOrAdd(DisplayName);
+    RequestList.RequestIds.EmplaceAt(0, RequestId);
 
     if (!JobPollTimer.IsValid())
     {
         FTimerDelegate TimerDelegate = FTimerDelegate::CreateUObject(this, &UMythicaEditorSubsystem::PollJobStatus);
         GEditor->GetTimerManager()->SetTimer(JobPollTimer, TimerDelegate, 1.0f, true);
     }
+
+    OnJobCreated.Broadcast(RequestId, DisplayName);
 
     return RequestId;
 }
@@ -1422,6 +1435,9 @@ void UMythicaEditorSubsystem::SetJobState(int RequestId, EMythicaJobState State,
 void UMythicaEditorSubsystem::ClearJobs()
 {
     Jobs.Reset();
+
+    ComponentToJobs.Reset();
+
     GEditor->GetTimerManager()->ClearTimer(JobPollTimer);
 }
 

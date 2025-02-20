@@ -39,6 +39,7 @@ DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnFavoriteAssetsUpdated);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnThumbnailLoaded, const FString&, PackageId);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnAssetInstalled, const FString&, PackageId);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnAssetUninstalled, const FString&, PackageId);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FOnJobCreated, int, RequestId, const FString&, ComponentId);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_ThreeParams(FOnJobStateChanged, int, RequestId, EMythicaJobState, State, FText, Message);
 
 USTRUCT(BlueprintType)
@@ -221,6 +222,19 @@ public:
 
 };
 
+USTRUCT(BlueprintType)
+struct FMythicaRequestIdList
+{
+    GENERATED_BODY()
+
+public:
+
+    /** A list of all associated job requests */
+    UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "Data")
+    TArray<int> RequestIds;
+
+};
+
 UCLASS()
 class UMythicaEditorSubsystem : public UEditorSubsystem
 {
@@ -249,6 +263,9 @@ public:
 
     UFUNCTION(BlueprintPure, Category = "Mythica")
     TMap<int, FMythicaJob> GetActiveJobsList() const;
+
+    UFUNCTION(BlueprintPure, Category = "Mythica")
+    TMap<FString, FMythicaRequestIdList> GetJobsToComponentList() const;
 
     UFUNCTION(BlueprintCallable, Category = "Mythica")
     TArray<FMythicaJobDefinition> GetJobDefinitionList(const FString& JobType);
@@ -327,6 +344,9 @@ public:
     FOnAssetInstalled OnAssetUninstalled;
 
     UPROPERTY(BlueprintAssignable, Category = "Mythica")
+    FOnJobCreated OnJobCreated;
+
+    UPROPERTY(BlueprintAssignable, Category = "Mythica")
     FOnJobStateChanged OnJobStateChange;
 
 private:
@@ -381,6 +401,8 @@ private:
 
     FMythicaAsset* FindAsset(const FString& PackageId);
 
+private:
+
     EMythicaSessionState SessionState = EMythicaSessionState::None;
     FString AuthToken;
     TSharedPtr<IWebSocket> WebSocket;
@@ -390,6 +412,10 @@ private:
 
     UPROPERTY()
     TMap<int, FMythicaJob> Jobs;
+
+    UPROPERTY()
+    TMap<FString, FMythicaRequestIdList> ComponentToJobs = TMap<FString, FMythicaRequestIdList>();
+
     FTimerHandle JobPollTimer;
     int NextRequestId = 1;
 
