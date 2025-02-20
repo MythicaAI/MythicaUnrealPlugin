@@ -56,13 +56,13 @@ struct FMythicaAssetVersion
 {
     GENERATED_BODY()
     
-    UPROPERTY(BlueprintReadOnly, Category = "Version")
+    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Version")
     int32 Major = 0;
     
-    UPROPERTY(BlueprintReadOnly, Category = "Version")
+    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Version")
     int32 Minor = 0;
     
-    UPROPERTY(BlueprintReadOnly, Category = "Version")
+    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Version")
     int32 Patch = 0;
 
     bool operator<(const FMythicaAssetVersion& Other) const;
@@ -76,19 +76,19 @@ struct FMythicaAssetVersionEntryPointReference
 {
     GENERATED_BODY()
 
-    UPROPERTY(BlueprintReadOnly, Category = "Data")
+    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Data")
     FString AssetId;
 
-    UPROPERTY(BlueprintReadOnly, Category = "Data")
+    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Data")
     FMythicaAssetVersion Version;
 
-    UPROPERTY(BlueprintReadOnly, Category = "Data")
+    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Data")
     FString FileId;
 
-    UPROPERTY(BlueprintReadOnly, Category = "Data")
+    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Data")
     FString FileName;
 
-    UPROPERTY(BlueprintReadOnly, Category = "Data")
+    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Data")
     FString EntryPoint;
 
     bool IsValid() const;
