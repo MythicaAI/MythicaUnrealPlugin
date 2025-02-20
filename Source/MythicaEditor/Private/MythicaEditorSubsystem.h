@@ -59,13 +59,13 @@ struct FMythicaAssetVersion
 {
     GENERATED_BODY()
     
-    UPROPERTY(BlueprintReadOnly, Category = "Version")
+    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Version")
     int32 Major = 0;
     
-    UPROPERTY(BlueprintReadOnly, Category = "Version")
+    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Version")
     int32 Minor = 0;
     
-    UPROPERTY(BlueprintReadOnly, Category = "Version")
+    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Version")
     int32 Patch = 0;
 
     bool operator<(const FMythicaAssetVersion& Other) const;
@@ -79,19 +79,19 @@ struct FMythicaAssetVersionEntryPointReference
 {
     GENERATED_BODY()
 
-    UPROPERTY(BlueprintReadOnly, Category = "Data")
+    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Data")
     FString AssetId;
 
-    UPROPERTY(BlueprintReadOnly, Category = "Data")
+    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Data")
     FMythicaAssetVersion Version;
 
-    UPROPERTY(BlueprintReadOnly, Category = "Data")
+    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Data")
     FString FileId;
 
-    UPROPERTY(BlueprintReadOnly, Category = "Data")
+    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Data")
     FString FileName;
 
-    UPROPERTY(BlueprintReadOnly, Category = "Data")
+    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Data")
     FString EntryPoint;
 
     bool IsValid() const;
@@ -175,6 +175,19 @@ struct FMythicaAsset
     int32 DigitalAssetCount;
 };
 
+
+USTRUCT()
+struct FMythicaStreamFile
+{
+    GENERATED_BODY()
+
+    UPROPERTY()
+    TArray<uint8> FileData;
+
+    UPROPERTY()
+    uint32 ChunksReceived = 0;
+};
+
 USTRUCT(BlueprintType)
 struct FMythicaJob
 {
@@ -219,6 +232,12 @@ public:
     /** The system time of the machine at the time the job was completed */
     UPROPERTY(BlueprintReadOnly, Category = "Data")
     FDateTime EndTime = FDateTime();
+
+    UPROPERTY()
+    FString ImportDirectory;
+
+    UPROPERTY()
+    FMythicaStreamFile StreamFile;
 
 };
 
