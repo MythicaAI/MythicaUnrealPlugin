@@ -1791,6 +1791,62 @@ void UMythicaEditorSubsystem::OnResultMeshData(const TArray<uint8>& FileData, in
     RequestData->ImportDirectory = ImportDirectory;
     SetJobState(RequestId, EMythicaJobState::Completed);
 
+    // @TODO: Find a way to render the thumbnails
+    // Look into FSlateShaderResource* FAssetThumbnail::GetViewportRenderTargetTexture() const, might be able to render that directly.
+
+    //UE_LOG(LogMythica, Warning, TEXT("ImportDirectory - %s"), *ImportDirectory);
+    //UE_LOG(LogMythica, Warning, TEXT("ImportDirectoryParent - %s"), *ImportDirectoryParent);
+    //UE_LOG(LogMythica, Warning, TEXT("ImportName - %s"), *ImportName);
+    //UE_LOG(LogMythica, Warning, TEXT("CacheImportFile - %s"), *CacheImportFile);
+
+    //FString AssetPath = FPaths::Combine(ImportDirectory, TEXT("StaticMeshes/SM_usd_node"));
+    //UE_LOG(LogMythica, Warning, TEXT("AssetPath - %s"), *AssetPath);
+
+    //const FObjectThumbnail* Thumbnail = ThumbnailTools::FindCachedThumbnail(AssetPath);
+    //if (Thumbnail)
+    //{
+    //    FString PackageName = FPaths::Combine(ImportDirectory, TEXT("T_") + ImportName);
+
+    //    UPackage* Package = CreatePackage(*PackageName);
+    //    Package->FullyLoad();
+
+    //    UTexture2D* NewTexture = NewObject<UTexture2D>(Package, *ImportName, RF_Public | RF_Standalone | RF_MarkAsRootSet);
+    //    NewTexture->AddToRoot();
+
+    //    FTexturePlatformData* PlatformData = new FTexturePlatformData();
+    //    PlatformData->SizeX = Thumbnail->GetImageWidth();
+    //    PlatformData->SizeY = Thumbnail->GetImageHeight();
+    //    //platformData->NumSlices = 1;
+    //    PlatformData->PixelFormat = EPixelFormat::PF_B8G8R8A8;
+    //    NewTexture->SetPlatformData(PlatformData);
+
+    //    FTexture2DMipMap* Mip = new FTexture2DMipMap();
+    //    PlatformData->Mips.Add(Mip);
+    //    Mip->SizeX = Thumbnail->GetImageWidth();
+    //    Mip->SizeY = Thumbnail->GetImageHeight();
+
+    //    Mip->BulkData.Lock(LOCK_READ_WRITE);
+    //    uint8* TextureData = (uint8*)Mip->BulkData.Realloc(Thumbnail->GetUncompressedImageData().Num() * 4);
+    //    FMemory::Memcpy(TextureData, Thumbnail->GetUncompressedImageData().GetData(), Thumbnail->GetUncompressedImageData().Num());
+    //    Mip->BulkData.Unlock();
+
+    //    NewTexture->Source.Init(Thumbnail->GetImageWidth(), Thumbnail->GetImageHeight(), 1, 1, ETextureSourceFormat::TSF_BGRA8, Thumbnail->GetUncompressedImageData().GetData());
+    //    NewTexture->LODGroup = TEXTUREGROUP_UI;
+    //    NewTexture->UpdateResource();
+    //    Package->MarkPackageDirty();
+    //    Package->FullyLoad();
+    //    FAssetRegistryModule::AssetCreated(NewTexture);
+
+    //    FSavePackageArgs SaveArgs;
+    //    SaveArgs.TopLevelFlags = EObjectFlags::RF_Public | EObjectFlags::RF_Standalone;
+    //    SaveArgs.SaveFlags = SAVE_NoError;
+    //    SaveArgs.bForceByteSwapping = true;
+    //    FString PackageFileName = FPackageName::LongPackageNameToFilename(PackageName, FPackageName::GetAssetPackageExtension());
+    //    UPackage::SavePackage(Package, NewTexture, *PackageFileName, SaveArgs);
+
+    //    UE_LOG(LogMythica, Warning, TEXT("New Texture created at %s"), *PackageName);
+    //}
+
     if (MYTHICA_CLEAN_TEMP_FILES)
     {
         IFileManager::Get().Delete(*CacheImportFile);

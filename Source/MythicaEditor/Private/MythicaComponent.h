@@ -33,7 +33,9 @@ public:
     virtual void OnUnregister() override;
     virtual void OnComponentDestroyed(bool bDestroyingHierarchy) override;
 
+    UFUNCTION(BlueprintPure, Category="Mythica|Component")
     bool CanRegenerateMesh() const;
+    UFUNCTION(BlueprintCallable, Category = "Mythica|Component")
     void RegenerateMesh();
     FString GetImportPath();
 
