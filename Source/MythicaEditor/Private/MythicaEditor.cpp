@@ -45,9 +45,10 @@ static void OpenMythicaJobDirector_Clicked()
 static TSharedRef<SWidget> GetMythicaHubDropDown()
 {
     FMenuBuilder MenuBuilder(true, nullptr);
+    MenuBuilder.BeginSection("Windows", LOCTEXT("HubWindowSectionText", "Windows"));
 
     MenuBuilder.AddMenuEntry(
-        LOCTEXT("OpenMythicaPackageManagerButton", "Package Manager"),
+        LOCTEXT("OpenMythicaPackageManagerButtonShort", "Package Manager"),
         LOCTEXT("OpenMythicaPackageManagerDescription", "Opens the Mythica Package Manager."),
         FSlateIcon(FMythicaEditorStyle::GetStyleSetName(), "MythicaEditor.MythicaLogo"),
         FUIAction(
@@ -59,7 +60,7 @@ static TSharedRef<SWidget> GetMythicaHubDropDown()
     );
 
     MenuBuilder.AddMenuEntry(
-        LOCTEXT("OpenMythicaJobDirectorButton", "Job Director"),
+        LOCTEXT("OpenMythicaJobDirectorButtonShort", "Job Director"),
         LOCTEXT("OpenMythicaJobDirectorDescription", "The Job Director displays a list of all MythicaComponents in the current scene with their latest jobs status and some quick actions."),
         FSlateIcon(FMythicaEditorStyle::GetStyleSetName(), "MythicaEditor.MythicaLogo"),
         FUIAction(
@@ -69,6 +70,8 @@ static TSharedRef<SWidget> GetMythicaHubDropDown()
             FIsActionButtonVisible::CreateStatic(&HasNoPlayWorld)
         )
     );
+
+    MenuBuilder.EndSection();
 
     return MenuBuilder.MakeWidget();
 }
