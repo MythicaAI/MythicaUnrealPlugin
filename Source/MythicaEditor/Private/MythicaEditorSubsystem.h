@@ -234,9 +234,6 @@ public:
     FDateTime EndTime = FDateTime();
 
     UPROPERTY()
-    FString ImportDirectory;
-
-    UPROPERTY()
     FMythicaStreamFile StreamFile;
 
 };
@@ -247,6 +244,10 @@ struct FMythicaRequestIdList
     GENERATED_BODY()
 
 public:
+
+    /** A list of all associated job requests */
+    UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "Data")
+    TWeakObjectPtr<UMythicaComponent> WeakComponentRef;
 
     /** A list of all associated job requests */
     UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "Data")

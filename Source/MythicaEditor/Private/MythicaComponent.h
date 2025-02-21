@@ -40,6 +40,8 @@ public:
     EMythicaJobState GetJobState() const { return State; }
     FText GetJobMessage() const { return Message; }
     bool IsJobProcessing() const;
+
+    UFUNCTION(BlueprintPure, Category="Mythica|Component")
     float JobProgressPercent() const;
 
     virtual void PostEditChangeProperty(FPropertyChangedEvent& PropertyChangedEvent) override;
