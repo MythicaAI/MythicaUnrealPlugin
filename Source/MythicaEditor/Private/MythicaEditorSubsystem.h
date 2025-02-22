@@ -233,6 +233,9 @@ public:
     UPROPERTY(BlueprintReadOnly, Category = "Data")
     FDateTime EndTime = FDateTime();
 
+    UPROPERTY(BlueprintReadOnly, Category = "Data")
+    FAssetData CreatedMeshData = FAssetData();
+
     UPROPERTY()
     FMythicaStreamFile StreamFile;
 

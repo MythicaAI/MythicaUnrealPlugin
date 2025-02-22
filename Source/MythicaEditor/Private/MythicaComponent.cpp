@@ -358,6 +358,9 @@ void UMythicaComponent::UpdateMesh()
     UMythicaEditorSubsystem* MythicaEditorSubsystem = GEditor->GetEditorSubsystem<UMythicaEditorSubsystem>();
     FString ImportDirectory = MythicaEditorSubsystem->GetImportDirectory(RequestId);
 
+    TMap<int, FMythicaJob> JobsList = MythicaEditorSubsystem->GetActiveJobsList();
+    FMythicaJob* Job = JobsList.Find(RequestId);
+
     FAssetRegistryModule& AssetRegistryModule = FModuleManager::LoadModuleChecked<FAssetRegistryModule>("AssetRegistry");
 
     TArray<FAssetData> Assets;
@@ -384,6 +387,11 @@ void UMythicaComponent::UpdateMesh()
                 break;
             }
         }
+
+        if (Job)
+        {
+            Job->CreatedMeshData = Asset;
+        }
         
         // Otherwise spawn a new one
         if (!MeshComponent)
@@ -396,6 +404,10 @@ void UMythicaComponent::UpdateMesh()
             OwnerActor->AddInstanceComponent(MeshComponent);
             MeshComponent->RegisterComponent();
 
+            if (Job)
+            {
+                Job->CreatedMeshData = Asset;
+            }
         }
 
         MeshComponentNames.Add(MeshComponent->GetFName());
