@@ -1,5 +1,7 @@
 #include "MythicaDeveloperSettings.h"
 
+#include UE_INLINE_GENERATED_CPP_BY_NAME(MythicaDeveloperSettings)
+
 const TCHAR* DefaultAssetIdIdWhitelist[] =
 {
     TEXT("asset_2gcVbJghPhWLznuAxXeiapVKvQQi")  // Rockify

@@ -6,6 +6,8 @@
 #include "Interfaces/IHttpResponse.h"
 #include "IWebSocket.h"
 #include "MythicaTypes.h"
+#include "UObject/WeakObjectPtrTemplates.h"
+
 #include "MythicaEditorSubsystem.generated.h"
 
 DECLARE_LOG_CATEGORY_EXTERN(LogMythica, Log, All);
@@ -37,6 +39,7 @@ DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnFavoriteAssetsUpdated);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnThumbnailLoaded, const FString&, PackageId);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnAssetInstalled, const FString&, PackageId);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnAssetUninstalled, const FString&, PackageId);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FOnJobCreated, int, RequestId, const FString&, ComponentId);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_ThreeParams(FOnJobStateChanged, int, RequestId, EMythicaJobState, State, FText, Message);
 
 USTRUCT(BlueprintType)
@@ -139,9 +142,11 @@ struct FMythicaAsset
 {
     GENERATED_BODY()
 
+    /** The id of the asset in the mythica api. The asset encompasses all versioned packages. */
     UPROPERTY(BlueprintReadOnly, Category = "Data")
     FString AssetId;
 
+    /** The id of the package of files that is versioned and stored under an asset id. */
     UPROPERTY(BlueprintReadOnly, Category = "Data")
     FString PackageId;
     
@@ -170,6 +175,7 @@ struct FMythicaAsset
     int32 DigitalAssetCount;
 };
 
+
 USTRUCT()
 struct FMythicaStreamFile
 {
@@ -182,37 +188,64 @@ struct FMythicaStreamFile
     uint32 ChunksReceived = 0;
 };
 
-USTRUCT()
+USTRUCT(BlueprintType)
 struct FMythicaJob
 {
     GENERATED_BODY()
 
-    UPROPERTY()
-    FString JobDefId;
+public:
 
-    UPROPERTY()
-    TArray<FString> InputFileIds;
+    UPROPERTY(BlueprintReadOnly, Category = "Data")
+    FString JobDefId = FString();
 
-    UPROPERTY()
-    FMythicaParameters Params;
+    UPROPERTY(BlueprintReadOnly, Category = "Data")
+    TArray<FString> InputFileIds = TArray<FString>();
 
-    UPROPERTY()
-    FString ImportPath;
+    UPROPERTY(BlueprintReadOnly, Category = "Data")
+    FMythicaParameters Params = FMythicaParameters();
 
-    UPROPERTY()
+    UPROPERTY(BlueprintReadOnly, Category = "Data")
+    FString ImportPath = FString();
+
+    UPROPERTY(BlueprintReadOnly, Category = "Data")
     EMythicaJobState State = EMythicaJobState::Requesting;
 
-    UPROPERTY()
+    UPROPERTY(BlueprintReadOnly, Category = "Data")
     FTimerHandle TimeoutTimer;
 
-    UPROPERTY()
-    FString JobId;
+    UPROPERTY(BlueprintReadOnly, Category = "Data")
+    FString JobId = FString();
 
-    UPROPERTY()
-    FString ImportDirectory;
+    UPROPERTY(BlueprintReadOnly, Category = "Data")
+    FString ImportDirectory = FString();
+
+    /** The system time of the machine at the time the job was created */
+    UPROPERTY(BlueprintReadOnly, Category = "Data")
+    FDateTime StartTime = FDateTime();
+
+    /** The system time of the machine at the time the job was completed */
+    UPROPERTY(BlueprintReadOnly, Category = "Data")
+    FDateTime EndTime = FDateTime();
+
+    UPROPERTY(BlueprintReadOnly, Category = "Data")
+    FAssetData CreatedMeshData = FAssetData();
 
     UPROPERTY()
     FMythicaStreamFile StreamFile;
+
+};
+
+USTRUCT(BlueprintType)
+struct FMythicaRequestIdList
+{
+    GENERATED_BODY()
+
+public:
+
+    /** A list of all associated job requests */
+    UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "Data")
+    TArray<int> RequestIds;
+
 };
 
 UCLASS()
@@ -240,6 +273,15 @@ public:
 
     UFUNCTION(BlueprintCallable, Category = "Mythica")
     TArray<FMythicaAsset> GetAssetList();
+
+    UFUNCTION(BlueprintPure, Category = "Mythica")
+    TMap<int, FMythicaJob> GetActiveJobsList() const;
+
+    UFUNCTION(BlueprintCallable, Category = "Mythica")
+    void SetJobsCachedAssetData(int InRequestId, FAssetData InAssetData);
+
+    UFUNCTION(BlueprintPure, Category = "Mythica")
+    TMap<FString, FMythicaRequestIdList> GetJobsToComponentList() const;
 
     UFUNCTION(BlueprintCallable, Category = "Mythica")
     TArray<FMythicaJobDefinition> GetJobDefinitionList(const FString& JobType);
@@ -295,7 +337,8 @@ public:
         const FString& JobDefId, 
         const FMythicaParameters& Params, 
         const FString& ImportPath, 
-        const FVector& Origin);
+        const FVector& Origin,
+        UMythicaComponent* ExecutingComp);
 
     // Delegates
     UPROPERTY(BlueprintAssignable, Category = "Mythica")
@@ -315,6 +358,9 @@ public:
 
     UPROPERTY(BlueprintAssignable, Category = "Mythica")
     FOnAssetInstalled OnAssetUninstalled;
+
+    UPROPERTY(BlueprintAssignable, Category = "Mythica")
+    FOnJobCreated OnJobCreated;
 
     UPROPERTY(BlueprintAssignable, Category = "Mythica")
     FOnJobStateChanged OnJobStateChange;
@@ -346,7 +392,7 @@ private:
     void OnMeshDownloadResponse(FHttpRequestPtr Request, FHttpResponsePtr Response, bool bWasSuccessful, int RequestId);
     void OnResultMeshData(const TArray<uint8>& FileData, int RequestId);
 
-    int CreateJob(const FString& JobDefId, const FMythicaParameters& Params, const FString& ImportName);
+    int CreateJob(const FString& JobDefId, const FMythicaParameters& Params, const FString& ImportName, UMythicaComponent* Component);
     void SetJobState(int RequestId, EMythicaJobState State, FText Message = FText::GetEmpty());
     void PollJobStatus();
     void OnJobTimeout(int RequestId);
@@ -371,6 +417,8 @@ private:
 
     FMythicaAsset* FindAsset(const FString& PackageId);
 
+private:
+
     EMythicaSessionState SessionState = EMythicaSessionState::None;
     FString AuthToken;
     TSharedPtr<IWebSocket> WebSocket;
@@ -380,6 +428,10 @@ private:
 
     UPROPERTY()
     TMap<int, FMythicaJob> Jobs;
+
+    UPROPERTY()
+    TMap<FString, FMythicaRequestIdList> ComponentToJobs = TMap<FString, FMythicaRequestIdList>();
+
     FTimerHandle JobPollTimer;
     int NextRequestId = 1;
 

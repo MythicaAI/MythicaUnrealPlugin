@@ -1,6 +1,7 @@
 #include "MythicaComponent.h"
 
 #include "AssetRegistry/AssetRegistryModule.h"
+#include "Kismet/KismetSystemLibrary.h"
 #include "ObjectTools.h"
 
 #define IMPORT_NAME_LENGTH 10
@@ -100,7 +101,7 @@ void UMythicaComponent::RegenerateMesh()
     }
 
     UMythicaEditorSubsystem* MythicaEditorSubsystem = GEditor->GetEditorSubsystem<UMythicaEditorSubsystem>();
-    RequestId = MythicaEditorSubsystem->ExecuteJob(JobDefId.JobDefId, Parameters, GetImportPath(), K2_GetComponentLocation());
+    RequestId = MythicaEditorSubsystem->ExecuteJob(JobDefId.JobDefId, Parameters, GetImportPath(), K2_GetComponentLocation(), this);
 
     if (RequestId > 0 && IsRegistered())
     {
@@ -395,12 +396,13 @@ void UMythicaComponent::UpdateMesh()
 
             OwnerActor->AddInstanceComponent(MeshComponent);
             MeshComponent->RegisterComponent();
-
         }
+
+        MythicaEditorSubsystem->SetJobsCachedAssetData(RequestId, Asset);
 
         MeshComponentNames.Add(MeshComponent->GetFName());
     }
-    
+
     // Destroy any meshes that were not re-used
     for (UStaticMeshComponent* MeshComponent : ExistingMeshCache)
     {
@@ -418,6 +420,8 @@ void UMythicaComponent::UpdatePlaceholderMesh()
 
         PlaceholderMeshComponent = NewObject<UStaticMeshComponent>(
             this, UStaticMeshComponent::StaticClass(), NAME_None, RF_Transactional);
+
+        // GetAttachParentActor()->AddComponentByClass();
 
         PlaceholderMeshComponent->SetStaticMesh(Mesh);
         PlaceholderMeshComponent->SetHiddenInGame(true);

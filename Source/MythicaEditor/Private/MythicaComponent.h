@@ -33,16 +33,23 @@ public:
     virtual void OnUnregister() override;
     virtual void OnComponentDestroyed(bool bDestroyingHierarchy) override;
 
+    UFUNCTION(BlueprintPure, Category="Mythica|Component")
     bool CanRegenerateMesh() const;
+    UFUNCTION(BlueprintCallable, Category = "Mythica|Component")
     void RegenerateMesh();
     FString GetImportPath();
 
     EMythicaJobState GetJobState() const { return State; }
     FText GetJobMessage() const { return Message; }
     bool IsJobProcessing() const;
+
+    UFUNCTION(BlueprintPure, Category="Mythica|Component")
     float JobProgressPercent() const;
 
     virtual void PostEditChangeProperty(FPropertyChangedEvent& PropertyChangedEvent) override;
+
+    UFUNCTION(BlueprintPure, Category="Mythica|Component")
+    TArray<FName> GetMeshComponentNames() const { return MeshComponentNames; }
 
 private:
     void OnJobDefIdChanged();

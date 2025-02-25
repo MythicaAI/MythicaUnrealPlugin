@@ -18,6 +18,7 @@ class MYTHICAEDITOR_API UMythicaDeveloperSettings : public UDeveloperSettings
     GENERATED_BODY()
 
 public:
+
     UMythicaDeveloperSettings(const FObjectInitializer& ObjectInitializer);
 
     FString GetServiceURL() const;

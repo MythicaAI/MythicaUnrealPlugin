@@ -6,6 +6,9 @@
 #include "EditorUtilitySubsystem.h"
 #include "EditorUtilityWidgetBlueprint.h"
 
+FSoftObjectPath UMythicaEditorUtilityLibrary::s_PackageManagerWidgetPath = FString(TEXT("/Mythica/UI/WBP_PackageManager.WBP_PackageManager"));
+FSoftObjectPath UMythicaEditorUtilityLibrary::s_JobDirectorWidgetPath = FString(TEXT("/Mythica/UI/Jobs/EUW_JobDirector.EUW_JobDirector"));
+
 void UMythicaEditorUtilityLibrary::OpenEditorUtilityWidgetAsTab(UObject* Outer, const TCHAR* Name, const TCHAR* Filename, uint32 LoadFlags, UPackageMap* Sandbox, const FLinkerInstancingContext* InstancingContext)
 {
     UEditorUtilitySubsystem* EditorUtilitySubsystem = GEditor->GetEditorSubsystem<UEditorUtilitySubsystem>();
@@ -17,7 +20,22 @@ void UMythicaEditorUtilityLibrary::OpenEditorUtilityWidgetAsTab(UObject* Outer, 
     EditorUtilitySubsystem->SpawnAndRegisterTab(UtilityWidgetBlueprint);
 }
 
+void UMythicaEditorUtilityLibrary::OpenEditorUtilityWidgetAsTab(FSoftObjectPath WidgetToLoad, FUObjectSerializeContext* Context)
+{
+    UEditorUtilitySubsystem* EditorUtilitySubsystem = GEditor->GetEditorSubsystem<UEditorUtilitySubsystem>();
+    ensure(EditorUtilitySubsystem);
+
+    UEditorUtilityWidgetBlueprint* UtilityWidgetBlueprint = CastChecked<UEditorUtilityWidgetBlueprint>(WidgetToLoad.TryLoad(Context));
+
+    EditorUtilitySubsystem->SpawnAndRegisterTab(UtilityWidgetBlueprint);
+}
+
 void UMythicaEditorUtilityLibrary::OpenPackageManager()
 {
-    OpenEditorUtilityWidgetAsTab(NULL, PACKAGE_MANAGER_WIDGET_ASSET);
+    OpenEditorUtilityWidgetAsTab(s_PackageManagerWidgetPath);
+}
+
+void UMythicaEditorUtilityLibrary::OpenJobDirector()
+{
+    OpenEditorUtilityWidgetAsTab(s_JobDirectorWidgetPath);
 }
