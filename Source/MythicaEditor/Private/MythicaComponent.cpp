@@ -1,6 +1,7 @@
 #include "MythicaComponent.h"
 
 #include "AssetRegistry/AssetRegistryModule.h"
+#include "Kismet/KismetSystemLibrary.h"
 #include "ObjectTools.h"
 
 #define IMPORT_NAME_LENGTH 10
@@ -327,8 +328,6 @@ void UMythicaComponent::OnJobStateChanged(int InRequestId, EMythicaJobState InSt
         RegenerateMesh();
     }
 }
-
-#include "Kismet/KismetSystemLibrary.h"
 
 void UMythicaComponent::UpdateMesh()
 {
