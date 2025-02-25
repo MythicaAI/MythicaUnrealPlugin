@@ -1388,22 +1388,30 @@ void UMythicaEditorSubsystem::OnExecuteJobResponse(FHttpRequestPtr Request, FHtt
 int UMythicaEditorSubsystem::CreateJob(const FString& JobDefId, const FMythicaParameters& Params, const FString& ImportPath, UMythicaComponent* Component)
 {
     int RequestId = NextRequestId++;
-    FString DisplayName = UKismetSystemLibrary::GetDisplayName(Component);
 
-    FMythicaJob& Job = Jobs.Add(RequestId, { JobDefId, {}, Params, ImportPath, Component, DisplayName });
+    FMythicaJob& Job = Jobs.Add(RequestId, { JobDefId, {}, Params, ImportPath });
 
     Job.StartTime = FDateTime::Now();
 
-    FMythicaRequestIdList& RequestList = ComponentToJobs.FindOrAdd(DisplayName);
-    RequestList.RequestIds.EmplaceAt(0, RequestId);
+    if (IsValid(Component))
+    {
+        FString DisplayName = UKismetSystemLibrary::GetDisplayName(Component);
+        FMythicaRequestIdList& RequestList = ComponentToJobs.FindOrAdd(DisplayName);
+        RequestList.RequestIds.EmplaceAt(0, RequestId);
+
+        OnJobCreated.Broadcast(RequestId, DisplayName);
+    }
+    else
+    {
+        // @TODO - Liam: Properly handle this case were we dont have a valid component
+        OnJobCreated.Broadcast(RequestId, FString());
+    }
 
     if (!JobPollTimer.IsValid())
     {
         FTimerDelegate TimerDelegate = FTimerDelegate::CreateUObject(this, &UMythicaEditorSubsystem::PollJobStatus);
         GEditor->GetTimerManager()->SetTimer(JobPollTimer, TimerDelegate, 1.0f, true);
     }
-
-    OnJobCreated.Broadcast(RequestId, DisplayName);
 
     return RequestId;
 }

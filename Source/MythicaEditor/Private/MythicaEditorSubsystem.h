@@ -208,12 +208,6 @@ public:
     FString ImportPath = FString();
 
     UPROPERTY(BlueprintReadOnly, Category = "Data")
-    TWeakObjectPtr<class UMythicaComponent> OwningComponent = nullptr;
-
-    UPROPERTY(BlueprintReadOnly, Category = "Data")
-    FString OwningComponentName = FString();
-
-    UPROPERTY(BlueprintReadOnly, Category = "Data")
     EMythicaJobState State = EMythicaJobState::Requesting;
 
     UPROPERTY(BlueprintReadOnly, Category = "Data")

@@ -421,9 +421,8 @@ void UMythicaComponent::UpdatePlaceholderMesh()
 
         PlaceholderMeshComponent = NewObject<UStaticMeshComponent>(
             this, UStaticMeshComponent::StaticClass(), NAME_None, RF_Transactional);
-        GetParent()->AddComponentByClass();
 
-        GetAttachParentActor()->AddComponentByClass(,);
+        // GetAttachParentActor()->AddComponentByClass();
 
         PlaceholderMeshComponent->SetStaticMesh(Mesh);
         PlaceholderMeshComponent->SetHiddenInGame(true);
