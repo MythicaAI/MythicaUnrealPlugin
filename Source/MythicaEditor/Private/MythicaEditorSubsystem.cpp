@@ -239,6 +239,16 @@ TMap<int, FMythicaJob> UMythicaEditorSubsystem::GetActiveJobsList() const
     return Jobs;
 }
 
+void UMythicaEditorSubsystem::SetJobsCachedAssetData(int InRequestId, FAssetData InAssetData)
+{
+    FMythicaJob* Job = Jobs.Find(InRequestId);
+
+    if (Job)
+    {
+        Job->CreatedMeshData = InAssetData;
+    }
+}
+
 TMap<FString, FMythicaRequestIdList> UMythicaEditorSubsystem::GetJobsToComponentList() const
 {
     return ComponentToJobs;

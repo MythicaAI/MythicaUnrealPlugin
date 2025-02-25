@@ -250,10 +250,6 @@ public:
 
     /** A list of all associated job requests */
     UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "Data")
-    TWeakObjectPtr<UMythicaComponent> WeakComponentRef;
-
-    /** A list of all associated job requests */
-    UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "Data")
     TArray<int> RequestIds;
 
 };
@@ -286,6 +282,9 @@ public:
 
     UFUNCTION(BlueprintPure, Category = "Mythica")
     TMap<int, FMythicaJob> GetActiveJobsList() const;
+
+    UFUNCTION(BlueprintCallable, Category = "Mythica")
+    void SetJobsCachedAssetData(int InRequestId, FAssetData InAssetData);
 
     UFUNCTION(BlueprintPure, Category = "Mythica")
     TMap<FString, FMythicaRequestIdList> GetJobsToComponentList() const;

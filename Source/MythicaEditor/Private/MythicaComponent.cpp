@@ -328,6 +328,8 @@ void UMythicaComponent::OnJobStateChanged(int InRequestId, EMythicaJobState InSt
     }
 }
 
+#include "Kismet/KismetSystemLibrary.h"
+
 void UMythicaComponent::UpdateMesh()
 {
     AActor* OwnerActor = GetOwner();
@@ -358,9 +360,6 @@ void UMythicaComponent::UpdateMesh()
     UMythicaEditorSubsystem* MythicaEditorSubsystem = GEditor->GetEditorSubsystem<UMythicaEditorSubsystem>();
     FString ImportDirectory = MythicaEditorSubsystem->GetImportDirectory(RequestId);
 
-    TMap<int, FMythicaJob> JobsList = MythicaEditorSubsystem->GetActiveJobsList();
-    FMythicaJob* Job = JobsList.Find(RequestId);
-
     FAssetRegistryModule& AssetRegistryModule = FModuleManager::LoadModuleChecked<FAssetRegistryModule>("AssetRegistry");
 
     TArray<FAssetData> Assets;
@@ -387,11 +386,6 @@ void UMythicaComponent::UpdateMesh()
                 break;
             }
         }
-
-        if (Job)
-        {
-            Job->CreatedMeshData = Asset;
-        }
         
         // Otherwise spawn a new one
         if (!MeshComponent)
@@ -403,16 +397,13 @@ void UMythicaComponent::UpdateMesh()
 
             OwnerActor->AddInstanceComponent(MeshComponent);
             MeshComponent->RegisterComponent();
-
-            if (Job)
-            {
-                Job->CreatedMeshData = Asset;
-            }
         }
+
+        MythicaEditorSubsystem->SetJobsCachedAssetData(RequestId, Asset);
 
         MeshComponentNames.Add(MeshComponent->GetFName());
     }
-    
+
     // Destroy any meshes that were not re-used
     for (UStaticMeshComponent* MeshComponent : ExistingMeshCache)
     {
@@ -430,6 +421,9 @@ void UMythicaComponent::UpdatePlaceholderMesh()
 
         PlaceholderMeshComponent = NewObject<UStaticMeshComponent>(
             this, UStaticMeshComponent::StaticClass(), NAME_None, RF_Transactional);
+        GetParent()->AddComponentByClass();
+
+        GetAttachParentActor()->AddComponentByClass(,);
 
         PlaceholderMeshComponent->SetStaticMesh(Mesh);
         PlaceholderMeshComponent->SetHiddenInGame(true);
