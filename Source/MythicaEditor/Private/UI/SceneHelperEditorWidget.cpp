@@ -14,13 +14,16 @@
 
 void USceneHelperEditorWidget::NativeConstruct()
 {
-    Super::NativeConstruct();
-
     UMythicaEditorSubsystem* MythicaEditorSubsystem = GEditor->GetEditorSubsystem<UMythicaEditorSubsystem>();
     ensure(MythicaEditorSubsystem);
 
     MythicaEditorSubsystem->OnJobCreated.AddUniqueDynamic(this, &ThisClass::OnJobCreated);
     MythicaEditorSubsystem->OnJobStateChange.AddUniqueDynamic(this, &ThisClass::OnJobStateChanged);
+    MythicaEditorSubsystem->OnGenAssetCreated.AddUniqueDynamic(this, &ThisClass::OnGenAssetCreated);
+
+    NativePoll();
+
+    Super::NativeConstruct();
 }
 
 void USceneHelperEditorWidget::NativeDestruct()
@@ -32,6 +35,7 @@ void USceneHelperEditorWidget::NativeDestruct()
 
     MythicaEditorSubsystem->OnJobCreated.RemoveAll(this);
     MythicaEditorSubsystem->OnJobStateChange.RemoveAll(this);
+    MythicaEditorSubsystem->OnGenAssetCreated.RemoveAll(this);
 }
 
 void USceneHelperEditorWidget::NativeTick(const FGeometry& MyGeometry, float InDeltaTime)
@@ -90,6 +94,36 @@ void USceneHelperEditorWidget::OnJobStateChanged(int RequestId, EMythicaJobState
         USceneHelperEntryEditorWidget* WidgetRef = *WidgetRefCheck;
 
         WidgetRef->NativeJobStateUpdated(RequestId, State, Message);
+    }
+}
+
+void USceneHelperEditorWidget::OnGenAssetCreated(int RequestId)
+{
+    UMythicaEditorSubsystem* MythicaEditorSubsystem = GEditor->GetEditorSubsystem<UMythicaEditorSubsystem>();
+    ensure(MythicaEditorSubsystem);
+
+    for (const TPair<FString, FMythicaRequestIdList>& RequestCompLink : MythicaEditorSubsystem->GetJobsToComponentList())
+    {
+        const FMythicaRequestIdList ReqList = RequestCompLink.Value;
+
+        if (!ReqList.RequestIds.Contains(RequestId))
+        {
+            continue;
+        }
+
+        FString CompId = RequestCompLink.Key;
+
+        TObjectPtr<USceneHelperEntryEditorWidget>* WidgetRefCheck = TrackedComponentWidgets.Find(CompId);
+
+        if (WidgetRefCheck == nullptr || !IsValid(*WidgetRefCheck))
+        {
+            UE_LOG(LogMythicaEditor, Warning, TEXT("There was no Widgets found with the Id of [%s]."), *CompId);
+            return;
+        }
+
+        USceneHelperEntryEditorWidget* WidgetRef = *WidgetRefCheck;
+
+        WidgetRef->NativeGenAssetCreated(RequestId);
     }
 }
 

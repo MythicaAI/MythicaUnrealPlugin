@@ -41,6 +41,7 @@ DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnAssetInstalled, const FString&, P
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnAssetUninstalled, const FString&, PackageId);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FOnJobCreated, int, RequestId, const FString&, ComponentId);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_ThreeParams(FOnJobStateChanged, int, RequestId, EMythicaJobState, State, FText, Message);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnGenMeshAssetCreated, int, RequestId);
 
 USTRUCT(BlueprintType)
 struct FMythicaStats
@@ -364,6 +365,9 @@ public:
 
     UPROPERTY(BlueprintAssignable, Category = "Mythica")
     FOnJobStateChanged OnJobStateChange;
+
+    UPROPERTY(BlueprintAssignable, Category = "Mythica")
+    FOnGenMeshAssetCreated OnGenAssetCreated;
 
 private:
     void OnCreateSessionResponse(FHttpRequestPtr Request, FHttpResponsePtr Response, bool bWasSuccessful);

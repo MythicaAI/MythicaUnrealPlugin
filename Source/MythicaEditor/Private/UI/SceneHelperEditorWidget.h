@@ -59,6 +59,9 @@ public:
     UFUNCTION()
     void OnJobStateChanged(int RequestId, EMythicaJobState State, FText Message);
 
+    UFUNCTION()
+    void OnGenAssetCreated(int RequestId);
+
 protected:
 
     virtual void NativePoll();

@@ -243,9 +243,13 @@ void UMythicaEditorSubsystem::SetJobsCachedAssetData(int InRequestId, FAssetData
 {
     FMythicaJob* Job = Jobs.Find(InRequestId);
 
-    if (Job)
+    if (Job && Job->CreatedMeshData != InAssetData)
     {
+        UE_LOG(LogMythica, Warning, TEXT("Setting new Cached Asset Data. [%s]"), *InAssetData.GetExportTextName());
+
         Job->CreatedMeshData = InAssetData;
+
+        OnGenAssetCreated.Broadcast(InRequestId);
     }
 }
 
@@ -1425,7 +1429,6 @@ void UMythicaEditorSubsystem::SetJobState(int RequestId, EMythicaJobState State,
     }
 
     JobData->State = State;
-    OnJobStateChange.Broadcast(RequestId, State, Message);
 
     if (State == EMythicaJobState::Queued)
     {
@@ -1448,6 +1451,8 @@ void UMythicaEditorSubsystem::SetJobState(int RequestId, EMythicaJobState State,
     {
         GEditor->GetTimerManager()->ClearTimer(JobPollTimer);
     }
+
+    OnJobStateChange.Broadcast(RequestId, State, Message);
 }
 
 void UMythicaEditorSubsystem::ClearJobs()
