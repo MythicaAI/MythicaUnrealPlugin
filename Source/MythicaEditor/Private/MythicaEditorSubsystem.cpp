@@ -245,8 +245,6 @@ void UMythicaEditorSubsystem::SetJobsCachedAssetData(int InRequestId, FAssetData
 
     if (Job && Job->CreatedMeshData != InAssetData)
     {
-        UE_LOG(LogMythica, Warning, TEXT("Setting new Cached Asset Data. [%s]"), *InAssetData.GetExportTextName());
-
         Job->CreatedMeshData = InAssetData;
 
         OnGenAssetCreated.Broadcast(InRequestId);

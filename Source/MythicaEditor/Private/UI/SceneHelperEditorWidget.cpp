@@ -7,6 +7,7 @@
 #include "Kismet\KismetSystemLibrary.h"
 #include "MythicaComponent.h"
 #include "MythicaEditor.h"
+#include "MythicaEditorSubsystem.h"
 #include "SceneHelperEntryEditorWidget.h"
 #include "Subsystems/EditorActorSubsystem.h"
 
@@ -21,6 +22,22 @@ void USceneHelperEditorWidget::NativeConstruct()
     MythicaEditorSubsystem->OnJobStateChange.AddUniqueDynamic(this, &ThisClass::OnJobStateChanged);
     MythicaEditorSubsystem->OnGenAssetCreated.AddUniqueDynamic(this, &ThisClass::OnGenAssetCreated);
 
+    // Store initial stats then let even driven take over.
+    TArray<FMythicaJob> Jobs;
+    MythicaEditorSubsystem->GetActiveJobsList().GenerateValueArray(Jobs);
+    for (const FMythicaJob& Job : Jobs)
+    {
+        if (Job.State >= EMythicaJobState::Completed)
+        {
+            Stats.FinishedJobsCount++;
+        }
+        else if (Job.State >= EMythicaJobState::Requesting)
+        {
+            Stats.ActiveJobsCount++;
+        }
+    }
+
+    // Run the first poll to construct all widgets
     NativePoll();
 
     Super::NativeConstruct();
@@ -65,6 +82,8 @@ void USceneHelperEditorWidget::OnJobCreated(int RequestId, const FString& Compon
 
     USceneHelperEntryEditorWidget* WidgetRef = *WidgetRefCheck;
     WidgetRef->NativeJobCreated(RequestId);
+
+    Stats.ActiveJobsCount++;
 }
 
 void USceneHelperEditorWidget::OnJobStateChanged(int RequestId, EMythicaJobState State, FText Message)
@@ -88,12 +107,20 @@ void USceneHelperEditorWidget::OnJobStateChanged(int RequestId, EMythicaJobState
         if (WidgetRefCheck == nullptr || !IsValid(*WidgetRefCheck))
         {
             UE_LOG(LogMythicaEditor, Warning, TEXT("There was no Widgets found with the Id of [%s]."), *CompId);
-            return;
+            break;
         }
 
         USceneHelperEntryEditorWidget* WidgetRef = *WidgetRefCheck;
 
         WidgetRef->NativeJobStateUpdated(RequestId, State, Message);
+
+        break;
+    }
+
+    if (State >= EMythicaJobState::Completed)
+    {
+        Stats.ActiveJobsCount--;
+        Stats.FinishedJobsCount++;
     }
 }
 
