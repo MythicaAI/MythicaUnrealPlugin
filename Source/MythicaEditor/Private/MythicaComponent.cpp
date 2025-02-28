@@ -391,7 +391,7 @@ void UMythicaComponent::UpdateMesh()
         {
             MeshComponent = NewObject<UStaticMeshComponent>(OwnerActor);
             MeshComponent->SetStaticMesh(Cast<UStaticMesh>(Asset.GetAsset()));
-            MeshComponent->SetWorldLocation(K2_GetComponentLocation());
+            MeshComponent->SetWorldLocation(GetComponentLocation());
             MeshComponent->AttachToComponent(GetAttachParent(), FAttachmentTransformRules::KeepWorldTransform);
 
             OwnerActor->AddInstanceComponent(MeshComponent);
