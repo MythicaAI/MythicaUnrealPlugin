@@ -12,7 +12,6 @@
 USceneHelperEntryEditorWidget::USceneHelperEntryEditorWidget(const FObjectInitializer& Initializer)
     : Super(Initializer)
 {
-    bHasJobHistory = false;
     bThumbnailRequiresReset = false;
 }
 
@@ -28,7 +27,7 @@ void USceneHelperEntryEditorWidget::NativeDestruct()
 
 void USceneHelperEntryEditorWidget::NativeTick(const FGeometry& MyGeometry, float InDeltaTime)
 {
-    if (bHasJobHistory && CurrentJobData.State > EMythicaJobState::Invalid && CurrentJobData.State < EMythicaJobState::Completed)
+    if (HasJobHistory() && CurrentJobData.State > EMythicaJobState::Invalid && CurrentJobData.State < EMythicaJobState::Completed)
     {
         CacheCurrentJobData();
     }
@@ -62,8 +61,6 @@ void USceneHelperEntryEditorWidget::NativePostCreate()
 void USceneHelperEntryEditorWidget::NativeJobCreated(int RequestId)
 {
     CurrentRequestId = RequestId;
-
-    bHasJobHistory = true;
 
     CacheCurrentJobData();
 
@@ -104,12 +101,9 @@ void USceneHelperEntryEditorWidget::CacheLatestJobRequest()
     if (RequestList == nullptr || RequestList->RequestIds.IsEmpty())
     {
         // There is no job history so we can early out
-        bHasJobHistory = false;
         CurrentRequestId = -1;
         return;
     }
-
-    bHasJobHistory = true;
 
     CurrentRequestId = RequestList->RequestIds[0];
 
@@ -119,7 +113,7 @@ void USceneHelperEntryEditorWidget::CacheLatestJobRequest()
 
 void USceneHelperEntryEditorWidget::CacheCurrentJobData()
 {
-    if (!bHasJobHistory)
+    if (!HasJobHistory())
     {
         // This shouldnt be getting called when we dont have a job history
         return;
@@ -134,7 +128,7 @@ void USceneHelperEntryEditorWidget::CacheCurrentJobData()
 
 void USceneHelperEntryEditorWidget::CacheGenMeshAssetData()
 {
-    if (!bHasJobHistory)
+    if (!HasJobHistory())
     {
         return;
     }

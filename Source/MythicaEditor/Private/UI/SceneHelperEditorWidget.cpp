@@ -53,6 +53,8 @@ void USceneHelperEditorWidget::NativeDestruct()
     MythicaEditorSubsystem->OnJobCreated.RemoveAll(this);
     MythicaEditorSubsystem->OnJobStateChange.RemoveAll(this);
     MythicaEditorSubsystem->OnGenAssetCreated.RemoveAll(this);
+
+    TrackedComponentWidgets.Empty();
 }
 
 void USceneHelperEditorWidget::NativeTick(const FGeometry& MyGeometry, float InDeltaTime)
@@ -211,7 +213,6 @@ USceneHelperEntryEditorWidget* USceneHelperEditorWidget::CreateSceneEntry(UMythi
 {
     ensure(OwningComponent);
 
-    // @TODO - Liam: I need to inject the component before the construction script runs.
     USceneHelperEntryEditorWidget* NewWidget = CreateWidget<USceneHelperEntryEditorWidget>(this, EntryClassToSpawn);
     ensure(NewWidget);
 

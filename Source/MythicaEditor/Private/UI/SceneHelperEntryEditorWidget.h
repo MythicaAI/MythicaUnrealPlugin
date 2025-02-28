@@ -76,11 +76,6 @@ protected:
 
 protected:
 
-    UE_DEPRECATED(5.2, "Direct access to bHasJobHistory is deprecated. Please use HasJobHistory() function call instead.")
-    /** Used to change UI based on if the stored component has any job history yet. */
-    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Init")
-    uint8 bHasJobHistory:1;
-
     /** This lets the SceneHelper widget know if this widget should be reconstructed or not. */
     UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category="Init")
     uint8 bThumbnailRequiresReset:1;
