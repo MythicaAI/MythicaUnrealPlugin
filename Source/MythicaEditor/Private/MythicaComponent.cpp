@@ -180,14 +180,45 @@ void UMythicaComponent::PostEditChangeProperty(FPropertyChangedEvent& PropertyCh
     Super::PostEditChangeProperty(PropertyChangedEvent);
 }
 
-TArray<USceneComponent*> UMythicaComponent::GetGeneratedMeshComponents() const
+TArray<UStaticMeshComponent*> UMythicaComponent::GetGeneratedMeshComponents() const
 {
-    return TArray<USceneComponent*>();
+    AActor* Owner = GetOwner();
+    ensure(Owner);
+
+    // @TODO: Should add a component tag with comps GUID then search for all comps with the GUID tag.
+    TArray<UStaticMeshComponent*> MeshComponents;
+    Owner->GetComponents(UStaticMeshComponent::StaticClass(), MeshComponents);
+
+    TArray<UStaticMeshComponent*> RtnComps;
+    for (UStaticMeshComponent* MeshComp : MeshComponents)
+    {
+        if (MeshComponentNames.Contains(MeshComp->GetName()))
+        {
+            RtnComps.Emplace(MeshComp);
+        }
+    }
+
+    return MoveTemp(RtnComps);
 }
 
-TArray<USceneComponent*> UMythicaComponent::GetWorldInputActors() const
+TArray<AActor*> UMythicaComponent::GetWorldInputActors() const
 {
-    return TArray<USceneComponent*>();
+    TArray<AActor*> InputActors = TArray<AActor*>();
+
+    for (const FMythicaParameter Param : Parameters.Parameters)
+    {
+        if (Param.Type == EMythicaParameterType::File)
+        {
+            const FMythicaParameterFile& File = Param.ValueFile;
+
+            for (AActor* Actor : File.Actors)
+            {
+                InputActors.Emplace(Actor);
+            }
+        }
+    }
+
+    return InputActors;
 }
 
 static void ForceRefreshDetailsViewPanel()

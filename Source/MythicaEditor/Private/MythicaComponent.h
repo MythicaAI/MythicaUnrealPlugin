@@ -49,10 +49,10 @@ public:
     virtual void PostEditChangeProperty(FPropertyChangedEvent& PropertyChangedEvent) override;
 
     UFUNCTION(BlueprintPure, Category = "Mythica|Component")
-    TArray<USceneComponent*> GetGeneratedMeshComponents() const;
+    TArray<UStaticMeshComponent*> GetGeneratedMeshComponents() const;
 
     UFUNCTION(BlueprintPure, Category = "Mythica|Component")
-    TArray<USceneComponent*> GetWorldInputActors() const;
+    TArray<AActor*> GetWorldInputActors() const;
 
     UFUNCTION(BlueprintPure, Category="Mythica|Component")
     TArray<FName> GetMeshComponentNames() const { return MeshComponentNames; }
