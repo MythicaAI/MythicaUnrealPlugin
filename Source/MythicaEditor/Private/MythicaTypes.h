@@ -17,7 +17,7 @@ enum class EMythicaInputType : uint8
     Volume  UMETA(DisplayName = "Volume")
 };
 
-UENUM()
+UENUM(BlueprintType)
 enum class EMythicaParameterType : uint8
 {
     Int,
@@ -28,21 +28,21 @@ enum class EMythicaParameterType : uint8
     File
 };
 
-USTRUCT()
+USTRUCT(BlueprintType)
 struct FMythicaParameterInt
 {
     GENERATED_BODY()
 
-    UPROPERTY(VisibleAnywhere, Category = "Parameter")
+    UPROPERTY(VisibleAnywhere, BlueprintReadWrite)
     TArray<int> Values;
 
-    UPROPERTY(VisibleAnywhere, Category = "Parameter")
+    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Config")
     TArray<int> DefaultValues;
 
-    UPROPERTY(VisibleAnywhere, Category = "Parameter")
+    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Config")
     TOptional<int> MinValue;
 
-    UPROPERTY(VisibleAnywhere, Category = "Parameter")
+    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Config")
     TOptional<int> MaxValue;
 
     bool IsDefault() const;
@@ -50,21 +50,21 @@ struct FMythicaParameterInt
     void Copy(const FMythicaParameterInt& Source);
 };
 
-USTRUCT()
+USTRUCT(BlueprintType)
 struct FMythicaParameterFloat
 {
     GENERATED_BODY()
 
-    UPROPERTY(VisibleAnywhere, Category = "Parameter")
+    UPROPERTY(VisibleAnywhere, BlueprintReadWrite)
     TArray<float> Values;
 
-    UPROPERTY(VisibleAnywhere, Category = "Parameter")
+    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Config")
     TArray<float> DefaultValues;
 
-    UPROPERTY(VisibleAnywhere, Category = "Parameter")
+    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Config")
     TOptional<float> MinValue;
 
-    UPROPERTY(VisibleAnywhere, Category = "Parameter")
+    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Config")
     TOptional<float> MaxValue;
 
     bool IsDefault() const;
@@ -72,60 +72,60 @@ struct FMythicaParameterFloat
     void Copy(const FMythicaParameterFloat& Source);
 };
 
-USTRUCT()
+USTRUCT(BlueprintType)
 struct FMythicaParameterBool
 {
     GENERATED_BODY()
 
-    UPROPERTY(VisibleAnywhere, Category = "Parameter")
+    UPROPERTY(VisibleAnywhere, BlueprintReadWrite)
     bool Value = false;
 
-    UPROPERTY(VisibleAnywhere, Category = "Parameter")
+    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Config")
     bool DefaultValue = false;
 
     bool IsDefault() const;
     void Copy(const FMythicaParameterBool& Source);
 };
 
-USTRUCT()
+USTRUCT(BlueprintType)
 struct FMythicaParameterString
 {
     GENERATED_BODY()
 
-    UPROPERTY(VisibleAnywhere, Category = "Parameter")
+    UPROPERTY(VisibleAnywhere, BlueprintReadWrite)
     FString Value;
 
-    UPROPERTY(VisibleAnywhere, Category = "Parameter")
+    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Config")
     FString DefaultValue;
 
     bool IsDefault() const;
     void Copy(const FMythicaParameterString& Source);
 };
 
-USTRUCT()
+USTRUCT(BlueprintType)
 struct FMythicaParameterEnumValue
 {
     GENERATED_BODY()
 
-    UPROPERTY(VisibleAnywhere, Category = "Parameter")
+    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Config")
     FString Name;
 
-    UPROPERTY(VisibleAnywhere, Category = "Parameter")
+    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Config")
     FString Label;
 };
 
-USTRUCT()
+USTRUCT(BlueprintType)
 struct FMythicaParameterEnum
 {
     GENERATED_BODY()
 
-    UPROPERTY(VisibleAnywhere, Category = "Parameter")
+    UPROPERTY(VisibleAnywhere, BlueprintReadWrite)
     FString Value;
 
-    UPROPERTY(VisibleAnywhere, Category = "Parameter")
+    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Config")
     FString DefaultValue;
 
-    UPROPERTY(VisibleAnywhere, Category = "Parameter")
+    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Config")
     TArray<FMythicaParameterEnumValue> Values;
 
     bool IsDefault() const;
@@ -133,36 +133,36 @@ struct FMythicaParameterEnum
     void Copy(const FMythicaParameterEnum& Source);
 };
 
-USTRUCT()
+USTRUCT(BlueprintType)
 struct FMythicaParameterFileSettings
 {
     GENERATED_BODY()
 
-    UPROPERTY(EditAnywhere, Category = "Parameter")
+    UPROPERTY(EditAnywhere, BlueprintReadWrite)
     EMythicaExportTransformType TransformType = EMythicaExportTransformType::Relative;
 };
 
-USTRUCT()
+USTRUCT(BlueprintType)
 struct FMythicaParameterFile
 {
     GENERATED_BODY()
 
-    UPROPERTY(EditAnywhere, Category = "Parameter")
+    UPROPERTY(EditAnywhere, BlueprintReadWrite)
     EMythicaInputType Type = EMythicaInputType::World;
 
-    UPROPERTY(EditAnywhere, Category = "Parameter", meta = (EditCondition = "Type == EMythicaInputType::Mesh", EditConditionHides))
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, meta = (EditCondition = "Type == EMythicaInputType::Mesh", EditConditionHides))
     UStaticMesh* Mesh = nullptr;
 
-    UPROPERTY(EditAnywhere, Category = "Parameter", meta = (EditCondition = "Type == EMythicaInputType::World", EditConditionHides))
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, meta = (EditCondition = "Type == EMythicaInputType::World", EditConditionHides))
     TArray<AActor*> Actors;
 
-    UPROPERTY(EditAnywhere, Category = "Parameter", meta = (EditCondition = "Type == EMythicaInputType::Spline", EditConditionHides))
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, meta = (EditCondition = "Type == EMythicaInputType::Spline", EditConditionHides))
     AActor* SplineActor = nullptr;
 
-    UPROPERTY(EditAnywhere, Category = "Parameter", meta = (EditCondition = "Type == EMythicaInputType::Volume", EditConditionHides))
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, meta = (EditCondition = "Type == EMythicaInputType::Volume", EditConditionHides))
     AMythicaInputSelectionVolume* VolumeActor = nullptr;
 
-    UPROPERTY(EditAnywhere, Category = "Parameter", meta = (EditCondition = "Type != EMythicaInputType::Mesh", EditConditionHides))
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, meta = (EditCondition = "Type != EMythicaInputType::Mesh", EditConditionHides))
     FMythicaParameterFileSettings Settings;
 
     void Copy(const FMythicaParameterFile& Source);
@@ -173,31 +173,31 @@ struct FMythicaParameter
 {
     GENERATED_BODY()
 
-    UPROPERTY(VisibleAnywhere, Category = "Parameter")
+    UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
     FString Name;
 
-    UPROPERTY(VisibleAnywhere, Category = "Parameter")
+    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Config")
     FString Label;
 
-    UPROPERTY(VisibleAnywhere, Category = "Parameter")
+    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Config")
     EMythicaParameterType Type = EMythicaParameterType::Int;
 
-    UPROPERTY(VisibleAnywhere, Category = "Parameter")
+    UPROPERTY(VisibleAnywhere, BlueprintReadWrite)
     FMythicaParameterInt ValueInt;
 
-    UPROPERTY(VisibleAnywhere, Category = "Parameter")
+    UPROPERTY(VisibleAnywhere, BlueprintReadWrite)
     FMythicaParameterFloat ValueFloat;
 
-    UPROPERTY(VisibleAnywhere, Category = "Parameter")
+    UPROPERTY(VisibleAnywhere, BlueprintReadWrite)
     FMythicaParameterBool ValueBool;
 
-    UPROPERTY(VisibleAnywhere, Category = "Parameter")
+    UPROPERTY(VisibleAnywhere, BlueprintReadWrite)
     FMythicaParameterString ValueString;
 
-    UPROPERTY(VisibleAnywhere, Category = "Parameter")
+    UPROPERTY(VisibleAnywhere, BlueprintReadWrite)
     FMythicaParameterEnum ValueEnum;
  
-    UPROPERTY(EditAnywhere, Category = "Parameter")
+    UPROPERTY(EditAnywhere, BlueprintReadWrite)
     FMythicaParameterFile ValueFile;
 };
 
@@ -206,7 +206,7 @@ struct FMythicaParameters
 {
     GENERATED_BODY()
 
-    UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Parameter")
+    UPROPERTY(EditAnywhere, BlueprintReadWrite)
     TArray<FMythicaParameter> Parameters;
 };
 
@@ -215,7 +215,7 @@ struct FMythicaMaterialParameters
 {
     GENERATED_BODY()
 
-    UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = "Material")
+    UPROPERTY(EditAnywhere, BlueprintReadWrite)
     UMaterialInterface* Material;
 };
 

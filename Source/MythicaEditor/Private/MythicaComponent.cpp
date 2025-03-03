@@ -95,9 +95,9 @@ void UMythicaComponent::RegenerateMesh()
         return;
     }
 
-    if (!ComponentGUID.IsValid())
+    if (!ComponentGuid.IsValid())
     {
-        ComponentGUID = FGuid::NewGuid();
+        ComponentGuid = FGuid::NewGuid();
     }
 
     UMythicaEditorSubsystem* MythicaEditorSubsystem = GEditor->GetEditorSubsystem<UMythicaEditorSubsystem>();
@@ -112,7 +112,7 @@ void UMythicaComponent::RegenerateMesh()
 FString UMythicaComponent::GetImportPath()
 {
     FString ImportFolderClean = ObjectTools::SanitizeObjectName(ToolName);
-    FString ImportNameClean = ObjectTools::SanitizeObjectName(ComponentGUID.ToString().Left(IMPORT_NAME_LENGTH));
+    FString ImportNameClean = ObjectTools::SanitizeObjectName(ComponentGuid.ToString().Left(IMPORT_NAME_LENGTH));
 
     return FPaths::Combine(ImportFolderClean, ImportNameClean);
 }
@@ -178,6 +178,16 @@ void UMythicaComponent::PostEditChangeProperty(FPropertyChangedEvent& PropertyCh
     }
 
     Super::PostEditChangeProperty(PropertyChangedEvent);
+}
+
+TArray<USceneComponent*> UMythicaComponent::GetGeneratedMeshComponents() const
+{
+    return TArray<USceneComponent*>();
+}
+
+TArray<USceneComponent*> UMythicaComponent::GetWorldInputActors() const
+{
+    return TArray<USceneComponent*>();
 }
 
 static void ForceRefreshDetailsViewPanel()

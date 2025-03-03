@@ -48,8 +48,17 @@ public:
 
     virtual void PostEditChangeProperty(FPropertyChangedEvent& PropertyChangedEvent) override;
 
+    UFUNCTION(BlueprintPure, Category = "Mythica|Component")
+    TArray<USceneComponent*> GetGeneratedMeshComponents() const;
+
+    UFUNCTION(BlueprintPure, Category = "Mythica|Component")
+    TArray<USceneComponent*> GetWorldInputActors() const;
+
     UFUNCTION(BlueprintPure, Category="Mythica|Component")
     TArray<FName> GetMeshComponentNames() const { return MeshComponentNames; }
+
+    UFUNCTION(BlueprintPure, Category="Mythica|Component")
+    const FGuid GetGuid() const { return ComponentGuid; }
 
 private:
     void OnJobDefIdChanged();
@@ -82,6 +91,9 @@ public:
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Parameters")
     FMythicaParameters Parameters;
 
+    UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
+    TSet<USceneComponent*> WorldInputComponents;
+
 private:
     UPROPERTY(VisibleAnywhere, DuplicateTransient, Category = "Mythica", meta = (EditCondition = "false", EditConditionHides))
     int RequestId = -1;
@@ -105,14 +117,11 @@ private:
     TMap<EMythicaJobState, double> StateDurations;
 
     UPROPERTY(Transient)
-    TSet<USceneComponent*> WorldInputComponents;
-
-    UPROPERTY(Transient)
     UStaticMeshComponent* PlaceholderMeshComponent = nullptr;
 
     UPROPERTY(VisibleAnywhere, Category = "Mythica", meta = (EditCondition = "false", EditConditionHides))
     TArray<FName> MeshComponentNames;
 
-    UPROPERTY(VisibleAnywhere, DuplicateTransient, Category = "Mythica", meta = (EditCondition = "false", EditConditionHides))
-    FGuid ComponentGUID;
+    UPROPERTY(Transient, DuplicateTransient)
+    FGuid ComponentGuid;
 };
