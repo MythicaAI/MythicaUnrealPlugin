@@ -95,9 +95,9 @@ void UMythicaComponent::RegenerateMesh()
         return;
     }
 
-    if (!ComponentGUID.IsValid())
+    if (!ComponentGuid.IsValid())
     {
-        ComponentGUID = FGuid::NewGuid();
+        ComponentGuid = FGuid::NewGuid();
     }
 
     UMythicaEditorSubsystem* MythicaEditorSubsystem = GEditor->GetEditorSubsystem<UMythicaEditorSubsystem>();
@@ -112,7 +112,7 @@ void UMythicaComponent::RegenerateMesh()
 FString UMythicaComponent::GetImportPath()
 {
     FString ImportFolderClean = ObjectTools::SanitizeObjectName(ToolName);
-    FString ImportNameClean = ObjectTools::SanitizeObjectName(ComponentGUID.ToString().Left(IMPORT_NAME_LENGTH));
+    FString ImportNameClean = ObjectTools::SanitizeObjectName(ComponentGuid.ToString().Left(IMPORT_NAME_LENGTH));
 
     return FPaths::Combine(ImportFolderClean, ImportNameClean);
 }
@@ -178,6 +178,47 @@ void UMythicaComponent::PostEditChangeProperty(FPropertyChangedEvent& PropertyCh
     }
 
     Super::PostEditChangeProperty(PropertyChangedEvent);
+}
+
+TArray<UStaticMeshComponent*> UMythicaComponent::GetGeneratedMeshComponents() const
+{
+    AActor* Owner = GetOwner();
+    ensure(Owner);
+
+    // @TODO: Should add a component tag with comps GUID then search for all comps with the GUID tag.
+    TArray<UStaticMeshComponent*> MeshComponents;
+    Owner->GetComponents(UStaticMeshComponent::StaticClass(), MeshComponents);
+
+    TArray<UStaticMeshComponent*> RtnComps;
+    for (UStaticMeshComponent* MeshComp : MeshComponents)
+    {
+        if (MeshComponentNames.Contains(MeshComp->GetName()))
+        {
+            RtnComps.Emplace(MeshComp);
+        }
+    }
+
+    return MoveTemp(RtnComps);
+}
+
+TArray<AActor*> UMythicaComponent::GetWorldInputActors() const
+{
+    TArray<AActor*> InputActors = TArray<AActor*>();
+
+    for (const FMythicaParameter Param : Parameters.Parameters)
+    {
+        if (Param.Type == EMythicaParameterType::File)
+        {
+            const FMythicaParameterFile& File = Param.ValueFile;
+
+            for (AActor* Actor : File.Actors)
+            {
+                InputActors.Emplace(Actor);
+            }
+        }
+    }
+
+    return InputActors;
 }
 
 static void ForceRefreshDetailsViewPanel()
