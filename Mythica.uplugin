@@ -1,7 +1,7 @@
 {
 	"FileVersion": 3,
-	"Version": 5,
-	"VersionName": "1.1.1",
+	"Version": 6,
+	"VersionName": "1.1.2",
 	"FriendlyName": "Mythica",
 	"Description": "Library of procedural tools.",
 	"Category": "Procedural",
@@ -15,11 +15,20 @@
 	"IsExperimentalVersion": false,
 	"Installed": false,
 	"Modules": [
-		{
-			"Name": "Mythica",
-			"Type": "Editor",
-			"LoadingPhase": "Default"
-		}
+        {
+            "Name": "MythicaEditor",
+            "Type": "Editor",
+            "LoadingPhase": "Default"
+        },
+        {
+            "Name": "MythicaRuntime",
+            "Type": "Runtime",
+            "LoadingPhase": "Default",
+            "AdditionalDependencies": [
+                "DeveloperSettings",
+                "Engine"
+            ]
+        }
 	],
 	"Plugins": [
 		{
