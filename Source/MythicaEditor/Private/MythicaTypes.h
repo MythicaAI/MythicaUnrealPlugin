@@ -36,13 +36,13 @@ struct FMythicaParameterInt
     UPROPERTY(VisibleAnywhere, BlueprintReadWrite)
     TArray<int> Values;
 
-    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Config")
+    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Config")
     TArray<int> DefaultValues;
 
-    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Config")
+    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Config")
     TOptional<int> MinValue;
 
-    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Config")
+    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Config")
     TOptional<int> MaxValue;
 
     bool IsDefault() const;
@@ -61,7 +61,7 @@ struct FMythicaParameterFloat
     UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Config")
     TArray<float> DefaultValues;
 
-    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Config")
+    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Config")
     TOptional<float> MinValue;
 
     UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Config")
@@ -176,10 +176,10 @@ struct FMythicaParameter
     UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
     FString Name;
 
-    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Config")
+    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Config")
     FString Label;
 
-    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Config")
+    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Config")
     EMythicaParameterType Type = EMythicaParameterType::Int;
 
     UPROPERTY(VisibleAnywhere, BlueprintReadWrite)

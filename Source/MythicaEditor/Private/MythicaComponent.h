@@ -122,6 +122,6 @@ private:
     UPROPERTY(VisibleAnywhere, Category = "Mythica", meta = (EditCondition = "false", EditConditionHides))
     TArray<FName> MeshComponentNames;
 
-    UPROPERTY(Transient, DuplicateTransient)
+    UPROPERTY(VisibleAnywhere, DuplicateTransient, Category = "Mythica", meta = (EditCondition = "false", EditConditionHides))
     FGuid ComponentGuid;
 };
