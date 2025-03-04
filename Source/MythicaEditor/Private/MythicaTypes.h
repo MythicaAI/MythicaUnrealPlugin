@@ -168,6 +168,38 @@ struct FMythicaParameterFile
     void Copy(const FMythicaParameterFile& Source);
 };
 
+UENUM(BlueprintType)
+enum class EMythicaCurveType : uint8
+{
+
+};
+
+USTRUCT(BlueprintType)
+struct FMythicaParameterCurve
+{
+    GENERATED_BODY()
+
+    UPROPERTY(EditAnywhere, BlueprintReadWrite)
+    EMythicaInputType Type = EMythicaInputType::World;
+
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, meta = (EditCondition = "Type == EMythicaInputType::Mesh", EditConditionHides))
+    UStaticMesh* Mesh = nullptr;
+
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, meta = (EditCondition = "Type == EMythicaInputType::World", EditConditionHides))
+    TArray<AActor*> Actors;
+
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, meta = (EditCondition = "Type == EMythicaInputType::Spline", EditConditionHides))
+    AActor* SplineActor = nullptr;
+
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, meta = (EditCondition = "Type == EMythicaInputType::Volume", EditConditionHides))
+    AMythicaInputSelectionVolume* VolumeActor = nullptr;
+
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, meta = (EditCondition = "Type != EMythicaInputType::Mesh", EditConditionHides))
+    FMythicaParameterFileSettings Settings;
+
+    void Copy(const FMythicaParameterFile& Source);
+};
+
 USTRUCT(BlueprintType)
 struct FMythicaParameter
 {

@@ -2,6 +2,7 @@
 
 #include "DetailWidgetRow.h"
 #include "IDetailChildrenBuilder.h"
+#include "MythicaCurveEditor.h"
 #include "MythicaTypes.h"
 #include "Styling/AppStyle.h"
 #include "Widgets/Text/SMultiLineEditableText.h"
@@ -308,32 +309,35 @@ void FMythicaParametersDetails::CustomizeChildren(TSharedRef<IPropertyHandle> St
             }
             case EMythicaParameterType::Bool:
             {
-                auto IsChecked = [this, ParamIndex]()
-                {
-                    FMythicaParameters* Parameters = GetParametersFromHandleWeak(HandleWeak);
-                    bool Value = Parameters ? Parameters->Parameters[ParamIndex].ValueBool.Value : false;
-                    return Value ? ECheckBoxState::Checked : ECheckBoxState::Unchecked;
-                };
+                ValueWidget = SNew(SMythicaCurveEditor);
+                DesiredWidthScalar = 3;
 
-                auto OnCheckStateChanged = [this, ParamIndex](ECheckBoxState NewState)
-                {
-                    if (NewState == ECheckBoxState::Undetermined)
-                        return;
+                //auto IsChecked = [this, ParamIndex]()
+                //{
+                //    FMythicaParameters* Parameters = GetParametersFromHandleWeak(HandleWeak);
+                //    bool Value = Parameters ? Parameters->Parameters[ParamIndex].ValueBool.Value : false;
+                //    return Value ? ECheckBoxState::Checked : ECheckBoxState::Unchecked;
+                //};
 
-                    UObject* Object = nullptr;
-                    FMythicaParameters* Parameters = GetParametersFromHandleWeak(HandleWeak, &Object);
-                    if (Parameters)
-                    {
-                        const FScopedTransaction Transaction(LOCTEXT("MythicaChangeParameter", "Parameter Value Changed"));
-                        Object->Modify();
-                        Parameters->Parameters[ParamIndex].ValueBool.Value = (NewState == ECheckBoxState::Checked);
-                        HandleWeak.Pin()->NotifyPostChange(EPropertyChangeType::ValueSet);
-                    }
-                };
+                //auto OnCheckStateChanged = [this, ParamIndex](ECheckBoxState NewState)
+                //{
+                //    if (NewState == ECheckBoxState::Undetermined)
+                //        return;
 
-                ValueWidget = SNew(SCheckBox)
-                    .IsChecked_Lambda(IsChecked)
-                    .OnCheckStateChanged_Lambda(OnCheckStateChanged);
+                //    UObject* Object = nullptr;
+                //    FMythicaParameters* Parameters = GetParametersFromHandleWeak(HandleWeak, &Object);
+                //    if (Parameters)
+                //    {
+                //        const FScopedTransaction Transaction(LOCTEXT("MythicaChangeParameter", "Parameter Value Changed"));
+                //        Object->Modify();
+                //        Parameters->Parameters[ParamIndex].ValueBool.Value = (NewState == ECheckBoxState::Checked);
+                //        HandleWeak.Pin()->NotifyPostChange(EPropertyChangeType::ValueSet);
+                //    }
+                //};
+
+                //ValueWidget = SNew(SCheckBox)
+                //    .IsChecked_Lambda(IsChecked)
+                //    .OnCheckStateChanged_Lambda(OnCheckStateChanged);
 
                 ResetToDefaultVisible = [this, ParamIndex]()
                 {
