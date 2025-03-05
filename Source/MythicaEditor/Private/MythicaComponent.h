@@ -116,8 +116,8 @@ private:
     UPROPERTY(VisibleAnywhere, Category = "Mythica", meta = (EditCondition = "false", EditConditionHides))
     TMap<EMythicaJobState, double> StateDurations = TMap<EMythicaJobState, double>();
 
-    UPROPERTY(Transient)
-    TObjectPtr<UStaticMeshComponent> PlaceholderMeshComponent = nullptr;
+    //UPROPERTY(Transient)
+    //TObjectPtr<UStaticMeshComponent> PlaceholderMeshComponent = nullptr;
 
     UPROPERTY(VisibleAnywhere, Category = "Mythica", meta = (EditCondition = "false", EditConditionHides))
     TArray<FName> MeshComponentNames = TArray<FName>();

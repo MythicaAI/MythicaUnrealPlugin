@@ -419,14 +419,12 @@ void UMythicaComponent::UpdateMesh()
         // Otherwise spawn a new one
         if (!MeshComponent)
         {
-            MeshComponent = CastChecked<UStaticMeshComponent>(OwnerActor->AddComponentByClass(UStaticMeshComponent::StaticClass(), true, FTransform::Identity, false));
-            // MeshComponent = NewObject<UStaticMeshComponent>(OwnerActor);
+            MeshComponent = NewObject<UStaticMeshComponent>(OwnerActor);
             MeshComponent->SetStaticMesh(Cast<UStaticMesh>(Asset.GetAsset()));
-            //MeshComponent->SetWorldLocation(GetOwner()->GetActorLocation());
-            MeshComponent->AttachToComponent(GetOwner()->GetRootComponent(), FAttachmentTransformRules::KeepWorldTransform);
+            MeshComponent->SetupAttachment(OwnerActor->GetRootComponent());
 
-            //OwnerActor->AddInstanceComponent(MeshComponent);
-            //MeshComponent->RegisterComponent();
+            OwnerActor->AddInstanceComponent(MeshComponent);
+            MeshComponent->RegisterComponent();
         }
 
         MythicaEditorSubsystem->SetJobsCachedAssetData(RequestId, Asset);
@@ -445,37 +443,36 @@ void UMythicaComponent::UpdateMesh()
 
 void UMythicaComponent::UpdatePlaceholderMesh()
 {
-    AActor* Owner = GetOwner();
-    ensure(Owner);
+    //AActor* Owner = GetOwner();
+    //ensure(Owner);
 
-    if (MeshComponentNames.IsEmpty() && !PlaceholderMeshComponent)
-    {
-        UStaticMesh* Mesh = Cast<UStaticMesh>(StaticLoadObject(UStaticMesh::StaticClass(), NULL, PLACEHOLDER_MESH_ASSET));
+    //if (MeshComponentNames.IsEmpty() && !PlaceholderMeshComponent)
+    //{
+    //    UStaticMesh* Mesh = Cast<UStaticMesh>(StaticLoadObject(UStaticMesh::StaticClass(), NULL, PLACEHOLDER_MESH_ASSET));
 
-        PlaceholderMeshComponent = NewObject<UStaticMeshComponent>(
-            this, UStaticMeshComponent::StaticClass(), NAME_None, RF_Transactional);
+    //    PlaceholderMeshComponent = NewObject<UStaticMeshComponent>(
+    //        this, UStaticMeshComponent::StaticClass(), NAME_None, RF_Transactional);
 
-        // Owner->AddComponentByClass();
-
-        PlaceholderMeshComponent->SetStaticMesh(Mesh);
-        PlaceholderMeshComponent->SetHiddenInGame(true);
-        PlaceholderMeshComponent->AttachToComponent(GetOwner()->GetRootComponent(), FAttachmentTransformRules::KeepRelativeTransform);
-        PlaceholderMeshComponent->RegisterComponent();
-    }
-    else if (!MeshComponentNames.IsEmpty() && PlaceholderMeshComponent)
-    {
-        PlaceholderMeshComponent->DetachFromComponent(FDetachmentTransformRules::KeepRelativeTransform);
-        PlaceholderMeshComponent->UnregisterComponent();
-        PlaceholderMeshComponent->DestroyComponent();
-        PlaceholderMeshComponent = nullptr;
-    }
+    //    PlaceholderMeshComponent->SetStaticMesh(Mesh);
+    //    PlaceholderMeshComponent->SetHiddenInGame(true);
+    //    PlaceholderMeshComponent->SetupAttachment(GetOwner()->GetRootComponent());
+    //    //PlaceholderMeshComponent->AttachToComponent(GetOwner()->GetRootComponent(), FAttachmentTransformRules::KeepRelativeTransform);
+    //    PlaceholderMeshComponent->RegisterComponent();
+    //}
+    //else if (!MeshComponentNames.IsEmpty() && PlaceholderMeshComponent)
+    //{
+    //    //PlaceholderMeshComponent->DetachFromComponent(FDetachmentTransformRules::KeepRelativeTransform);
+    //    PlaceholderMeshComponent->UnregisterComponent();
+    //    PlaceholderMeshComponent->DestroyComponent();
+    //    PlaceholderMeshComponent = nullptr;
+    //}
 }
 
 void UMythicaComponent::DestroyPlaceholderMesh()
 {
-    if (PlaceholderMeshComponent)
-    {
-        PlaceholderMeshComponent->DestroyComponent();
-        PlaceholderMeshComponent = nullptr;
-    }
+    //if (PlaceholderMeshComponent)
+    //{
+    //    PlaceholderMeshComponent->DestroyComponent();
+    //    PlaceholderMeshComponent = nullptr;
+    //}
 }
