@@ -12,17 +12,17 @@ struct FMythicaComponentSettings
     GENERATED_BODY()
 
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Mythica")
-    bool RegenerateOnParameterChange = true;
+    bool RegenerateOnParameterChange = false;
 
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Mythica")
-    bool RegenerateOnInputChange = true;
+    bool RegenerateOnInputChange = false;
 
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Mythica")
     bool RegenerateOnTransformChange = false;
 };
 
-UCLASS( ClassGroup=(Custom), meta=(BlueprintSpawnableComponent), hidecategories=(Rendering, Activation, Cooking, Physics, LOD, Navigation, AssetUserData))
-class UMythicaComponent : public USceneComponent
+UCLASS( ClassGroup=(Mythica), meta=(BlueprintSpawnableComponent), hidecategories=(Activation, Cooking, AssetUserData))
+class UMythicaComponent : public UActorComponent
 {
     GENERATED_BODY()
 
@@ -66,7 +66,6 @@ private:
     void BindWorldInputListeners();
     void UnbindWorldInputListeners();
     void OnWorldInputTransformUpdated(USceneComponent* InComponent, EUpdateTransformFlags InFlags, ETeleportType InType);
-    void OnTransformUpdated(USceneComponent* InComponent, EUpdateTransformFlags InFlags, ETeleportType InType);
 
     UFUNCTION()
     void OnJobStateChanged(int InRequestId, EMythicaJobState InState, FText InMessage);
@@ -76,23 +75,24 @@ private:
     void DestroyPlaceholderMesh();
 
 public:
-    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Mythica", meta = (EditCondition = "false", EditConditionHides))
-    FMythicaJobDefinitionId JobDefId;
 
     UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Mythica", meta = (EditCondition = "false", EditConditionHides))
-    FMythicaAssetVersionEntryPointReference Source;
+    FMythicaJobDefinitionId JobDefId = FMythicaJobDefinitionId();
 
     UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Mythica", meta = (EditCondition = "false", EditConditionHides))
-    FString ToolName;
+    FMythicaAssetVersionEntryPointReference Source = FMythicaAssetVersionEntryPointReference();
+
+    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Mythica", meta = (EditCondition = "false", EditConditionHides))
+    FString ToolName = FString();
 
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Mythica")
-    FMythicaComponentSettings Settings;
+    FMythicaComponentSettings Settings = FMythicaComponentSettings();
 
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Parameters")
-    FMythicaParameters Parameters;
+    FMythicaParameters Parameters = FMythicaParameters();
 
     UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
-    TSet<USceneComponent*> WorldInputComponents;
+    TSet<TObjectPtr<USceneComponent>> WorldInputComponents = TSet<TObjectPtr<USceneComponent>>();
 
 private:
     UPROPERTY(VisibleAnywhere, DuplicateTransient, Category = "Mythica", meta = (EditCondition = "false", EditConditionHides))
@@ -102,7 +102,7 @@ private:
     EMythicaJobState State = EMythicaJobState::Invalid;
 
     UPROPERTY(VisibleAnywhere, DuplicateTransient, Category = "Mythica", meta = (EditCondition = "false", EditConditionHides))
-    FText Message;
+    FText Message = FText();
 
     UPROPERTY(VisibleAnywhere, DuplicateTransient, Category = "Mythica", meta = (EditCondition = "false", EditConditionHides))
     double StateBeginTime = 0.0f;
@@ -114,14 +114,14 @@ private:
     FTimerHandle DelayRegenerateHandle;
 
     UPROPERTY(VisibleAnywhere, Category = "Mythica", meta = (EditCondition = "false", EditConditionHides))
-    TMap<EMythicaJobState, double> StateDurations;
+    TMap<EMythicaJobState, double> StateDurations = TMap<EMythicaJobState, double>();
 
     UPROPERTY(Transient)
-    UStaticMeshComponent* PlaceholderMeshComponent = nullptr;
+    TObjectPtr<UStaticMeshComponent> PlaceholderMeshComponent = nullptr;
 
     UPROPERTY(VisibleAnywhere, Category = "Mythica", meta = (EditCondition = "false", EditConditionHides))
-    TArray<FName> MeshComponentNames;
+    TArray<FName> MeshComponentNames = TArray<FName>();
 
     UPROPERTY(VisibleAnywhere, DuplicateTransient, Category = "Mythica", meta = (EditCondition = "false", EditConditionHides))
-    FGuid ComponentGuid;
+    FGuid ComponentGuid = FGuid();
 };

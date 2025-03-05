@@ -121,7 +121,7 @@ void USceneHelperEditorWidget::OnJobStateChanged(int RequestId, EMythicaJobState
 
     if (State >= EMythicaJobState::Completed)
     {
-        Stats.ActiveJobsCount--;
+        Stats.ActiveJobsCount = FMath::Max(Stats.ActiveJobsCount-1, 0);
         Stats.FinishedJobsCount++;
     }
 }
@@ -173,7 +173,7 @@ void USceneHelperEditorWidget::NativePoll()
         }
 
         // Storing the unique parent actors for stats
-        MythicaActors.Emplace(MythComp->GetAttachParentActor());
+        MythicaActors.Emplace(MythComp->GetOwner());
 
         FString DisplayName = UKismetSystemLibrary::GetDisplayName(MythComp);
         TrackedCompIds.Emplace(DisplayName);
