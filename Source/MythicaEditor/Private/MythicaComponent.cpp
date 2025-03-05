@@ -22,7 +22,8 @@ const FMythicaProcessingStep ProcessingSteps[] = {
 };
 static_assert((uint8)EMythicaJobState::Completed - (uint8)EMythicaJobState::Invalid == 5);
 
-UMythicaComponent::UMythicaComponent()
+UMythicaComponent::UMythicaComponent(const FObjectInitializer& ObjectInitializer)
+    : Super(ObjectInitializer)
 {
     PrimaryComponentTick.bCanEverTick = false;
 }
@@ -364,9 +365,10 @@ void UMythicaComponent::UpdateMesh()
     AActor* OwnerActor = GetOwner();
     ensure(OwnerActor);
 
+    OwnerActor->Modify();
+
     // Clear existing meshes but save cache for re-use
     TArray<UStaticMeshComponent*> ExistingMeshCache;
-
     for (UActorComponent* Component : OwnerActor->GetComponents())
     {
         UStaticMeshComponent* MeshComponent = Cast<UStaticMeshComponent>(Component);
@@ -396,7 +398,7 @@ void UMythicaComponent::UpdateMesh()
     AssetRegistryModule.Get().GetAssetsByPath(*ImportDirectory, Assets, true, false);
 
     // Used to trigger a save object in the level instance so that we can save the new instance components.
-    UKismetSystemLibrary::TransactObject(OwnerActor);
+    // UKismetSystemLibrary::TransactObject(OwnerActor);
 
     for (FAssetData Asset : Assets)
     {
@@ -423,7 +425,7 @@ void UMythicaComponent::UpdateMesh()
         // Otherwise spawn a new one
         if (!MeshComponent)
         {
-            MeshComponent = NewObject<UStaticMeshComponent>(OwnerActor);
+            MeshComponent = NewObject<UStaticMeshComponent>(OwnerActor, Asset.AssetName, RF_Transactional);
 
             MeshComponent->SetStaticMesh(Cast<UStaticMesh>(Asset.GetAsset()));
             MeshComponent->SetupAttachment(OwnerActor->GetRootComponent());
@@ -443,43 +445,47 @@ void UMythicaComponent::UpdateMesh()
         MeshComponent->DestroyComponent();
     }
 
-    UKismetSystemLibrary::EndTransaction();
+    OwnerActor->Modify();
+
+    //UKismetSystemLibrary::EndTransaction();
 
     UpdatePlaceholderMesh();
 }
 
 void UMythicaComponent::UpdatePlaceholderMesh()
 {
-    //AActor* Owner = GetOwner();
-    //ensure(Owner);
+    AActor* Owner = GetOwner();
+    ensure(Owner);
 
-    //if (MeshComponentNames.IsEmpty() && !PlaceholderMeshComponent)
-    //{
-    //    UStaticMesh* Mesh = Cast<UStaticMesh>(StaticLoadObject(UStaticMesh::StaticClass(), NULL, PLACEHOLDER_MESH_ASSET));
+    if (MeshComponentNames.IsEmpty() && !IsValid(PlaceholderMeshComponent))
+    {
+        Owner->Modify();
 
-    //    PlaceholderMeshComponent = NewObject<UStaticMeshComponent>(
-    //        this, UStaticMeshComponent::StaticClass(), NAME_None, RF_Transactional);
+        UStaticMesh* Mesh = Cast<UStaticMesh>(StaticLoadObject(UStaticMesh::StaticClass(), NULL, PLACEHOLDER_MESH_ASSET));
 
-    //    PlaceholderMeshComponent->SetStaticMesh(Mesh);
-    //    PlaceholderMeshComponent->SetHiddenInGame(true);
-    //    PlaceholderMeshComponent->SetupAttachment(GetOwner()->GetRootComponent());
-    //    //PlaceholderMeshComponent->AttachToComponent(GetOwner()->GetRootComponent(), FAttachmentTransformRules::KeepRelativeTransform);
-    //    PlaceholderMeshComponent->RegisterComponent();
-    //}
-    //else if (!MeshComponentNames.IsEmpty() && PlaceholderMeshComponent)
-    //{
-    //    //PlaceholderMeshComponent->DetachFromComponent(FDetachmentTransformRules::KeepRelativeTransform);
-    //    PlaceholderMeshComponent->UnregisterComponent();
-    //    PlaceholderMeshComponent->DestroyComponent();
-    //    PlaceholderMeshComponent = nullptr;
-    //}
+        PlaceholderMeshComponent = NewObject<UStaticMeshComponent>(
+            this, UStaticMeshComponent::StaticClass(), NAME_None, RF_Transactional);
+
+        PlaceholderMeshComponent->SetStaticMesh(Mesh);
+        PlaceholderMeshComponent->SetHiddenInGame(true);
+        PlaceholderMeshComponent->SetupAttachment(GetOwner()->GetRootComponent());
+        Owner->AddOwnedComponent(PlaceholderMeshComponent);
+        PlaceholderMeshComponent->RegisterComponent();
+
+        Owner->Modify();
+    }
+    else if (!MeshComponentNames.IsEmpty() && IsValid(PlaceholderMeshComponent))
+    {
+        PlaceholderMeshComponent->DestroyComponent();
+        PlaceholderMeshComponent = nullptr;
+    }
 }
 
 void UMythicaComponent::DestroyPlaceholderMesh()
 {
-    //if (PlaceholderMeshComponent)
-    //{
-    //    PlaceholderMeshComponent->DestroyComponent();
-    //    PlaceholderMeshComponent = nullptr;
-    //}
+    if (IsValid(PlaceholderMeshComponent))
+    {
+        PlaceholderMeshComponent->DestroyComponent();
+        PlaceholderMeshComponent = nullptr;
+    }
 }
