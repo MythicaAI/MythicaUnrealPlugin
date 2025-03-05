@@ -362,6 +362,7 @@ void UMythicaComponent::OnJobStateChanged(int InRequestId, EMythicaJobState InSt
 void UMythicaComponent::UpdateMesh()
 {
     AActor* OwnerActor = GetOwner();
+    ensure(OwnerActor);
 
     // Clear existing meshes but save cache for re-use
     TArray<UStaticMeshComponent*> ExistingMeshCache;
@@ -394,6 +395,9 @@ void UMythicaComponent::UpdateMesh()
     TArray<FAssetData> Assets;
     AssetRegistryModule.Get().GetAssetsByPath(*ImportDirectory, Assets, true, false);
 
+    // Used to trigger a save object in the level instance so that we can save the new instance components.
+    UKismetSystemLibrary::TransactObject(OwnerActor);
+
     for (FAssetData Asset : Assets)
     {
         if (!Asset.IsInstanceOf(UStaticMesh::StaticClass()))
@@ -420,6 +424,7 @@ void UMythicaComponent::UpdateMesh()
         if (!MeshComponent)
         {
             MeshComponent = NewObject<UStaticMeshComponent>(OwnerActor);
+
             MeshComponent->SetStaticMesh(Cast<UStaticMesh>(Asset.GetAsset()));
             MeshComponent->SetupAttachment(OwnerActor->GetRootComponent());
 
@@ -437,6 +442,8 @@ void UMythicaComponent::UpdateMesh()
     {
         MeshComponent->DestroyComponent();
     }
+
+    UKismetSystemLibrary::EndTransaction();
 
     UpdatePlaceholderMesh();
 }
