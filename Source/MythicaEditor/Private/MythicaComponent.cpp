@@ -365,6 +365,7 @@ void UMythicaComponent::UpdateMesh()
     AActor* OwnerActor = GetOwner();
     ensure(OwnerActor);
 
+    // Used to trigger a save object in the level instance so that we can save the new instance components. I think its supposed to wrap the changes, but works without this call.
     OwnerActor->Modify();
 
     // Clear existing meshes but save cache for re-use
@@ -396,9 +397,6 @@ void UMythicaComponent::UpdateMesh()
 
     TArray<FAssetData> Assets;
     AssetRegistryModule.Get().GetAssetsByPath(*ImportDirectory, Assets, true, false);
-
-    // Used to trigger a save object in the level instance so that we can save the new instance components.
-    // UKismetSystemLibrary::TransactObject(OwnerActor);
 
     for (FAssetData Asset : Assets)
     {
@@ -445,9 +443,8 @@ void UMythicaComponent::UpdateMesh()
         MeshComponent->DestroyComponent();
     }
 
+    // Used to trigger a save object in the level instance so that we can save the new instance components.
     OwnerActor->Modify();
-
-    //UKismetSystemLibrary::EndTransaction();
 
     UpdatePlaceholderMesh();
 }
@@ -476,6 +473,7 @@ void UMythicaComponent::UpdatePlaceholderMesh()
     }
     else if (!MeshComponentNames.IsEmpty() && IsValid(PlaceholderMeshComponent))
     {
+        Owner->RemoveOwnedComponent(PlaceholderMeshComponent);
         PlaceholderMeshComponent->DestroyComponent();
         PlaceholderMeshComponent = nullptr;
     }
