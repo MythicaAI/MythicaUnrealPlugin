@@ -107,9 +107,6 @@ public:
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Mythica|Parameters")
     FMythicaParameters Parameters = FMythicaParameters();
 
-    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Mythica|Components")
-    TSet<TObjectPtr<USceneComponent>> WorldInputComponents = TSet<TObjectPtr<USceneComponent>>();
-
 private:
 
     UPROPERTY(VisibleAnywhere, DuplicateTransient, Category = "Mythica", meta = (EditCondition = "false", EditConditionHides))
@@ -141,4 +138,7 @@ private:
 
     UPROPERTY(VisibleAnywhere, DuplicateTransient, Category = "Mythica", meta = (EditCondition = "false", EditConditionHides))
     FGuid ComponentGuid = FGuid();
+
+    UPROPERTY(Transient, DuplicateTransient)
+    TSet<TObjectPtr<USceneComponent>> WorldInputComponents = TSet<TObjectPtr<USceneComponent>>();
 };

@@ -397,7 +397,6 @@ void UMythicaComponent::UpdateMesh()
 
     TArray<FAssetData> Assets;
     AssetRegistryModule.Get().GetAssetsByPath(*ImportDirectory, Assets, true, false);
-
     for (FAssetData Asset : Assets)
     {
         if (!Asset.IsInstanceOf(UStaticMesh::StaticClass()))
@@ -423,7 +422,8 @@ void UMythicaComponent::UpdateMesh()
         // Otherwise spawn a new one
         if (!MeshComponent)
         {
-            MeshComponent = NewObject<UStaticMeshComponent>(OwnerActor, Asset.AssetName, RF_Transactional);
+            FString ComponentName = FString::Printf(TEXT("GEN_%s"), *GetName());
+            MeshComponent = NewObject<UStaticMeshComponent>(OwnerActor, *ComponentName, RF_Transactional);
 
             MeshComponent->SetStaticMesh(Cast<UStaticMesh>(Asset.GetAsset()));
             MeshComponent->SetupAttachment(OwnerActor->GetRootComponent());
