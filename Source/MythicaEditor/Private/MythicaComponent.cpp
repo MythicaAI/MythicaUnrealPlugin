@@ -26,6 +26,9 @@ UMythicaComponent::UMythicaComponent(const FObjectInitializer& ObjectInitializer
     : Super(ObjectInitializer)
 {
     PrimaryComponentTick.bCanEverTick = false;
+
+    // This is so that is easy to get a reference to all MythicaComponnents
+    ComponentTags.Emplace(MYTHICA_COMPONENT_TAG);
 }
 
 void UMythicaComponent::OnRegister()
@@ -366,28 +369,30 @@ void UMythicaComponent::UpdateMesh()
     ensure(OwnerActor);
 
     // Used to trigger a save object in the level instance so that we can save the new instance components. I think its supposed to wrap the changes, but works without this call.
-    OwnerActor->Modify();
+    //OwnerActor->Modify();
 
     // Clear existing meshes but save cache for re-use
-    TArray<UStaticMeshComponent*> ExistingMeshCache;
-    for (UActorComponent* Component : OwnerActor->GetComponents())
-    {
-        UStaticMeshComponent* MeshComponent = Cast<UStaticMeshComponent>(Component);
-        if (!MeshComponent)
-        {
-            continue;
-        }
+    //TArray<UStaticMeshComponent*> ExistingMeshCache;
+    //for (UActorComponent* Component : OwnerActor->GetComponents())
+    //{
+    //    UStaticMeshComponent* MeshComponent = Cast<UStaticMeshComponent>(Component);
+    //    if (!MeshComponent)
+    //    {
+    //        continue;
+    //    }
 
-        for (FName Name : MeshComponentNames)
-        {
-            if (Component->GetFName() == Name)
-            {
-                ExistingMeshCache.Add(MeshComponent);
-                break;
-            }
-        }
-    }
+    //    for (FName Name : MeshComponentNames)
+    //    {
+    //        if (Component->GetFName() == Name)
+    //        {
+    //            ExistingMeshCache.Add(MeshComponent);
+    //            break;
+    //        }
+    //    }
+    //}
     MeshComponentNames.Reset();
+
+    TArray<UActorComponent*> ExistingMeshCache = OwnerActor->GetComponentsByTag(UStaticMeshComponent::StaticClass(), *ComponentGuid.ToString());
 
     // Scan the directory for desired meshes
     UMythicaEditorSubsystem* MythicaEditorSubsystem = GEditor->GetEditorSubsystem<UMythicaEditorSubsystem>();
@@ -410,10 +415,16 @@ void UMythicaComponent::UpdateMesh()
         // Try to re-use an existing mesh component
         for (int32 i = 0; i < ExistingMeshCache.Num(); i++)
         {
-            UStaticMesh* Mesh = ExistingMeshCache[i]->GetStaticMesh();
+            UStaticMeshComponent* MeshComp = Cast<UStaticMeshComponent>(ExistingMeshCache[i]);
+            if (!IsValid(MeshComp))
+            {
+                continue;
+            }
+
+            UStaticMesh* Mesh = MeshComp->GetStaticMesh();
             if (Mesh && Mesh->GetPathName() == ObjectPath)
             {
-                MeshComponent = ExistingMeshCache[i];
+                MeshComponent = MeshComp;
                 ExistingMeshCache.RemoveAt(i);
                 break;
             }
@@ -430,21 +441,23 @@ void UMythicaComponent::UpdateMesh()
 
             OwnerActor->AddInstanceComponent(MeshComponent);
             MeshComponent->RegisterComponent();
+
+            MeshComponent->ComponentTags.Emplace(*ComponentGuid.ToString());
         }
 
         MythicaEditorSubsystem->SetJobsCachedAssetData(RequestId, Asset);
 
         MeshComponentNames.Add(MeshComponent->GetFName());
+
+        // Used to trigger a save object in the level instance so that we can save the new instance components.
+        OwnerActor->Modify();
     }
 
     // Destroy any meshes that were not re-used
-    for (UStaticMeshComponent* MeshComponent : ExistingMeshCache)
+    for (UActorComponent* GenComponent : ExistingMeshCache)
     {
-        MeshComponent->DestroyComponent();
+        GenComponent->DestroyComponent();
     }
-
-    // Used to trigger a save object in the level instance so that we can save the new instance components.
-    OwnerActor->Modify();
 
     UpdatePlaceholderMesh();
 }

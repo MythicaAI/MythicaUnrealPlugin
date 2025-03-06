@@ -6,6 +6,8 @@
 #include "MythicaTypes.h"
 #include "MythicaComponent.generated.h"
 
+#define MYTHICA_COMPONENT_TAG TEXT("MythicaEditorComp")
+
 /**
  * FMythicaComponentSettings
  *
