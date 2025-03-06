@@ -22,7 +22,8 @@ const FMythicaProcessingStep ProcessingSteps[] = {
 };
 static_assert((uint8)EMythicaJobState::Completed - (uint8)EMythicaJobState::Invalid == 5);
 
-UMythicaComponent::UMythicaComponent()
+UMythicaComponent::UMythicaComponent(const FObjectInitializer& ObjectInitializer)
+    : Super(ObjectInitializer)
 {
     PrimaryComponentTick.bCanEverTick = false;
 }
@@ -36,7 +37,6 @@ void UMythicaComponent::OnRegister()
     if (CanRegenerateMesh())
     {
         BindWorldInputListeners();
-        TransformUpdated.AddUObject(this, &UMythicaComponent::OnTransformUpdated);
     }
 
     if (RequestId > 0)
@@ -62,7 +62,6 @@ void UMythicaComponent::OnUnregister()
     DestroyPlaceholderMesh();
 
     UnbindWorldInputListeners();
-    TransformUpdated.RemoveAll(this);
 
     if (RequestId > 0)
     {
@@ -101,7 +100,7 @@ void UMythicaComponent::RegenerateMesh()
     }
 
     UMythicaEditorSubsystem* MythicaEditorSubsystem = GEditor->GetEditorSubsystem<UMythicaEditorSubsystem>();
-    RequestId = MythicaEditorSubsystem->ExecuteJob(JobDefId.JobDefId, Parameters, GetImportPath(), K2_GetComponentLocation(), this);
+    RequestId = MythicaEditorSubsystem->ExecuteJob(JobDefId.JobDefId, Parameters, GetImportPath(), GetOwner()->GetActorLocation(), this);
 
     if (RequestId > 0 && IsRegistered())
     {
@@ -328,15 +327,6 @@ void UMythicaComponent::OnWorldInputTransformUpdated(USceneComponent* InComponen
     }
 }
 
-void UMythicaComponent::OnTransformUpdated(USceneComponent* InComponent, EUpdateTransformFlags InFlags, ETeleportType InType)
-{
-    // Ignore events that fire during level load actor initialization
-    if (!GIsEditorLoadingPackage && Settings.RegenerateOnTransformChange)
-    {
-        GEditor->GetTimerManager()->SetTimer(DelayRegenerateHandle, [this]() { RegenerateMesh(); }, 0.05f, false);
-    }
-}
-
 void UMythicaComponent::OnJobStateChanged(int InRequestId, EMythicaJobState InState, FText InMessage)
 {
     if (InRequestId != RequestId)
@@ -373,10 +363,13 @@ void UMythicaComponent::OnJobStateChanged(int InRequestId, EMythicaJobState InSt
 void UMythicaComponent::UpdateMesh()
 {
     AActor* OwnerActor = GetOwner();
+    ensure(OwnerActor);
+
+    // Used to trigger a save object in the level instance so that we can save the new instance components. I think its supposed to wrap the changes, but works without this call.
+    OwnerActor->Modify();
 
     // Clear existing meshes but save cache for re-use
     TArray<UStaticMeshComponent*> ExistingMeshCache;
-
     for (UActorComponent* Component : OwnerActor->GetComponents())
     {
         UStaticMeshComponent* MeshComponent = Cast<UStaticMeshComponent>(Component);
@@ -404,7 +397,6 @@ void UMythicaComponent::UpdateMesh()
 
     TArray<FAssetData> Assets;
     AssetRegistryModule.Get().GetAssetsByPath(*ImportDirectory, Assets, true, false);
-
     for (FAssetData Asset : Assets)
     {
         if (!Asset.IsInstanceOf(UStaticMesh::StaticClass()))
@@ -430,10 +422,11 @@ void UMythicaComponent::UpdateMesh()
         // Otherwise spawn a new one
         if (!MeshComponent)
         {
-            MeshComponent = NewObject<UStaticMeshComponent>(OwnerActor);
+            FString ComponentName = FString::Printf(TEXT("GEN_%s"), *GetName());
+            MeshComponent = NewObject<UStaticMeshComponent>(OwnerActor, *ComponentName, RF_Transactional);
+
             MeshComponent->SetStaticMesh(Cast<UStaticMesh>(Asset.GetAsset()));
-            MeshComponent->SetWorldLocation(GetComponentLocation());
-            MeshComponent->AttachToComponent(GetAttachParent(), FAttachmentTransformRules::KeepWorldTransform);
+            MeshComponent->SetupAttachment(OwnerActor->GetRootComponent());
 
             OwnerActor->AddInstanceComponent(MeshComponent);
             MeshComponent->RegisterComponent();
@@ -450,29 +443,37 @@ void UMythicaComponent::UpdateMesh()
         MeshComponent->DestroyComponent();
     }
 
+    // Used to trigger a save object in the level instance so that we can save the new instance components.
+    OwnerActor->Modify();
+
     UpdatePlaceholderMesh();
 }
 
 void UMythicaComponent::UpdatePlaceholderMesh()
 {
-    if (MeshComponentNames.IsEmpty() && !PlaceholderMeshComponent)
+    AActor* Owner = GetOwner();
+    ensure(Owner);
+
+    if (MeshComponentNames.IsEmpty() && !IsValid(PlaceholderMeshComponent))
     {
+        Owner->Modify();
+
         UStaticMesh* Mesh = Cast<UStaticMesh>(StaticLoadObject(UStaticMesh::StaticClass(), NULL, PLACEHOLDER_MESH_ASSET));
 
         PlaceholderMeshComponent = NewObject<UStaticMeshComponent>(
             this, UStaticMeshComponent::StaticClass(), NAME_None, RF_Transactional);
 
-        // GetAttachParentActor()->AddComponentByClass();
-
         PlaceholderMeshComponent->SetStaticMesh(Mesh);
         PlaceholderMeshComponent->SetHiddenInGame(true);
-        PlaceholderMeshComponent->AttachToComponent(this, FAttachmentTransformRules::KeepRelativeTransform);
+        PlaceholderMeshComponent->SetupAttachment(GetOwner()->GetRootComponent());
+        Owner->AddOwnedComponent(PlaceholderMeshComponent);
         PlaceholderMeshComponent->RegisterComponent();
+
+        Owner->Modify();
     }
-    else if (!MeshComponentNames.IsEmpty() && PlaceholderMeshComponent)
+    else if (!MeshComponentNames.IsEmpty() && IsValid(PlaceholderMeshComponent))
     {
-        PlaceholderMeshComponent->DetachFromComponent(FDetachmentTransformRules::KeepRelativeTransform);
-        PlaceholderMeshComponent->UnregisterComponent();
+        Owner->RemoveOwnedComponent(PlaceholderMeshComponent);
         PlaceholderMeshComponent->DestroyComponent();
         PlaceholderMeshComponent = nullptr;
     }
@@ -480,7 +481,7 @@ void UMythicaComponent::UpdatePlaceholderMesh()
 
 void UMythicaComponent::DestroyPlaceholderMesh()
 {
-    if (PlaceholderMeshComponent)
+    if (IsValid(PlaceholderMeshComponent))
     {
         PlaceholderMeshComponent->DestroyComponent();
         PlaceholderMeshComponent = nullptr;

@@ -6,28 +6,44 @@
 #include "MythicaTypes.h"
 #include "MythicaComponent.generated.h"
 
+/**
+ * FMythicaComponentSettings
+ *
+ * Used to store important settings about how the component functions.
+ */
 USTRUCT(BlueprintType)
 struct FMythicaComponentSettings
 {
+
     GENERATED_BODY()
 
-    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Mythica")
-    bool RegenerateOnParameterChange = true;
+public:
 
-    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Mythica")
-    bool RegenerateOnInputChange = true;
+    UPROPERTY(EditAnywhere, BlueprintReadWrite)
+    bool RegenerateOnParameterChange = false;
 
-    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Mythica")
+    UPROPERTY(EditAnywhere, BlueprintReadWrite)
+    bool RegenerateOnInputChange = false;
+
+    UPROPERTY(EditAnywhere, BlueprintReadWrite)
     bool RegenerateOnTransformChange = false;
 };
 
-UCLASS( ClassGroup=(Custom), meta=(BlueprintSpawnableComponent), hidecategories=(Rendering, Activation, Cooking, Physics, LOD, Navigation, AssetUserData))
-class UMythicaComponent : public USceneComponent
+/**
+ * UMythicaComponent
+ *
+ * A component that interfaces with Mythica's API to generate mesh assets and add them to an actor.
+ * This is an Editor-Only component which will get stripped in production builds so do not rely on it for
+ * runtime applications.
+ */
+UCLASS( ClassGroup=(Mythica), meta=(BlueprintSpawnableComponent), hidecategories=(Activation, Cooking, AssetUserData, Navigation))
+class UMythicaComponent : public UActorComponent
 {
     GENERATED_BODY()
 
 public:
-    UMythicaComponent();
+
+    UMythicaComponent(const FObjectInitializer& ObjectInitializer);
 
     virtual void OnRegister() override;
     virtual void OnUnregister() override;
@@ -66,7 +82,6 @@ private:
     void BindWorldInputListeners();
     void UnbindWorldInputListeners();
     void OnWorldInputTransformUpdated(USceneComponent* InComponent, EUpdateTransformFlags InFlags, ETeleportType InType);
-    void OnTransformUpdated(USceneComponent* InComponent, EUpdateTransformFlags InFlags, ETeleportType InType);
 
     UFUNCTION()
     void OnJobStateChanged(int InRequestId, EMythicaJobState InState, FText InMessage);
@@ -76,25 +91,24 @@ private:
     void DestroyPlaceholderMesh();
 
 public:
-    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Mythica", meta = (EditCondition = "false", EditConditionHides))
-    FMythicaJobDefinitionId JobDefId;
 
-    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Mythica", meta = (EditCondition = "false", EditConditionHides))
-    FMythicaAssetVersionEntryPointReference Source;
+    UPROPERTY(BlueprintReadOnly)
+    FMythicaJobDefinitionId JobDefId = FMythicaJobDefinitionId();
 
-    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Mythica", meta = (EditCondition = "false", EditConditionHides))
-    FString ToolName;
+    UPROPERTY(BlueprintReadOnly)
+    FMythicaAssetVersionEntryPointReference Source = FMythicaAssetVersionEntryPointReference();
+
+    UPROPERTY(BlueprintReadOnly)
+    FString ToolName = FString();
 
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Mythica")
-    FMythicaComponentSettings Settings;
+    FMythicaComponentSettings Settings = FMythicaComponentSettings();
 
-    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Parameters")
-    FMythicaParameters Parameters;
-
-    UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
-    TSet<USceneComponent*> WorldInputComponents;
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Mythica|Parameters")
+    FMythicaParameters Parameters = FMythicaParameters();
 
 private:
+
     UPROPERTY(VisibleAnywhere, DuplicateTransient, Category = "Mythica", meta = (EditCondition = "false", EditConditionHides))
     int RequestId = -1;
 
@@ -102,7 +116,7 @@ private:
     EMythicaJobState State = EMythicaJobState::Invalid;
 
     UPROPERTY(VisibleAnywhere, DuplicateTransient, Category = "Mythica", meta = (EditCondition = "false", EditConditionHides))
-    FText Message;
+    FText Message = FText();
 
     UPROPERTY(VisibleAnywhere, DuplicateTransient, Category = "Mythica", meta = (EditCondition = "false", EditConditionHides))
     double StateBeginTime = 0.0f;
@@ -110,18 +124,21 @@ private:
     UPROPERTY(VisibleAnywhere, DuplicateTransient, Category = "Mythica", meta = (EditCondition = "false", EditConditionHides))
     bool QueueRegenerate = false;
 
-    UPROPERTY(Transient)
+    UPROPERTY(Transient, DuplicateTransient)
     FTimerHandle DelayRegenerateHandle;
 
     UPROPERTY(VisibleAnywhere, Category = "Mythica", meta = (EditCondition = "false", EditConditionHides))
-    TMap<EMythicaJobState, double> StateDurations;
+    TMap<EMythicaJobState, double> StateDurations = TMap<EMythicaJobState, double>();
 
-    UPROPERTY(Transient)
-    UStaticMeshComponent* PlaceholderMeshComponent = nullptr;
+    UPROPERTY(Transient, DuplicateTransient)
+    TObjectPtr<UStaticMeshComponent> PlaceholderMeshComponent = nullptr;
 
-    UPROPERTY(VisibleAnywhere, Category = "Mythica", meta = (EditCondition = "false", EditConditionHides))
-    TArray<FName> MeshComponentNames;
+    UPROPERTY(VisibleAnywhere, Category = "Mythica|Components", meta = (EditCondition = "false", EditConditionHides))
+    TArray<FName> MeshComponentNames = TArray<FName>();
 
     UPROPERTY(VisibleAnywhere, DuplicateTransient, Category = "Mythica", meta = (EditCondition = "false", EditConditionHides))
-    FGuid ComponentGuid;
+    FGuid ComponentGuid = FGuid();
+
+    UPROPERTY(Transient, DuplicateTransient)
+    TSet<TObjectPtr<USceneComponent>> WorldInputComponents = TSet<TObjectPtr<USceneComponent>>();
 };
