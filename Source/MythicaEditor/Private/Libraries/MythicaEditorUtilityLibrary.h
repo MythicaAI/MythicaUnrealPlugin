@@ -27,12 +27,12 @@ public:
 
     static void OpenPackageManager();
 
-    static void OpenJobDirector();
+    static void OpenSceneHelper();
 
 public:
 
-    static FSoftObjectPath s_PackageManagerWidgetPath;
+    static FSoftObjectPath PackageManagerWidgetPath;
 
-    static FSoftObjectPath s_JobDirectorWidgetPath;
+    static FSoftObjectPath SceneHelperWidgetPath;
 
 };

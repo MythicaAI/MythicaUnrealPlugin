@@ -6,8 +6,8 @@
 #include "EditorUtilitySubsystem.h"
 #include "EditorUtilityWidgetBlueprint.h"
 
-FSoftObjectPath UMythicaEditorUtilityLibrary::s_PackageManagerWidgetPath = FString(TEXT("/Mythica/UI/WBP_PackageManager.WBP_PackageManager"));
-FSoftObjectPath UMythicaEditorUtilityLibrary::s_JobDirectorWidgetPath = FString(TEXT("/Mythica/UI/Jobs/EUW_JobDirector.EUW_JobDirector"));
+FSoftObjectPath UMythicaEditorUtilityLibrary::PackageManagerWidgetPath = FString(TEXT("/Mythica/UI/WBP_PackageManager.WBP_PackageManager"));
+FSoftObjectPath UMythicaEditorUtilityLibrary::SceneHelperWidgetPath = FString(TEXT("/Mythica/UI/Scene/EUW_SceneHelper.EUW_SceneHelper"));
 
 void UMythicaEditorUtilityLibrary::OpenEditorUtilityWidgetAsTab(UObject* Outer, const TCHAR* Name, const TCHAR* Filename, uint32 LoadFlags, UPackageMap* Sandbox, const FLinkerInstancingContext* InstancingContext)
 {
@@ -32,10 +32,10 @@ void UMythicaEditorUtilityLibrary::OpenEditorUtilityWidgetAsTab(FSoftObjectPath 
 
 void UMythicaEditorUtilityLibrary::OpenPackageManager()
 {
-    OpenEditorUtilityWidgetAsTab(s_PackageManagerWidgetPath);
+    OpenEditorUtilityWidgetAsTab(PackageManagerWidgetPath);
 }
 
-void UMythicaEditorUtilityLibrary::OpenJobDirector()
+void UMythicaEditorUtilityLibrary::OpenSceneHelper()
 {
-    OpenEditorUtilityWidgetAsTab(s_JobDirectorWidgetPath);
+    OpenEditorUtilityWidgetAsTab(SceneHelperWidgetPath);
 }
