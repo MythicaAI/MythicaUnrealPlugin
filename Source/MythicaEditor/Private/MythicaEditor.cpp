@@ -37,9 +37,9 @@ static void OpenMythicaPackageManager_Clicked()
     UMythicaEditorUtilityLibrary::OpenPackageManager();
 }
 
-static void OpenMythicaJobDirector_Clicked()
+static void OpenMythicaSceneHelper_Clicked()
 {
-    UMythicaEditorUtilityLibrary::OpenJobDirector();
+    UMythicaEditorUtilityLibrary::OpenSceneHelper();
 }
 
 static TSharedRef<SWidget> GetMythicaHubDropDown()
@@ -60,11 +60,11 @@ static TSharedRef<SWidget> GetMythicaHubDropDown()
     );
 
     MenuBuilder.AddMenuEntry(
-        LOCTEXT("OpenMythicaJobDirectorButtonShort", "Job Director"),
-        LOCTEXT("OpenMythicaJobDirectorDescription", "The Job Director displays a list of all MythicaComponents in the current scene with their latest jobs status and some quick actions."),
+        LOCTEXT("OpenMythicaSceneHelperButtonShort", "Scene Helper"),
+        LOCTEXT("OpenMythicaSceneHelperDescription", "An editor tab that displays a list of all MythicaComponents in the current level with their latest jobs status and some quick actions."),
         FSlateIcon(FMythicaEditorStyle::GetStyleSetName(), "MythicaEditor.MythicaLogo"),
         FUIAction(
-            FExecuteAction::CreateStatic(&OpenMythicaJobDirector_Clicked),
+            FExecuteAction::CreateStatic(&OpenMythicaSceneHelper_Clicked),
             FCanExecuteAction::CreateStatic(&HasNoPlayWorld),
             FIsActionChecked(),
             FIsActionButtonVisible::CreateStatic(&HasNoPlayWorld)
@@ -166,19 +166,19 @@ void FMythicaEditorModule::RegisterEditorMenus()
         );
         GetContentSection.AddEntry(OpenPackageManagerEntry);
 
-        FToolMenuEntry OpenJobDirectorEntry = FToolMenuEntry::InitMenuEntry(
-            "OpenJobDirector",
-            LOCTEXT("OpenMythicaJobDirectorButton", "Mythica Job Director"),
-            LOCTEXT("OpenMythicaJobDirectorDescription", "The Job Director displays a list of all MythicaComponents in the current scene with their latest jobs status and some quick actions."),
+        FToolMenuEntry OpenSceneHelperEntry = FToolMenuEntry::InitMenuEntry(
+            "OpenSceneHelper",
+            LOCTEXT("OpenMythicaSceneHelperButton", "Mythica Scene Helper"),
+            LOCTEXT("OpenMythicaSceneHelperDescription", "An editor tab that displays a list of all MythicaComponents in the current level with their latest jobs status and some quick actions."),
             FSlateIcon(FMythicaEditorStyle::GetStyleSetName(), "MythicaEditor.MythicaLogo"),
             FUIAction(
-                FExecuteAction::CreateStatic(&OpenMythicaJobDirector_Clicked),
+                FExecuteAction::CreateStatic(&OpenMythicaSceneHelper_Clicked),
                 FCanExecuteAction::CreateStatic(&HasNoPlayWorld),
                 FIsActionChecked(),
                 FIsActionButtonVisible::CreateStatic(&HasNoPlayWorld)
             )
         );
-        GetContentSection.AddEntry(OpenJobDirectorEntry);
+        GetContentSection.AddEntry(OpenSceneHelperEntry);
     }
 }
 

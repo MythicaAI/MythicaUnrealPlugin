@@ -22,9 +22,16 @@ const FMythicaProcessingStep ProcessingSteps[] = {
 };
 static_assert((uint8)EMythicaJobState::Completed - (uint8)EMythicaJobState::Invalid == 5);
 
-UMythicaComponent::UMythicaComponent()
+UMythicaComponent::UMythicaComponent(const FObjectInitializer& ObjectInitializer)
+    : Super(ObjectInitializer)
 {
     PrimaryComponentTick.bCanEverTick = false;
+
+    // This way the engine will stop people from trying to reference this comp at runtime.
+    bIsEditorOnly = true;
+
+    // This is so that is easy to get a reference to all MythicaComponnents
+    ComponentTags.Emplace(MYTHICA_COMPONENT_TAG);
 }
 
 void UMythicaComponent::OnRegister()
@@ -36,7 +43,6 @@ void UMythicaComponent::OnRegister()
     if (CanRegenerateMesh())
     {
         BindWorldInputListeners();
-        TransformUpdated.AddUObject(this, &UMythicaComponent::OnTransformUpdated);
     }
 
     if (RequestId > 0)
@@ -62,7 +68,6 @@ void UMythicaComponent::OnUnregister()
     DestroyPlaceholderMesh();
 
     UnbindWorldInputListeners();
-    TransformUpdated.RemoveAll(this);
 
     if (RequestId > 0)
     {
@@ -101,7 +106,7 @@ void UMythicaComponent::RegenerateMesh()
     }
 
     UMythicaEditorSubsystem* MythicaEditorSubsystem = GEditor->GetEditorSubsystem<UMythicaEditorSubsystem>();
-    RequestId = MythicaEditorSubsystem->ExecuteJob(JobDefId.JobDefId, Parameters, GetImportPath(), K2_GetComponentLocation(), this);
+    RequestId = MythicaEditorSubsystem->ExecuteJob(JobDefId.JobDefId, Parameters, GetImportPath(), GetOwner()->GetActorLocation(), this);
 
     if (RequestId > 0 && IsRegistered())
     {
@@ -180,25 +185,14 @@ void UMythicaComponent::PostEditChangeProperty(FPropertyChangedEvent& PropertyCh
     Super::PostEditChangeProperty(PropertyChangedEvent);
 }
 
-TArray<UStaticMeshComponent*> UMythicaComponent::GetGeneratedMeshComponents() const
+TArray<UActorComponent*> UMythicaComponent::GetGeneratedMeshComponents() const
 {
     AActor* Owner = GetOwner();
     ensure(Owner);
 
-    // @TODO: Should add a component tag with comps GUID then search for all comps with the GUID tag.
-    TArray<UStaticMeshComponent*> MeshComponents;
-    Owner->GetComponents(UStaticMeshComponent::StaticClass(), MeshComponents);
+    TArray<UActorComponent*> MeshComponents = Owner->GetComponentsByTag(UStaticMeshComponent::StaticClass(), *ComponentGuid.ToString());
 
-    TArray<UStaticMeshComponent*> RtnComps;
-    for (UStaticMeshComponent* MeshComp : MeshComponents)
-    {
-        if (MeshComponentNames.Contains(MeshComp->GetName()))
-        {
-            RtnComps.Emplace(MeshComp);
-        }
-    }
-
-    return MoveTemp(RtnComps);
+    return MoveTemp(MeshComponents);
 }
 
 TArray<AActor*> UMythicaComponent::GetWorldInputActors() const
@@ -328,15 +322,6 @@ void UMythicaComponent::OnWorldInputTransformUpdated(USceneComponent* InComponen
     }
 }
 
-void UMythicaComponent::OnTransformUpdated(USceneComponent* InComponent, EUpdateTransformFlags InFlags, ETeleportType InType)
-{
-    // Ignore events that fire during level load actor initialization
-    if (!GIsEditorLoadingPackage && Settings.RegenerateOnTransformChange)
-    {
-        GEditor->GetTimerManager()->SetTimer(DelayRegenerateHandle, [this]() { RegenerateMesh(); }, 0.05f, false);
-    }
-}
-
 void UMythicaComponent::OnJobStateChanged(int InRequestId, EMythicaJobState InState, FText InMessage)
 {
     if (InRequestId != RequestId)
@@ -373,28 +358,9 @@ void UMythicaComponent::OnJobStateChanged(int InRequestId, EMythicaJobState InSt
 void UMythicaComponent::UpdateMesh()
 {
     AActor* OwnerActor = GetOwner();
+    ensure(OwnerActor);
 
-    // Clear existing meshes but save cache for re-use
-    TArray<UStaticMeshComponent*> ExistingMeshCache;
-
-    for (UActorComponent* Component : OwnerActor->GetComponents())
-    {
-        UStaticMeshComponent* MeshComponent = Cast<UStaticMeshComponent>(Component);
-        if (!MeshComponent)
-        {
-            continue;
-        }
-
-        for (FName Name : MeshComponentNames)
-        {
-            if (Component->GetFName() == Name)
-            {
-                ExistingMeshCache.Add(MeshComponent);
-                break;
-            }
-        }
-    }
-    MeshComponentNames.Reset();
+    TArray<UActorComponent*> ExistingMeshCache = OwnerActor->GetComponentsByTag(UStaticMeshComponent::StaticClass(), *ComponentGuid.ToString());
 
     // Scan the directory for desired meshes
     UMythicaEditorSubsystem* MythicaEditorSubsystem = GEditor->GetEditorSubsystem<UMythicaEditorSubsystem>();
@@ -404,7 +370,6 @@ void UMythicaComponent::UpdateMesh()
 
     TArray<FAssetData> Assets;
     AssetRegistryModule.Get().GetAssetsByPath(*ImportDirectory, Assets, true, false);
-
     for (FAssetData Asset : Assets)
     {
         if (!Asset.IsInstanceOf(UStaticMesh::StaticClass()))
@@ -418,10 +383,16 @@ void UMythicaComponent::UpdateMesh()
         // Try to re-use an existing mesh component
         for (int32 i = 0; i < ExistingMeshCache.Num(); i++)
         {
-            UStaticMesh* Mesh = ExistingMeshCache[i]->GetStaticMesh();
+            UStaticMeshComponent* MeshComp = Cast<UStaticMeshComponent>(ExistingMeshCache[i]);
+            if (!IsValid(MeshComp))
+            {
+                continue;
+            }
+
+            UStaticMesh* Mesh = MeshComp->GetStaticMesh();
             if (Mesh && Mesh->GetPathName() == ObjectPath)
             {
-                MeshComponent = ExistingMeshCache[i];
+                MeshComponent = MeshComp;
                 ExistingMeshCache.RemoveAt(i);
                 break;
             }
@@ -430,24 +401,28 @@ void UMythicaComponent::UpdateMesh()
         // Otherwise spawn a new one
         if (!MeshComponent)
         {
-            MeshComponent = NewObject<UStaticMeshComponent>(OwnerActor);
+            FString ComponentName = FString::Printf(TEXT("GEN_%s"), *GetName());
+            MeshComponent = NewObject<UStaticMeshComponent>(OwnerActor, *ComponentName, RF_Transactional);
+
             MeshComponent->SetStaticMesh(Cast<UStaticMesh>(Asset.GetAsset()));
-            MeshComponent->SetWorldLocation(GetComponentLocation());
-            MeshComponent->AttachToComponent(GetAttachParent(), FAttachmentTransformRules::KeepWorldTransform);
+            MeshComponent->SetupAttachment(OwnerActor->GetRootComponent());
 
             OwnerActor->AddInstanceComponent(MeshComponent);
             MeshComponent->RegisterComponent();
+
+            MeshComponent->ComponentTags.Emplace(*ComponentGuid.ToString());
         }
 
         MythicaEditorSubsystem->SetJobsCachedAssetData(RequestId, Asset);
 
-        MeshComponentNames.Add(MeshComponent->GetFName());
+        // Used to trigger a save object in the level instance so that we can save the new instance components.
+        OwnerActor->Modify();
     }
 
     // Destroy any meshes that were not re-used
-    for (UStaticMeshComponent* MeshComponent : ExistingMeshCache)
+    for (UActorComponent* GenComponent : ExistingMeshCache)
     {
-        MeshComponent->DestroyComponent();
+        GenComponent->DestroyComponent();
     }
 
     UpdatePlaceholderMesh();
@@ -455,24 +430,30 @@ void UMythicaComponent::UpdateMesh()
 
 void UMythicaComponent::UpdatePlaceholderMesh()
 {
-    if (MeshComponentNames.IsEmpty() && !PlaceholderMeshComponent)
+    AActor* Owner = GetOwner();
+    ensure(Owner);
+
+    TArray<UActorComponent*> GenComps = GetGeneratedMeshComponents();
+    if (GenComps.IsEmpty() && !IsValid(PlaceholderMeshComponent))
     {
+        Owner->Modify();
+
         UStaticMesh* Mesh = Cast<UStaticMesh>(StaticLoadObject(UStaticMesh::StaticClass(), NULL, PLACEHOLDER_MESH_ASSET));
 
         PlaceholderMeshComponent = NewObject<UStaticMeshComponent>(
             this, UStaticMeshComponent::StaticClass(), NAME_None, RF_Transactional);
 
-        // GetAttachParentActor()->AddComponentByClass();
-
         PlaceholderMeshComponent->SetStaticMesh(Mesh);
         PlaceholderMeshComponent->SetHiddenInGame(true);
-        PlaceholderMeshComponent->AttachToComponent(this, FAttachmentTransformRules::KeepRelativeTransform);
+        PlaceholderMeshComponent->SetupAttachment(GetOwner()->GetRootComponent());
+        Owner->AddOwnedComponent(PlaceholderMeshComponent);
         PlaceholderMeshComponent->RegisterComponent();
+
+        Owner->Modify();
     }
-    else if (!MeshComponentNames.IsEmpty() && PlaceholderMeshComponent)
+    else if (!GenComps.IsEmpty() && IsValid(PlaceholderMeshComponent))
     {
-        PlaceholderMeshComponent->DetachFromComponent(FDetachmentTransformRules::KeepRelativeTransform);
-        PlaceholderMeshComponent->UnregisterComponent();
+        Owner->RemoveOwnedComponent(PlaceholderMeshComponent);
         PlaceholderMeshComponent->DestroyComponent();
         PlaceholderMeshComponent = nullptr;
     }
@@ -480,7 +461,7 @@ void UMythicaComponent::UpdatePlaceholderMesh()
 
 void UMythicaComponent::DestroyPlaceholderMesh()
 {
-    if (PlaceholderMeshComponent)
+    if (IsValid(PlaceholderMeshComponent))
     {
         PlaceholderMeshComponent->DestroyComponent();
         PlaceholderMeshComponent = nullptr;
