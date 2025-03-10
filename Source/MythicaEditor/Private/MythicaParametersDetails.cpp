@@ -2,7 +2,7 @@
 
 #include "DetailWidgetRow.h"
 #include "IDetailChildrenBuilder.h"
-#include "MythicaCurveEditor.h"
+#include "UI/Slate/MythicaCurveEditor.h"
 #include "MythicaTypes.h"
 #include "Styling/AppStyle.h"
 #include "Widgets/Text/SMultiLineEditableText.h"

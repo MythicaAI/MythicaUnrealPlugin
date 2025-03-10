@@ -168,11 +168,11 @@ struct FMythicaParameterFile
     void Copy(const FMythicaParameterFile& Source);
 };
 
-UENUM(BlueprintType)
-enum class EMythicaCurveType : uint8
-{
-
-};
+//UENUM(BlueprintType)
+//enum class EMythicaCurveType : uint8
+//{
+//
+//};
 
 USTRUCT(BlueprintType)
 struct FMythicaParameterCurve

@@ -1,7 +1,7 @@
 // Fill out your copyright notice in the Description page of Project Settings.
 
 
-#include "UI/SceneHelperEditorWidget.h"
+#include "SceneHelperEditorWidget.h"
 
 #include "EditorUtilityWidgetComponents.h"
 #include "Kismet\KismetSystemLibrary.h"
@@ -10,6 +10,8 @@
 #include "MythicaEditorSubsystem.h"
 #include "SceneHelperEntryEditorWidget.h"
 #include "Subsystems/EditorActorSubsystem.h"
+
+#include "MythicaEditorPrivatePCH.h"
 
 #include UE_INLINE_GENERATED_CPP_BY_NAME(SceneHelperEditorWidget)
 
