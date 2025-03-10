@@ -11,8 +11,6 @@
 #include "SceneHelperEntryEditorWidget.h"
 #include "Subsystems/EditorActorSubsystem.h"
 
-#include "MythicaEditorPrivatePCH.h"
-
 #include UE_INLINE_GENERATED_CPP_BY_NAME(SceneHelperEditorWidget)
 
 void USceneHelperEditorWidget::NativeConstruct()
