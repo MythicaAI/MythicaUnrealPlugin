@@ -1,6 +1,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "Curves/CurveVector.h"
 #include "Misc/TVariant.h"
 #include "MythicaUSDUtil.h"
 
@@ -25,7 +26,8 @@ enum class EMythicaParameterType : uint8
     Bool,
     String,
     Enum,
-    File
+    File,
+    Curve
 };
 
 USTRUCT(BlueprintType)
@@ -168,11 +170,27 @@ struct FMythicaParameterFile
     void Copy(const FMythicaParameterFile& Source);
 };
 
-//UENUM(BlueprintType)
-//enum class EMythicaCurveType : uint8
-//{
-//
-//};
+UENUM(BlueprintType)
+enum class EMythicaCurveType : uint8
+{
+    MCT_Invalid = 0     UMETA(Hidden),
+    MCT_Float = 1       UMETA(DisplayName = "Float"),
+    MCT_Vector = 2      UMETA(DisplayName = "Vector"),
+    MCT_Color = 3       UMETA(DisplayName = "Color")
+};
+
+UENUM(BlueprintType)
+enum class EMythicaCurveInterpolationType : uint8
+{
+    MCIT_Invalid = 0        UMETA(Hidden),
+    MCIT_Constant = 1       UMETA(DisplayName = "Constant"),
+    MCIT_Linear = 2         UMETA(DisplayName = "Linear"),
+    MCIT_Catmull_Rom = 3    UMETA(DisplayName = "Catmull_Rom"),
+    MCIT_Monotone_Cubic = 4 UMETA(DisplayName = "Monotone_Cubic"),
+    MCIT_Bezier = 5         UMETA(DisplayName = "Bezier"),
+    MCIT_BSpline = 6        UMETA(DisplayName = "BSpline"),
+    MCIT_Hermite = 7        UMETA(DisplayName = "Hermite")
+};
 
 USTRUCT(BlueprintType)
 struct FMythicaParameterCurve
@@ -180,24 +198,18 @@ struct FMythicaParameterCurve
     GENERATED_BODY()
 
     UPROPERTY(EditAnywhere, BlueprintReadWrite)
-    EMythicaInputType Type = EMythicaInputType::World;
+    EMythicaCurveType Type = EMythicaCurveType::MCT_Invalid;
 
-    UPROPERTY(EditAnywhere, BlueprintReadWrite, meta = (EditCondition = "Type == EMythicaInputType::Mesh", EditConditionHides))
-    UStaticMesh* Mesh = nullptr;
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, meta = (EditCondition = "Type == EMythicaCurveType::MCT_Float", EditConditionHides))
+    TObjectPtr<UCurveFloat> FloatCurve = nullptr;
 
-    UPROPERTY(EditAnywhere, BlueprintReadWrite, meta = (EditCondition = "Type == EMythicaInputType::World", EditConditionHides))
-    TArray<AActor*> Actors;
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, meta = (EditCondition = "Type == EMythicaInputType::MCT_Vector", EditConditionHides))
+    TObjectPtr<UCurveVector> VectorCurve = nullptr;
 
-    UPROPERTY(EditAnywhere, BlueprintReadWrite, meta = (EditCondition = "Type == EMythicaInputType::Spline", EditConditionHides))
-    AActor* SplineActor = nullptr;
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, meta = (EditCondition = "Type == EMythicaInputType::MCT_Color", EditConditionHides))
+    TObjectPtr<UCurveLinearColor> ColorCurve = nullptr;
 
-    UPROPERTY(EditAnywhere, BlueprintReadWrite, meta = (EditCondition = "Type == EMythicaInputType::Volume", EditConditionHides))
-    AMythicaInputSelectionVolume* VolumeActor = nullptr;
-
-    UPROPERTY(EditAnywhere, BlueprintReadWrite, meta = (EditCondition = "Type != EMythicaInputType::Mesh", EditConditionHides))
-    FMythicaParameterFileSettings Settings;
-
-    void Copy(const FMythicaParameterFile& Source);
+    void Copy(const FMythicaParameterCurve& Source);
 };
 
 USTRUCT(BlueprintType)
@@ -231,6 +243,10 @@ struct FMythicaParameter
  
     UPROPERTY(EditAnywhere, BlueprintReadWrite)
     FMythicaParameterFile ValueFile;
+
+    UPROPERTY(EditAnywhere, BlueprintReadWrite)
+    FMythicaParameterCurve ValueCurve;
+
 };
 
 USTRUCT(BlueprintType)

@@ -1,13 +1,25 @@
+
+
 #pragma once
 
-#include "SCurveEditor.h"
+#include "SMythicaCurveEditorBase.h"
 
-class SMythicaCurveEditor : public SCurveEditor
+#include "CurveEditorSettings.h"
+#include "Curves/CurveFloat.h"
+#include "SCurveEditor.h"
+//#include "Widgets/SCompoundWidget.h"
+
+/**
+ * Mythica Float Curve Editor
+ *
+ * 
+ */
+class SMythicaFloatCurveEditor : public SMythicaCurveEditorBase<SCurveEditor>
 {
 
 public:
 
-    SLATE_BEGIN_ARGS(SMythicaCurveEditor)
+    SLATE_BEGIN_ARGS(SMythicaFloatCurveEditor)
         : _ViewMinInput(0.0f)
         , _ViewMaxInput(1.0f)
         , _ViewMinOutput(0.0f)
@@ -63,19 +75,24 @@ public:
         SLATE_ARGUMENT(bool, ShowOutputGridNumbers)
         SLATE_ARGUMENT(bool, ShowCurveSelector)
         SLATE_ARGUMENT(FLinearColor, GridColor)
-        SLATE_EVENT(FOnSetInputViewRange, OnSetInputViewRange)
-        SLATE_EVENT(FOnSetOutputViewRange, OnSetOutputViewRange)
-        SLATE_EVENT(FOnSetAreCurvesVisible, OnSetAreCurvesVisible)
+        //SLATE_EVENT(FOnSetInputViewRange, OnSetInputViewRange)
+        //SLATE_EVENT(FOnSetOutputViewRange, OnSetOutputViewRange)
+        //SLATE_EVENT(FOnSetAreCurvesVisible, OnSetAreCurvesVisible)
         SLATE_EVENT(FSimpleDelegate, OnCreateAsset)
 
-	SLATE_END_ARGS()
+    SLATE_END_ARGS()
 
+	/** Constructs this widget with InArgs */
 	void Construct(const FArguments& InArgs);
-	~SMythicaCurveEditor();
 
 private:
 
-	void OnCurveChanged(UCurveBase* InCurve, EPropertyChangeType::Type InChangeType);
+    void OnUpdateCurve(UCurveBase*, EPropertyChangeType::Type);
 
-	UCurveFloat* Curve = nullptr;
+private:
+
+    UCurveFloat* Curve;
+
+    FDelegateHandle OnUpdateCurveDelegateHandle;
+
 };

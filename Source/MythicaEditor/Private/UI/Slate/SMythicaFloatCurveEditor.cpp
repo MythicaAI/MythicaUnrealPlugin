@@ -1,6 +1,12 @@
-#include "MythicaCurveEditor.h"
 
-void SMythicaCurveEditor::Construct(const FArguments& InArgs)
+
+
+#include "UI/Slate/SMythicaFloatCurveEditor.h"
+
+#include "SlateOptMacros.h"
+
+BEGIN_SLATE_FUNCTION_BUILD_OPTIMIZATION
+void SMythicaFloatCurveEditor::Construct(const FArguments& InArgs)
 {
     Curve = NewObject<UCurveFloat>(
         GetTransientPackage(),
@@ -11,7 +17,8 @@ void SMythicaCurveEditor::Construct(const FArguments& InArgs)
 
     Curve->AddToRoot();
 
-    Curve->OnUpdateCurve.AddRaw(this, &SMythicaCurveEditor::OnCurveChanged);
+    OnUpdateCurveDelegateHandle = Curve->OnUpdateCurve.AddRaw(
+        this, &SMythicaFloatCurveEditor::OnUpdateCurve);
 
     SCurveEditor::Construct(
         SCurveEditor::FArguments()
@@ -31,44 +38,19 @@ void SMythicaCurveEditor::Construct(const FArguments& InArgs)
         .ZoomToFitHorizontal(InArgs._ZoomToFitHorizontal)
         .ZoomToFitVertical(InArgs._ZoomToFitVertical));
 
+    //UCurveEditorSettings* CurveEditorSettings = GetSettings();
+    //if (CurveEditorSettings)
+    //{
+    //    CurveEditorSettings->SetTangentVisibility(ECurveEditorTangentVisibility::NoTangents);
+    //}
+
     // Avoid showing tooltips inside of the curve editor
     EnableToolTipForceField(true);
 
     SetCurveOwner(Curve);
 }
+END_SLATE_FUNCTION_BUILD_OPTIMIZATION
 
-SMythicaCurveEditor::~SMythicaCurveEditor()
+void SMythicaFloatCurveEditor::OnUpdateCurve(UCurveBase*, EPropertyChangeType::Type)
 {
-    if (Curve)
-    {
-		SetCurveOwner(nullptr);
-
-        Curve->OnUpdateCurve.RemoveAll(this);
-
-		Curve->RemoveFromRoot();
-    }
-}
-
-void SMythicaCurveEditor::OnCurveChanged(UCurveBase* InCurve, EPropertyChangeType::Type InChangeType)
-{
-    UE_LOG(LogTemp, Warning, TEXT("Curve changed"));
-
-    // Create a new UCurveFloat asset in the transient package.
-    //Curve = NewObject<UCurveFloat>(
-    //    GetTransientPackage(),
-    //    UCurveFloat::StaticClass(),
-    //    NAME_None,
-    //    RF_Transient
-    //);
-
-    if (Curve)
-    {
-        // Optionally, add some keys to the curve so that it has data.
-        // This example adds keys at time 0 and 1.
-        //Curve->FloatCurve.AddKey(0.f, 0.f);
-        //Curve->FloatCurve.AddKey(1.f, 1.f);
-
-        GEditor->GetEditorSubsystem<UAssetEditorSubsystem>()->OpenEditorForAsset(Curve);
-        ZoomToFit();
-    }
 }

@@ -129,6 +129,11 @@ void FMythicaParameterFile::Copy(const FMythicaParameterFile& Source)
     *this = Source;
 }
 
+void FMythicaParameterCurve::Copy(const FMythicaParameterCurve& Source)
+{
+    *this = Source;
+}
+
 const TCHAR* SystemParameters[] =
 {
     TEXT("format"),
@@ -170,6 +175,9 @@ void Mythica::ReadParameters(const TSharedPtr<FJsonObject>& ParamsSchema, FMythi
 
         FString Type = ParameterObject->GetStringField(TEXT("param_type"));
         bool IsArray = ParameterObject->HasTypedField<EJson::Array>(TEXT("default"));
+
+        UE_LOG(LogTemp, Warning, TEXT("Reading Param: %s %s type:%s"), *Name, *Label, *Type);
+
         if (Type == "int")
         {
             TArray<int> DefaultValues;
@@ -265,6 +273,11 @@ void Mythica::ReadParameters(const TSharedPtr<FJsonObject>& ParamsSchema, FMythi
             Parameter.Type = EMythicaParameterType::File;
             Parameter.ValueFile = FMythicaParameterFile{};
         }
+        else if (Type == "ramp")
+        {
+            Parameter.Type = EMythicaParameterType::Curve;
+            Parameter.ValueCurve = FMythicaParameterCurve{};
+        }
         else
         {
             continue;
@@ -326,12 +339,17 @@ void Mythica::WriteParameters(const TArray<FString>& InputFileIds, const FMythic
                 break;
 
             case EMythicaParameterType::File:
+            {
                 FString FileId = InputFileIds.IsValidIndex(i) ? InputFileIds[i] : FString();
 
-                TSharedPtr<FJsonObject> FileObject = MakeShareable(new FJsonObject);
+                TSharedPtr<FJsonObject> FileObject = MakeShareable(new FJsonObject());
                 FileObject->SetStringField(TEXT("file_id"), FileId);
 
                 OutParamsSet->SetObjectField(Param.Name, FileObject);
+                break;
+            }
+            case EMythicaParameterType::Curve:
+                OutParamsSet->SetStringField(Param.Name, Param.ValueEnum.Value);
                 break;
         }
     }
@@ -386,6 +404,11 @@ void Mythica::CopyParameterValues(const FMythicaParameters& Source, FMythicaPara
             case EMythicaParameterType::File:
             {
                 TargetParam->ValueFile.Copy(SourceParam.ValueFile);
+                break;
+            }
+            case EMythicaParameterType::Curve:
+            {
+                TargetParam->ValueCurve.Copy(SourceParam.ValueCurve);
                 break;
             }
         }
