@@ -11,6 +11,8 @@
 
 #include UE_INLINE_GENERATED_CPP_BY_NAME(SceneHelperEntryEditorWidget)
 
+#define LOCTEXT_NAMESPACE MYTHICA_LOCTEXT_NAMESPACE
+
 USceneHelperEntryEditorWidget::USceneHelperEntryEditorWidget(const FObjectInitializer& Initializer)
     : Super(Initializer)
 {
@@ -151,3 +153,5 @@ void USceneHelperEntryEditorWidget::CacheGenMeshAssetData()
 
     bThumbnailRequiresReset = true;
 }
+
+#undef LOCTEXT_NAMESPACE

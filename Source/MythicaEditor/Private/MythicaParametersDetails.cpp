@@ -14,7 +14,7 @@
 
 #include "MythicaEditorPrivatePCH.h"
 
-#define LOCTEXT_NAMESPACE "Mythica"
+#define LOCTEXT_NAMESPACE MYTHICA_LOCTEXT_NAMESPACE
 
 static FMythicaParameters* GetParametersFromHandle(IPropertyHandle& Handle, UObject** OutObject = nullptr)
 {
@@ -574,3 +574,5 @@ void FMythicaParametersDetails::CustomizeChildren(TSharedRef<IPropertyHandle> St
             ];
     }
 }
+
+#undef LOCTEXT_NAMESPACE

@@ -6,7 +6,6 @@
 #include "EditorUtilityWidgetComponents.h"
 #include "Kismet\KismetSystemLibrary.h"
 #include "MythicaComponent.h"
-#include "MythicaEditor.h"
 #include "MythicaEditorSubsystem.h"
 #include "SceneHelperEntryEditorWidget.h"
 #include "Subsystems/EditorActorSubsystem.h"
@@ -14,6 +13,8 @@
 #include "MythicaEditorPrivatePCH.h"
 
 #include UE_INLINE_GENERATED_CPP_BY_NAME(SceneHelperEditorWidget)
+
+#define LOCTEXT_NAMESPACE MYTHICA_LOCTEXT_NAMESPACE
 
 void USceneHelperEditorWidget::NativeConstruct()
 {
@@ -231,3 +232,5 @@ USceneHelperEntryEditorWidget* USceneHelperEditorWidget::CreateSceneEntry(UMythi
 
     return NewWidget;
 }
+
+#undef LOCTEXT_NAMESPACE

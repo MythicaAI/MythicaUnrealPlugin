@@ -15,7 +15,7 @@
 
 #include "MythicaEditorPrivatePCH.h"
 
-#define LOCTEXT_NAMESPACE "MythicaEditor"
+#define LOCTEXT_NAMESPACE MYTHICA_LOCTEXT_NAMESPACE
 
 DEFINE_LOG_CATEGORY(LogMythicaEditor)
 
