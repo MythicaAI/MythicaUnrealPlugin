@@ -6,6 +6,8 @@
 #include "EditorUtilitySubsystem.h"
 #include "EditorUtilityWidgetBlueprint.h"
 
+#include "MythicaEditorPrivatePCH.h"
+
 FSoftObjectPath UMythicaEditorUtilityLibrary::PackageManagerWidgetPath = FString(TEXT("/Mythica/UI/WBP_PackageManager.WBP_PackageManager"));
 FSoftObjectPath UMythicaEditorUtilityLibrary::SceneHelperWidgetPath = FString(TEXT("/Mythica/UI/Scene/EUW_SceneHelper.EUW_SceneHelper"));
 

@@ -7,6 +7,8 @@
 #include "MythicaComponent.h"
 #include "MythicaEditorSubsystem.h"
 
+#include "MythicaEditorPrivatePCH.h"
+
 #include UE_INLINE_GENERATED_CPP_BY_NAME(SceneHelperEntryEditorWidget)
 
 USceneHelperEntryEditorWidget::USceneHelperEntryEditorWidget(const FObjectInitializer& Initializer)

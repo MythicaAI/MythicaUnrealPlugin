@@ -3,11 +3,16 @@
 #include "DetailWidgetRow.h"
 #include "IDetailChildrenBuilder.h"
 #include "MythicaTypes.h"
+#include "Widgets/Input/SComboBox.h"
+#include "Widgets/Input/SButton.h"
+#include "ScopedTransaction.h"
 #include "Styling/AppStyle.h"
 #include "Widgets/Text/SMultiLineEditableText.h"
 #include "Widgets/Input/SNumericEntryBox.h"
 
 #include <functional>
+
+#include "MythicaEditorPrivatePCH.h"
 
 #define LOCTEXT_NAMESPACE "Mythica"
 

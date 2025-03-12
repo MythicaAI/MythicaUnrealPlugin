@@ -4,6 +4,8 @@
 #include "LandscapeProxy.h"
 #include "MythicaComponent.h"
 
+#include "MythicaEditorPrivatePCH.h"
+
 static bool ActorHasAnyCollision(AActor* InActor)
 {
     TArray<UPrimitiveComponent*> PrimitiveComponents;

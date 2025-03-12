@@ -7,6 +7,8 @@
 #include "MythicaTypes.generated.h"
 
 class AMythicaInputSelectionVolume;
+class FJsonObject;
+class UMaterialInterface;
 
 UENUM(BlueprintType)
 enum class EMythicaInputType : uint8

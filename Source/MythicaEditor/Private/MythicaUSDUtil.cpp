@@ -27,6 +27,8 @@
     #include "pxr/usd/usdGeom/basisCurves.h"
 #include "USDIncludesEnd.h"
 
+#include "MythicaEditorPrivatePCH.h"
+
 static bool ConvertUSDtoUSDZ(const FString& InFile, const FString& OutFile)
 {
     if (!IPythonScriptPlugin::Get()->IsPythonAvailable())

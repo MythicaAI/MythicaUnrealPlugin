@@ -2,4 +2,5 @@
 
 
 #include "Jobs/MythicaJobSubsystem.h"
+#include "MythicaEditorPrivatePCH.h"
 

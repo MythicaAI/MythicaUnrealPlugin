@@ -2,5 +2,6 @@
 
 
 #include "Jobs/MythicaJob.h"
+#include "MythicaEditorPrivatePCH.h"
 
 #include UE_INLINE_GENERATED_CPP_BY_NAME(MythicaJob)

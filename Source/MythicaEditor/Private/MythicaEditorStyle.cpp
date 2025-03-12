@@ -9,6 +9,8 @@
 #include "Interfaces/IPluginManager.h"
 #include "Styling/SlateStyleMacros.h"
 
+#include "MythicaEditorPrivatePCH.h"
+
 #define RootToContentDir Style->RootToContentDir
 
 TSharedPtr<FSlateStyleSet> FMythicaEditorStyle::StyleInstance = nullptr;

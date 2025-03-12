@@ -12,6 +12,8 @@
 
 DECLARE_LOG_CATEGORY_EXTERN(LogMythica, Log, All);
 
+struct FAssetData;
+
 UENUM(BlueprintType)
 enum class EMythicaSessionState : uint8
 {

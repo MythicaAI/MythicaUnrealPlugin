@@ -2,6 +2,8 @@
 
 #include "CoreMinimal.h"
 
+#include "Engine/DeveloperSettings.h"
+
 #include "MythicaDeveloperSettings.generated.h"
 
 UENUM(BlueprintType)

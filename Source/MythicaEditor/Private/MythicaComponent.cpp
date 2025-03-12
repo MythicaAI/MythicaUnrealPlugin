@@ -1,8 +1,12 @@
 #include "MythicaComponent.h"
 
 #include "AssetRegistry/AssetRegistryModule.h"
+#include "Components/StaticMeshComponent.h"
 #include "Kismet/KismetSystemLibrary.h"
 #include "ObjectTools.h"
+#include "PropertyEditorModule.h"
+
+#include "MythicaEditorPrivatePCH.h"
 
 #define IMPORT_NAME_LENGTH 10
 

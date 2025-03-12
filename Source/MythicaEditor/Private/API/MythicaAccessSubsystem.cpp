@@ -2,4 +2,5 @@
 
 
 #include "API/MythicaAccessSubsystem.h"
+#include "MythicaEditorPrivatePCH.h"
 
