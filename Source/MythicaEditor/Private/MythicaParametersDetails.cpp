@@ -547,38 +547,38 @@ void FMythicaParametersDetails::CustomizeChildren(TSharedRef<IPropertyHandle> St
                 ValueWidget = SNew(SMythicaCurveEditor);
                 DesiredWidthScalar = 3;
 
-                //ResetToDefaultVisible = [this, ParamIndex]()
-                //    {
-                //        FMythicaParameters* Parameters = GetParametersFromHandleWeak(HandleWeak);
-                //        if (Parameters)
-                //        {
-                //            const FMythicaParameterCurve& CurveParam = Parameters->Parameters[ParamIndex].ValueCurve;
-                //            if (CurveParam.Value != CurveParam.DefaultValue)
-                //            {
-                //                return EVisibility::Visible;
-                //            }
-                //        }
-
-                //        return EVisibility::Collapsed;
-                //    };
-
-                //OnResetToDefault = [this, ParamIndex]()
-                //    {
-                //        UObject* Object = nullptr;
-                //        FMythicaParameters* Parameters = GetParametersFromHandleWeak(HandleWeak, &Object);
-                //        if (Parameters)
-                //        {
-                //            const FScopedTransaction Transaction(LOCTEXT("MythicaChangeParameter", "Parameter Value Reset"));
-                //            Object->Modify();
-
-                //            FMythicaParameterBool& BoolParam = Parameters->Parameters[ParamIndex].ValueBool;
-                //            BoolParam.Value = BoolParam.DefaultValue;
-                //            HandleWeak.Pin()->NotifyPostChange(EPropertyChangeType::ValueSet);
-                //        }
-
-                //        return FReply::Handled();
-                //    };
-                continue;
+                ResetToDefaultVisible = [this, ParamIndex]()
+                    {
+                        FMythicaParameters* Parameters = GetParametersFromHandleWeak(HandleWeak);
+                        if (Parameters)
+                        {
+                            //const FMythicaParameterCurve& CurveParam = Parameters->Parameters[ParamIndex].ValueCurve;
+                            //if (CurveParam.Value != CurveParam.DefaultValue)
+                            //{
+                            //    return EVisibility::Visible;
+                            //}
+                        }
+                
+                        return EVisibility::Collapsed;
+                    };
+                
+                OnResetToDefault = [this, ParamIndex]()
+                    {
+                        UObject* Object = nullptr;
+                        FMythicaParameters* Parameters = GetParametersFromHandleWeak(HandleWeak, &Object);
+                        if (Parameters)
+                        {
+                            const FScopedTransaction Transaction(LOCTEXT("MythicaChangeParameter", "Parameter Value Reset"));
+                            Object->Modify();
+                
+                            FMythicaParameterBool& BoolParam = Parameters->Parameters[ParamIndex].ValueBool;
+                            BoolParam.Value = BoolParam.DefaultValue;
+                            HandleWeak.Pin()->NotifyPostChange(EPropertyChangeType::ValueSet);
+                        }
+                
+                        return FReply::Handled();
+                    };
+                break;
             }
         }
 

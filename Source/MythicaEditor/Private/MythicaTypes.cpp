@@ -176,8 +176,6 @@ void Mythica::ReadParameters(const TSharedPtr<FJsonObject>& ParamsSchema, FMythi
         FString Type = ParameterObject->GetStringField(TEXT("param_type"));
         bool IsArray = ParameterObject->HasTypedField<EJson::Array>(TEXT("default"));
 
-        UE_LOG(LogTemp, Warning, TEXT("Reading Param: %s %s type:%s"), *Name, *Label, *Type);
-
         if (Type == "int")
         {
             TArray<int> DefaultValues;

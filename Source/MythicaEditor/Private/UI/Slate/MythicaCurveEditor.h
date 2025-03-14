@@ -8,10 +8,10 @@ class SMythicaCurveEditor : public SCurveEditor
 public:
 
     SLATE_BEGIN_ARGS(SMythicaCurveEditor)
-        : _ViewMinInput(0.0f)
-        , _ViewMaxInput(1.0f)
-        , _ViewMinOutput(0.0f)
-        , _ViewMaxOutput(1.0f)
+        : _ViewMinInput(-0.001f)
+        , _ViewMaxInput(1.001f)
+        , _ViewMinOutput(-0.001f)
+        , _ViewMaxOutput(1.001f)
         , _InputSnap(0.1f)
         , _OutputSnap(0.05f)
         , _InputSnappingEnabled(false)
@@ -38,8 +38,6 @@ public:
 
         SLATE_ATTRIBUTE(float, ViewMinInput)
         SLATE_ATTRIBUTE(float, ViewMaxInput)
-        SLATE_ATTRIBUTE(TOptional<float>, DataMinInput)
-        SLATE_ATTRIBUTE(TOptional<float>, DataMaxInput)
         SLATE_ATTRIBUTE(float, ViewMinOutput)
         SLATE_ATTRIBUTE(float, ViewMaxOutput)
         SLATE_ATTRIBUTE(float, InputSnap)
@@ -72,6 +70,9 @@ public:
 
 	void Construct(const FArguments& InArgs);
 	~SMythicaCurveEditor();
+
+    virtual FReply OnMouseWheel(const FGeometry& MyGeometry, const FPointerEvent& MouseEvent);
+    virtual FReply OnMouseButtonDown(const FGeometry& MyGeometry, const FPointerEvent& MouseEvent);
 
 private:
 

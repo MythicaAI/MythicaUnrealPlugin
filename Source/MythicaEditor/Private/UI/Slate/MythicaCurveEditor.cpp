@@ -21,15 +21,15 @@ void SMythicaCurveEditor::Construct(const FArguments& InArgs)
         .ViewMaxOutput(InArgs._ViewMaxOutput)
         .XAxisName(InArgs._XAxisName)
         .YAxisName(InArgs._YAxisName)
-        .HideUI(InArgs._HideUI)
-        .DrawCurve(InArgs._DrawCurve)
+        .HideUI(true)//InArgs._HideUI)
+        .DrawCurve(true)//InArgs._DrawCurve)
         .TimelineLength(InArgs._TimelineLength)
-        .AllowZoomOutput(InArgs._AllowZoomOutput)
-        .ShowInputGridNumbers(InArgs._ShowInputGridNumbers)
-        .ShowOutputGridNumbers(InArgs._ShowOutputGridNumbers)
-        .ShowZoomButtons(InArgs._ShowZoomButtons)
-        .ZoomToFitHorizontal(InArgs._ZoomToFitHorizontal)
-        .ZoomToFitVertical(InArgs._ZoomToFitVertical));
+        .AllowZoomOutput(false)//InArgs._AllowZoomOutput)
+        .ShowInputGridNumbers(false)//InArgs._ShowInputGridNumbers)
+        .ShowOutputGridNumbers(false)//InArgs._ShowOutputGridNumbers)
+        .ShowZoomButtons(false)//InArgs._ShowZoomButtons)
+        .ZoomToFitHorizontal(false)//InArgs._ZoomToFitHorizontal)
+        .ZoomToFitVertical(false));//InArgs._ZoomToFitVertical));
 
     // Avoid showing tooltips inside of the curve editor
     EnableToolTipForceField(true);
@@ -41,18 +41,39 @@ SMythicaCurveEditor::~SMythicaCurveEditor()
 {
     if (Curve)
     {
-		SetCurveOwner(nullptr);
+        SetCurveOwner(nullptr);
 
         Curve->OnUpdateCurve.RemoveAll(this);
 
-		Curve->RemoveFromRoot();
+        Curve->RemoveFromRoot();
     }
+}
+
+FReply SMythicaCurveEditor::OnMouseWheel(const FGeometry& MyGeometry, const FPointerEvent& MouseEvent)
+{
+    return FReply::Handled();
+}
+
+FReply SMythicaCurveEditor::OnMouseButtonDown(const FGeometry& MyGeometry, const FPointerEvent& MouseEvent)
+{
+    FReply Reply = SCurveEditor::OnMouseButtonDown(MyGeometry, MouseEvent);
+
+    if (Reply.IsEventHandled())
+    {
+        return Reply;
+    }
+
+    if (MouseEvent.IsMouseButtonDown(EKeys::LeftMouseButton) && Curve)
+    {
+        GEditor->GetEditorSubsystem<UAssetEditorSubsystem>()->OpenEditorForAsset(Curve);
+        return FReply::Handled();
+    }
+
+    return FReply::Unhandled();
 }
 
 void SMythicaCurveEditor::OnCurveChanged(UCurveBase* InCurve, EPropertyChangeType::Type InChangeType)
 {
-    UE_LOG(LogTemp, Warning, TEXT("Curve changed"));
-
     // Create a new UCurveFloat asset in the transient package.
     //Curve = NewObject<UCurveFloat>(
     //    GetTransientPackage(),
@@ -60,15 +81,14 @@ void SMythicaCurveEditor::OnCurveChanged(UCurveBase* InCurve, EPropertyChangeTyp
     //    NAME_None,
     //    RF_Transient
     //);
-
-    if (Curve)
-    {
-        // Optionally, add some keys to the curve so that it has data.
-        // This example adds keys at time 0 and 1.
-        //Curve->FloatCurve.AddKey(0.f, 0.f);
-        //Curve->FloatCurve.AddKey(1.f, 1.f);
-
-        GEditor->GetEditorSubsystem<UAssetEditorSubsystem>()->OpenEditorForAsset(Curve);
-        ZoomToFit();
-    }
+    //
+    //if (InCurve)
+    //{
+    //     Optionally, add some keys to the curve so that it has data.
+    //     This example adds keys at time 0 and 1.
+    //    Curve->FloatCurve.AddKey(0.f, 0.f);
+    //    Curve->FloatCurve.AddKey(1.f, 1.f);
+    //
+    //    GEditor->GetEditorSubsystem<UAssetEditorSubsystem>()->OpenEditorForAsset(InCurve);
+    //}
 }

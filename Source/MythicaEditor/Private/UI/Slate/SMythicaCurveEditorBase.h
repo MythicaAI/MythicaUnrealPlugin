@@ -17,7 +17,7 @@ public:
 };
 
 template<typename ParamType, typename ValueType>
-class FMythicaCurveDataProviderBase
+class FMythicaDataProviderBase
 {
 
 };
