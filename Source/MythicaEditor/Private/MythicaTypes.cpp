@@ -2,6 +2,10 @@
 
 #include "MythicaTypes.h"
 
+#include "Dom/JsonObject.h"
+
+#include "MythicaEditorPrivatePCH.h"
+
 bool FMythicaParameterInt::IsDefault() const
 {
     return Values == DefaultValues;

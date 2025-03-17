@@ -4,6 +4,8 @@
 
 #include "MythicaTypes.h"
 
+#include "Engine/TimerHandle.h"
+
 #include "MythicaJob.generated.h"
 
 //UENUM(BlueprintType)

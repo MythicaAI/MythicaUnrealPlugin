@@ -2,10 +2,7 @@
 
 #pragma once
 
-#include "Logging/LogMacros.h"
 #include "Modules/ModuleManager.h"
-
-DECLARE_LOG_CATEGORY_EXTERN(LogMythicaEditor, Log, All);
 
 class FMythicaEditorModule : public IModuleInterface
 {

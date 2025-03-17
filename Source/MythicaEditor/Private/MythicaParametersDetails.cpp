@@ -3,13 +3,18 @@
 #include "DetailWidgetRow.h"
 #include "IDetailChildrenBuilder.h"
 #include "MythicaTypes.h"
+#include "Widgets/Input/SComboBox.h"
+#include "Widgets/Input/SButton.h"
+#include "ScopedTransaction.h"
 #include "Styling/AppStyle.h"
 #include "Widgets/Text/SMultiLineEditableText.h"
 #include "Widgets/Input/SNumericEntryBox.h"
 
 #include <functional>
 
-#define LOCTEXT_NAMESPACE "Mythica"
+#include "MythicaEditorPrivatePCH.h"
+
+#define LOCTEXT_NAMESPACE MYTHICA_LOCTEXT_NAMESPACE
 
 static FMythicaParameters* GetParametersFromHandle(IPropertyHandle& Handle, UObject** OutObject = nullptr)
 {
@@ -569,3 +574,5 @@ void FMythicaParametersDetails::CustomizeChildren(TSharedRef<IPropertyHandle> St
             ];
     }
 }
+
+#undef LOCTEXT_NAMESPACE

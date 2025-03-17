@@ -1,6 +1,6 @@
 #pragma once
 
-#include "IDetailCustomization.h"
+#include "IPropertyTypeCustomization.h"
 
 struct FMythicaParameterEnumValue;
 

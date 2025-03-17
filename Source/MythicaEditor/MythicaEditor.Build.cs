@@ -6,8 +6,9 @@ public class MythicaEditor : ModuleRules
 {
     public MythicaEditor(ReadOnlyTargetRules Target) : base(Target)
     {
-        PCHUsage = ModuleRules.PCHUsageMode.UseExplicitOrSharedPCHs;
-        
+        PCHUsage = ModuleRules.PCHUsageMode.NoSharedPCHs;
+        PrivatePCHHeaderFile = "Private/MythicaEditorPrivatePCH.h";
+
         PublicIncludePaths.AddRange(
             new string[] {
                 // "MythicaEditor"

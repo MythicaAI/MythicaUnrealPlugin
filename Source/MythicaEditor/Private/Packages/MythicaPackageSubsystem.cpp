@@ -5,7 +5,14 @@
 
 #include "HttpModule.h"
 #include "IImageWrapperModule.h"
+#include "Misc/Paths.h"
+#include "Modules/ModuleManager.h"
 #include "MythicaDeveloperSettings.h"
+#include "Serialization/JsonReader.h"
+#include "Serialization/JsonSerializer.h"
+#include "Dom/JsonValue.h"
+
+#include "MythicaEditorPrivatePCH.h"
 
 #include UE_INLINE_GENERATED_CPP_BY_NAME(MythicaPackageSubsystem)
 
