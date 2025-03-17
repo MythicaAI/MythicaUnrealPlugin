@@ -1,7 +1,9 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "Curves/CurveFloat.h"
 #include "Curves/CurveVector.h"
+#include "Curves/CurveLinearColor.h"
 #include "Misc/TVariant.h"
 #include "MythicaUSDUtil.h"
 
@@ -197,6 +199,8 @@ struct FMythicaParameterCurve
 {
     GENERATED_BODY()
 
+public:
+
     UPROPERTY(EditAnywhere, BlueprintReadWrite)
     EMythicaCurveType Type = EMythicaCurveType::MCT_Invalid;
 
@@ -209,7 +213,15 @@ struct FMythicaParameterCurve
     UPROPERTY(EditAnywhere, BlueprintReadWrite, meta = (EditCondition = "Type == EMythicaInputType::MCT_Color", EditConditionHides))
     TObjectPtr<UCurveLinearColor> ColorCurve = nullptr;
 
+public:
+
+    FMythicaParameterCurve() = default;
+    FMythicaParameterCurve(EMythicaCurveType InType);
+    ~FMythicaParameterCurve();
+
     void Copy(const FMythicaParameterCurve& Source);
+    bool IsDataValid();
+
 };
 
 USTRUCT(BlueprintType)

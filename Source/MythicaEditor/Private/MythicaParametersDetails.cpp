@@ -544,7 +544,7 @@ void FMythicaParametersDetails::CustomizeChildren(TSharedRef<IPropertyHandle> St
             }
             case EMythicaParameterType::Curve:
             {
-                ValueWidget = SNew(SMythicaCurveEditor);
+                ValueWidget = SNew(SMythicaCurveEditor).FloatCurve((Parameter.ValueCurve.Type == EMythicaCurveType::MCT_Float) ? Parameter.ValueCurve.FloatCurve : nullptr);
                 DesiredWidthScalar = 3;
 
                 ResetToDefaultVisible = [this, ParamIndex]()

@@ -60,6 +60,7 @@ public:
         SLATE_ARGUMENT(bool, ShowInputGridNumbers)
         SLATE_ARGUMENT(bool, ShowOutputGridNumbers)
         SLATE_ARGUMENT(bool, ShowCurveSelector)
+        SLATE_ARGUMENT(UCurveFloat*, FloatCurve)
         SLATE_ARGUMENT(FLinearColor, GridColor)
         SLATE_EVENT(FOnSetInputViewRange, OnSetInputViewRange)
         SLATE_EVENT(FOnSetOutputViewRange, OnSetOutputViewRange)

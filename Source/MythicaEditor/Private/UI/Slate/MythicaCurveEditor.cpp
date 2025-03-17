@@ -2,16 +2,25 @@
 
 void SMythicaCurveEditor::Construct(const FArguments& InArgs)
 {
-    Curve = NewObject<UCurveFloat>(
-        GetTransientPackage(),
-        UCurveFloat::StaticClass(),
-        NAME_None,
-        RF_Transactional | RF_Public);
-    ensure(Curve);
 
-    Curve->AddToRoot();
+    if (!IsValid(InArgs._FloatCurve))
+    {
+        Curve = NewObject<UCurveFloat>(
+            GetTransientPackage(),
+            UCurveFloat::StaticClass(),
+            NAME_None,
+            RF_Transactional | RF_Public);
+        ensure(Curve);
+        
+        Curve->AddToRoot();
+    }
+    else
+    {
+        Curve = InArgs._FloatCurve;
+    }
+    
 
-    Curve->OnUpdateCurve.AddRaw(this, &SMythicaCurveEditor::OnCurveChanged);
+    //Curve->OnUpdateCurve.AddRaw(this, &SMythicaCurveEditor::OnCurveChanged);
 
     SCurveEditor::Construct(
         SCurveEditor::FArguments()
@@ -21,15 +30,15 @@ void SMythicaCurveEditor::Construct(const FArguments& InArgs)
         .ViewMaxOutput(InArgs._ViewMaxOutput)
         .XAxisName(InArgs._XAxisName)
         .YAxisName(InArgs._YAxisName)
-        .HideUI(true)//InArgs._HideUI)
-        .DrawCurve(true)//InArgs._DrawCurve)
+        .HideUI(InArgs._HideUI)
+        .DrawCurve(InArgs._DrawCurve)
         .TimelineLength(InArgs._TimelineLength)
-        .AllowZoomOutput(false)//InArgs._AllowZoomOutput)
-        .ShowInputGridNumbers(false)//InArgs._ShowInputGridNumbers)
-        .ShowOutputGridNumbers(false)//InArgs._ShowOutputGridNumbers)
-        .ShowZoomButtons(false)//InArgs._ShowZoomButtons)
-        .ZoomToFitHorizontal(false)//InArgs._ZoomToFitHorizontal)
-        .ZoomToFitVertical(false));//InArgs._ZoomToFitVertical));
+        .AllowZoomOutput(InArgs._AllowZoomOutput)
+        .ShowInputGridNumbers(InArgs._ShowInputGridNumbers)
+        .ShowOutputGridNumbers(InArgs._ShowOutputGridNumbers)
+        .ShowZoomButtons(InArgs._ShowZoomButtons)
+        .ZoomToFitHorizontal(InArgs._ZoomToFitHorizontal)
+        .ZoomToFitVertical(InArgs._ZoomToFitVertical));
 
     // Avoid showing tooltips inside of the curve editor
     EnableToolTipForceField(true);
@@ -43,7 +52,7 @@ SMythicaCurveEditor::~SMythicaCurveEditor()
     {
         SetCurveOwner(nullptr);
 
-        Curve->OnUpdateCurve.RemoveAll(this);
+        //Curve->OnUpdateCurve.RemoveAll(this);
 
         Curve->RemoveFromRoot();
     }
@@ -56,12 +65,6 @@ FReply SMythicaCurveEditor::OnMouseWheel(const FGeometry& MyGeometry, const FPoi
 
 FReply SMythicaCurveEditor::OnMouseButtonDown(const FGeometry& MyGeometry, const FPointerEvent& MouseEvent)
 {
-    FReply Reply = SCurveEditor::OnMouseButtonDown(MyGeometry, MouseEvent);
-
-    if (Reply.IsEventHandled())
-    {
-        return Reply;
-    }
 
     if (MouseEvent.IsMouseButtonDown(EKeys::LeftMouseButton) && Curve)
     {
@@ -69,7 +72,7 @@ FReply SMythicaCurveEditor::OnMouseButtonDown(const FGeometry& MyGeometry, const
         return FReply::Handled();
     }
 
-    return FReply::Unhandled();
+    return SCurveEditor::OnMouseButtonDown(MyGeometry, MouseEvent);
 }
 
 void SMythicaCurveEditor::OnCurveChanged(UCurveBase* InCurve, EPropertyChangeType::Type InChangeType)
