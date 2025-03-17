@@ -7,9 +7,13 @@
 #include "MythicaEditor.h"
 #include "MythicaComponent.h"
 #include "MythicaDeveloperSettings.h"
+#include "ScopedTransaction.h"
 #include "SSearchableComboBox.h"
+#include "Widgets/Input/SButton.h"
 #include "Widgets/Notifications/SProgressBar.h"
 #include "Widgets/Text/STextBlock.h"
+
+#include "MythicaEditorPrivatePCH.h"
 
 #define LOCTEXT_NAMESPACE "MythicaEditor"
 

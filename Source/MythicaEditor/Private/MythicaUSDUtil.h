@@ -1,5 +1,11 @@
 #pragma once
 
+#include "MythicaEditorPrivatePCH.h"
+
+class AActor;
+class FString;
+class UStaticMesh;
+
 UENUM(BlueprintType)
 enum class EMythicaExportTransformType : uint8
 {

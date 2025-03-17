@@ -4,16 +4,18 @@
 
 #include "Editor/UnrealEdEngine.h"
 #include "LevelEditor.h"
-#include "ToolMenu.h"
-#include "ToolMenus.h"
-#include "UnrealEdGlobals.h"
-
 #include "Libraries/MythicaEditorUtilityLibrary.h"
 #include "MythicaEditorStyle.h"
 #include "MythicaComponentDetails.h"
 #include "MythicaParametersDetails.h"
+#include "PropertyEditorModule.h"
+#include "UnrealEdGlobals.h"
+#include "ToolMenu.h"
+#include "ToolMenus.h"
 
-#define LOCTEXT_NAMESPACE "MythicaEditor"
+#include "MythicaEditorPrivatePCH.h"
+
+#define LOCTEXT_NAMESPACE MYTHICA_LOCTEXT_NAMESPACE
 
 DEFINE_LOG_CATEGORY(LogMythicaEditor)
 
