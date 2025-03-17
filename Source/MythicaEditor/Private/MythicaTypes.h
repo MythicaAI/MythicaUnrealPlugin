@@ -197,12 +197,6 @@ enum class EMythicaCurveInterpolationType : uint8
 };
 
 USTRUCT(BlueprintType)
-struct FMythicaCurvePoint
-{
-    float 
-};
-
-USTRUCT(BlueprintType)
 struct FMythicaParameterCurve
 {
     GENERATED_BODY()
