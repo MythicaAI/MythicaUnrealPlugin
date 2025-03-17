@@ -1,5 +1,9 @@
 #include "MythicaCurveEditor.h"
 
+#include "Curves/CurveFloat.h"
+
+#include "MythicaEditorPrivatePCH.h"
+
 void SMythicaCurveEditor::Construct(const FArguments& InArgs)
 {
 

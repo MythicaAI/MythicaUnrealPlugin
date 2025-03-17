@@ -141,38 +141,47 @@ FMythicaParameterCurve::FMythicaParameterCurve(EMythicaCurveType InType)
     {
     case EMythicaCurveType::MCT_Float:
     {
-        FloatCurve = NewObject<UCurveFloat>(
-            GetTransientPackage(),
-            UCurveFloat::StaticClass(),
-            NAME_None,
-            RF_Transactional | RF_Public);
-        ensure(FloatCurve);
+        if (!IsValid(FloatCurve))
+        {
+            FloatCurve = NewObject<UCurveFloat>(
+                GetTransientPackage(),
+                UCurveFloat::StaticClass(),
+                NAME_None,
+                RF_Transactional | RF_Public);
+            ensure(FloatCurve);
 
-        FloatCurve->AddToRoot();
+            FloatCurve->AddToRoot();
+        }
         break;
     }
     case EMythicaCurveType::MCT_Vector:
     {
-        VectorCurve = NewObject<UCurveVector>(
-            GetTransientPackage(),
-            UCurveVector::StaticClass(),
-            NAME_None,
-            RF_Transactional | RF_Public);
-        ensure(VectorCurve);
+        if (!IsValid(VectorCurve))
+        {
+            VectorCurve = NewObject<UCurveVector>(
+                GetTransientPackage(),
+                UCurveVector::StaticClass(),
+                NAME_None,
+                RF_Transactional | RF_Public);
+            ensure(VectorCurve);
 
-        VectorCurve->AddToRoot();
+            VectorCurve->AddToRoot();
+        }
         break;
     }
     case EMythicaCurveType::MCT_Color:
     {
-        ColorCurve = NewObject<UCurveLinearColor>(
-            GetTransientPackage(),
-            UCurveLinearColor::StaticClass(),
-            NAME_None,
-            RF_Transactional | RF_Public);
-        ensure(ColorCurve);
+        if (!IsValid(ColorCurve))
+        {
+            ColorCurve = NewObject<UCurveLinearColor>(
+                GetTransientPackage(),
+                UCurveLinearColor::StaticClass(),
+                NAME_None,
+                RF_Transactional | RF_Public);
+            ensure(ColorCurve);
 
-        ColorCurve->AddToRoot();
+            ColorCurve->AddToRoot();
+        }
         break;
     }
     case EMythicaCurveType::MCT_Invalid:
@@ -184,23 +193,23 @@ FMythicaParameterCurve::FMythicaParameterCurve(EMythicaCurveType InType)
 
 FMythicaParameterCurve::~FMythicaParameterCurve()
 {
-    //if (IsValid(FloatCurve))
-    //{
-    //    FloatCurve->RemoveFromRoot();
-    //    FloatCurve = nullptr;
-    //}
-
-    //if (IsValid(VectorCurve))
-    //{
-    //    VectorCurve->RemoveFromRoot();
-    //    VectorCurve = nullptr;
-    //}
-
-    //if (IsValid(ColorCurve))
-    //{
-    //    ColorCurve->RemoveFromRoot();
-    //    ColorCurve = nullptr;
-    //}
+    if (IsValid(FloatCurve))
+    {
+        FloatCurve->RemoveFromRoot();
+        FloatCurve = nullptr;
+    }
+    
+    if (IsValid(VectorCurve))
+    {
+        VectorCurve->RemoveFromRoot();
+        VectorCurve = nullptr;
+    }
+    
+    if (IsValid(ColorCurve))
+    {
+        ColorCurve->RemoveFromRoot();
+        ColorCurve = nullptr;
+    }
 }
 
 void FMythicaParameterCurve::Copy(const FMythicaParameterCurve& Source)

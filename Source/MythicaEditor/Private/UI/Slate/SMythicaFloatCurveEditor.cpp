@@ -5,6 +5,8 @@
 
 #include "SlateOptMacros.h"
 
+#include "MythicaEditorPrivatePCH.h"
+
 BEGIN_SLATE_FUNCTION_BUILD_OPTIMIZATION
 void SMythicaFloatCurveEditor::Construct(const FArguments& InArgs)
 {

@@ -4,6 +4,8 @@
 
 #include "CoreMinimal.h"
 
+#include "Curves/RealCurve.h"
+
 #define LOCTEXT_NAMESPACE "MythicaEditor"
 
 // Disclamer: Houdini helped design this templating system for the CurveEditor

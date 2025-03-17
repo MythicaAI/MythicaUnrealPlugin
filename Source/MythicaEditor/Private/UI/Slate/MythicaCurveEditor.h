@@ -2,6 +2,8 @@
 
 #include "SCurveEditor.h"
 
+class UCurveFloat;
+
 class SMythicaCurveEditor : public SCurveEditor
 {
 
