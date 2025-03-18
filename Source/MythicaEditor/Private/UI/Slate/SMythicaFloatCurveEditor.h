@@ -2,7 +2,7 @@
 
 #pragma once
 
-#include "SMythicaCurveEditorBase.h"
+#include "SMythicaBaseCurveEditor.h"
 
 #include "CurveEditorSettings.h"
 #include "Curves/CurveFloat.h"
@@ -10,11 +10,29 @@
 //#include "Widgets/SCompoundWidget.h"
 
 /**
+ * Mythica Float Curve Provider
+ *
+ * 
+ */
+class FMythicaFloatCurveProvider : public TMythicaBaseDataProvider<
+    float, FMythicaParameterCurve, FMythicaCurvePoint>
+{
+public:
+
+    //static constexpr ValueType DefaultInsertValue = 1.f;
+
+    explicit FMythicaFloatCurveProvider(TWeakPtr<IPropertyHandle> InHandle)
+        : TMythicaBaseDataProvider(InHandle)
+    {
+    }
+};
+
+/**
  * Mythica Float Curve Editor
  *
  * 
  */
-class SMythicaFloatCurveEditor : public SMythicaCurveEditorBase<SCurveEditor>
+class SMythicaFloatCurveEditor : public SMythicaBaseCurveEditor<SCurveEditor, FMythicaFloatCurveProvider>
 {
 
 public:
@@ -75,15 +93,20 @@ public:
         SLATE_ARGUMENT(bool, ShowOutputGridNumbers)
         SLATE_ARGUMENT(bool, ShowCurveSelector)
         SLATE_ARGUMENT(FLinearColor, GridColor)
-        //SLATE_EVENT(FOnSetInputViewRange, OnSetInputViewRange)
-        //SLATE_EVENT(FOnSetOutputViewRange, OnSetOutputViewRange)
-        //SLATE_EVENT(FOnSetAreCurvesVisible, OnSetAreCurvesVisible)
+        SLATE_EVENT(FOnSetInputViewRange, OnSetInputViewRange)
+        SLATE_EVENT(FOnSetOutputViewRange, OnSetOutputViewRange)
+        SLATE_EVENT(FOnSetAreCurvesVisible, OnSetAreCurvesVisible)
         SLATE_EVENT(FSimpleDelegate, OnCreateAsset)
 
     SLATE_END_ARGS()
 
 	/** Constructs this widget with InArgs */
 	void Construct(const FArguments& InArgs);
+
+    ~SMythicaFloatCurveEditor();
+
+    FReply OnMouseButtonUp(const FGeometry& MyGeometry, const FPointerEvent& MouseEvent) override;
+    FReply OnMouseButtonDown(const FGeometry& MyGeometry, const FPointerEvent& MouseEvent) override;
 
 private:
 

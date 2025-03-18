@@ -197,6 +197,31 @@ enum class EMythicaCurveInterpolationType : uint8
 };
 
 USTRUCT(BlueprintType)
+struct FMythicaCurvePoint
+{
+
+    GENERATED_BODY()
+
+public:
+
+    UPROPERTY(EditAnywhere, BlueprintReadWrite)
+    float Pos;
+
+    UPROPERTY(EditAnywhere, BlueprintReadWrite)
+    float FloatValue;
+
+    UPROPERTY(EditAnywhere, BlueprintReadWrite)
+    FLinearColor ColorValue;
+
+    UPROPERTY(EditAnywhere, BlueprintReadWrite)
+    FVector VectorValue;
+
+    UPROPERTY(EditAnywhere, BlueprintReadWrite)
+    EMythicaCurveInterpolationType InterpType;
+
+};
+
+USTRUCT(BlueprintType)
 struct FMythicaParameterCurve
 {
     GENERATED_BODY()
@@ -206,20 +231,14 @@ public:
     UPROPERTY(EditAnywhere, BlueprintReadWrite)
     EMythicaCurveType Type = EMythicaCurveType::MCT_Invalid;
 
-    UPROPERTY(EditAnywhere, BlueprintReadWrite, meta = (EditCondition = "Type == EMythicaCurveType::MCT_Float", EditConditionHides))
-    TObjectPtr<UCurveFloat> FloatCurve = nullptr;
-
-    UPROPERTY(EditAnywhere, BlueprintReadWrite, meta = (EditCondition = "Type == EMythicaInputType::MCT_Vector", EditConditionHides))
-    TObjectPtr<UCurveVector> VectorCurve = nullptr;
-
-    UPROPERTY(EditAnywhere, BlueprintReadWrite, meta = (EditCondition = "Type == EMythicaInputType::MCT_Color", EditConditionHides))
-    TObjectPtr<UCurveLinearColor> ColorCurve = nullptr;
+    UPROPERTY(EditANywhere, BlueprintReadWrite)
+    TArray<FMythicaCurvePoint> Points = TArray<FMythicaCurvePoint>();
 
 public:
 
-    FMythicaParameterCurve() = default;
-    FMythicaParameterCurve(EMythicaCurveType InType);
-    ~FMythicaParameterCurve();
+    //FMythicaParameterCurve() = default;
+    //FMythicaParameterCurve(EMythicaCurveType InType);
+    //~FMythicaParameterCurve();
 
     void Copy(const FMythicaParameterCurve& Source);
     bool IsDataValid();

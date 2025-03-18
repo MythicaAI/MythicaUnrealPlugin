@@ -2,6 +2,7 @@
 
 #include "DetailWidgetRow.h"
 #include "IDetailChildrenBuilder.h"
+#include "IPropertyUtilities.h"
 #include "MythicaTypes.h"
 #include "UI/Slate/MythicaCurveEditor.h"
 #include "Widgets/Input/SComboBox.h"
@@ -10,6 +11,7 @@
 #include "Styling/AppStyle.h"
 #include "Widgets/Text/SMultiLineEditableText.h"
 #include "Widgets/Input/SNumericEntryBox.h"
+#include "SlateOptMacros.h"
 
 #include <functional>
 
@@ -46,13 +48,108 @@ static FMythicaParameters* GetParametersFromHandleWeak(TWeakPtr<IPropertyHandle>
     return GetParametersFromHandle(*Handle, OutObject);
 }
 
-TSharedRef<IPropertyTypeCustomization> FMythicaParametersDetails::MakeInstance()
+// See InstancedStructDetails.h. How unreal updates properties
+//if (StructProperty && StructProperty->IsValidHandle())
+//{
+//    FScopedTransaction Transaction(LOCTEXT("OnStructPicked", "Set Struct"));
+//
+//    StructProperty->NotifyPreChange();
+//
+//    StructProperty->EnumerateRawData([InStruct](void* RawData, const int32 /*DataIndex*/, const int32 /*NumDatas*/)
+//        {
+//            if (FInstancedStruct* InstancedStruct = static_cast<FInstancedStruct*>(RawData))
+//            {
+//                InstancedStruct->InitializeAs(InStruct);
+//            }
+//            return true;
+//        });
+//
+//    StructProperty->NotifyPostChange(EPropertyChangeType::ValueSet);
+//    StructProperty->NotifyFinishedChangingProperties();
+//
+//    // Property tree will be invalid after changing the struct type, force update.
+//    if (PropUtils.IsValid())
+//    {
+//        PropUtils->ForceRefresh();
+//    }
+//}
+
+FMythicaParametersDetails::~FMythicaParametersDetails()
 {
-    return MakeShareable(new FMythicaParametersDetails);
+    if (OnObjectsReinstancedHandle.IsValid())
+    {
+        FCoreUObjectDelegates::OnObjectsReinstanced.Remove(OnObjectsReinstancedHandle);
+    }
 }
 
+TSharedRef<IPropertyTypeCustomization> FMythicaParametersDetails::MakeInstance()
+{
+    return MakeShared<FMythicaParametersDetails>();
+}
+
+BEGIN_SLATE_FUNCTION_BUILD_OPTIMIZATION
 void FMythicaParametersDetails::CustomizeHeader(TSharedRef<IPropertyHandle> StructPropertyHandle, FDetailWidgetRow& HeaderRow, IPropertyTypeCustomizationUtils& StructCustomizationUtils)
 {
+    StructProperty = StructPropertyHandle;
+    PropUtils = StructCustomizationUtils.GetPropertyUtilities();
+
+    {
+        FScopedTransaction Transaction(LOCTEXT("On Random Number Changed", "Customize Header"));
+
+        UE_LOG(LogMythicaEditor, Warning, TEXT("Raw Params: "));
+        FMythicaParameters* OutParams;
+        StructProperty->EnumerateRawData([&OutParams](void* RawData, const int32 /*DataIndex*/, const int32 /*NumDatas*/)
+            {
+                if (FMythicaParameters* Params = static_cast<FMythicaParameters*>(RawData))
+                {
+                    OutParams = Params;
+                    for (const FMythicaParameter& Param : Params->Parameters)
+                    {
+                        UE_LOG(LogMythicaEditor, Warning, TEXT("\tName: %s"), *Param.Name);
+                    }
+                }
+                return true;
+            });
+
+        StructProperty->NotifyPreChange();
+
+        OutParams->Parameters[2].ValueFloat.Values.Empty();
+        OutParams->Parameters[2].ValueFloat.Values.Add(3.0f);
+
+        StructProperty->NotifyPostChange(EPropertyChangeType::ValueSet);
+        StructProperty->NotifyFinishedChangingProperties();
+
+        // Property tree will be invalid after changing the struct type, force update.
+        //if (PropUtils.IsValid())
+        //{
+        //    PropUtils->ForceRefresh();
+        //}
+    }
+
+    FString OutString;
+    StructProperty->GetValueAsDisplayString(OutString);
+
+    UE_LOG(LogMythicaEditor, Warning, TEXT("As Value String: %s"), *OutString);
+
+    TArray<void *> RawData;
+    StructProperty->AccessRawData(RawData);
+
+    FMythicaParameters* Params;
+    for (void* Data : RawData)
+    {
+        if (FMythicaParameters* PotentialParams = static_cast<FMythicaParameters*>(Data))
+        {
+            Params = PotentialParams;
+            for (const FMythicaParameter& Param : Params->Parameters)
+            {
+                UE_LOG(LogMythicaEditor, Warning, TEXT("\tName: %s"), *Param.Name);
+            }
+        }
+    }
+
+    // A callback when the object gets compiled
+    OnObjectsReinstancedHandle = FCoreUObjectDelegates::OnObjectsReinstanced.AddSP(this, &FMythicaParametersDetails::OnObjectsReinstanced);
+
     HeaderRow.ShouldAutoExpand(true);
 }
 
@@ -549,7 +646,7 @@ void FMythicaParametersDetails::CustomizeChildren(TSharedRef<IPropertyHandle> St
             }
             case EMythicaParameterType::Curve:
             {
-                ValueWidget = SNew(SMythicaCurveEditor).FloatCurve((Parameter.ValueCurve.Type == EMythicaCurveType::MCT_Float) ? Parameter.ValueCurve.FloatCurve : nullptr);
+                ValueWidget = SNew(SMythicaCurveEditor).FloatCurve(nullptr);
                 DesiredWidthScalar = 3;
 
                 ResetToDefaultVisible = [this, ParamIndex]()
@@ -612,6 +709,16 @@ void FMythicaParametersDetails::CustomizeChildren(TSharedRef<IPropertyHandle> St
                     ]
             ];
     }
+}
+END_SLATE_FUNCTION_BUILD_OPTIMIZATION
+
+void FMythicaParametersDetails::OnObjectsReinstanced(const FReplacementObjectMap& ObjectMap)
+{
+    // Force update the details when BP is compiled, since we may cached hold references to the old object or class.
+    //if (!ObjectMap.IsEmpty() && PropUtils.IsValid())
+    //{
+    //    PropUtils->RequestRefresh();
+    //}
 }
 
 #undef LOCTEXT_NAMESPACE
