@@ -99,30 +99,54 @@ TOptional<ERichCurveInterpMode> SMythicaFloatCurveEditor::GetCurveKeyInterpolati
 
 void SMythicaFloatCurveEditor::OnUpdateCurve(UCurveBase* Base, EPropertyChangeType::Type Type)
 {
+    // To prevent updating data while actively moving points.
+    //if (bIsMouseButtonDown)
+    //{
+    //    return; // See comment in declaration of bIsMouseButtonDown
+    //}
+
+    OnCurveChanged();
+
     FString TypeString;
     if (Type & EPropertyChangeType::ArrayAdd)
     {
-        TypeString = TEXT("Array Add");
+        TypeString += TEXT("- Array Add");
     }
-    else if (Type & EPropertyChangeType::ArrayRemove)
+    if (Type & EPropertyChangeType::ArrayRemove)
     {
-        TypeString = TEXT("Array Add");
+        TypeString += TEXT("- Array Add");
     }
-    else if (Type & EPropertyChangeType::ArrayClear)
+    if (Type & EPropertyChangeType::ArrayClear)
     {
-        TypeString = TEXT("Array Clear");
+        TypeString += TEXT("- Array Clear");
     }
-    else if (Type & EPropertyChangeType::ArrayMove)
+    if (Type & EPropertyChangeType::ArrayMove)
     {
-        TypeString = TEXT("Array Move");
+        TypeString += TEXT("- Array Move");
     }
-    else if (Type & EPropertyChangeType::Interactive)
+    if (Type & EPropertyChangeType::Interactive)
     {
-        TypeString = TEXT("Interactive");
+        TypeString += TEXT("- Interactive");
     }
-    else if (Type & EPropertyChangeType::ValueSet)
+    if (Type & EPropertyChangeType::ValueSet)
     {
-        TypeString = TEXT("ValueSet");
+        TypeString += TEXT("- ValueSet");
+    }
+    if (Type & EPropertyChangeType::Duplicate)
+    {
+        TypeString += TEXT("- Duplicate");
+    }
+    if (Type & EPropertyChangeType::Redirected)
+    {
+        TypeString += TEXT("- Redirected");
+    }
+    if (Type & EPropertyChangeType::ToggleEditable)
+    {
+        TypeString += TEXT("- Toggle Editable");
+    }
+    if (Type & EPropertyChangeType::Unspecified)
+    {
+        TypeString += TEXT("- Unspecified");
     }
 
     UE_LOG(LogMythicaEditor, Warning, TEXT("Curve Update: %s"), *TypeString);

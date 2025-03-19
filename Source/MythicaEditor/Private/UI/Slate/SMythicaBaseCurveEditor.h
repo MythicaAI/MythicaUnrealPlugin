@@ -195,6 +195,18 @@ protected:
         }
 
         UE_LOG(LogMythicaEditor, Warning, TEXT("Curve Updated %s"), *DataProvider->ParameterHandle->GeneratePathToProperty());
+
+        const int32 NumPoints = RampView->GetPointCount();
+        const TOptional<int32> NumCurveKeys = GetNumCurveKeys();
+
+        if (!NumCurveKeys.IsSet())
+        {
+            return;
+        }
+
+        // Note! The EPropertyChangeType is (unintuitively) always EPropertyChangeType::ValueSet
+        const bool bIsAddingPoints = NumCurveKeys.GetValue() > NumPoints;
+        const bool bIsDeletingPoints = NumCurveKeys.GetValue() < NumPoints;
     }
 
 private:
