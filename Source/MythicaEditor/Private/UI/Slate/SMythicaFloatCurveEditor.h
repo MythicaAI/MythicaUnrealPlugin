@@ -4,10 +4,8 @@
 
 #include "SMythicaBaseCurveEditor.h"
 
-#include "CurveEditorSettings.h"
 #include "Curves/CurveFloat.h"
 #include "SCurveEditor.h"
-//#include "Widgets/SCompoundWidget.h"
 
 /**
  * Mythica Float Curve Provider
@@ -19,10 +17,8 @@ class FMythicaFloatCurveProvider : public TMythicaBaseDataProvider<
 {
 public:
 
-    //static constexpr ValueType DefaultInsertValue = 1.f;
-
-    explicit FMythicaFloatCurveProvider(TWeakPtr<IPropertyHandle> InHandle)
-        : TMythicaBaseDataProvider(InHandle)
+    explicit FMythicaFloatCurveProvider(TWeakPtr<IPropertyHandle> InHandle, int32_t InParamIndex)
+        : TMythicaBaseDataProvider(InHandle, InParamIndex)
     {
     }
 };
@@ -107,6 +103,17 @@ public:
 
     FReply OnMouseButtonUp(const FGeometry& MyGeometry, const FPointerEvent& MouseEvent) override;
     FReply OnMouseButtonDown(const FGeometry& MyGeometry, const FPointerEvent& MouseEvent) override;
+
+protected:
+
+    /**
+     * BaseCurveEditor Interface
+     */
+    virtual TOptional<int32> GetNumCurveKeys() const;
+    virtual TOptional<float> GetCurveKeyPosition(const int32 Index) const;
+    virtual TOptional<ValueType> GetCurveKeyValue(const int32 Index) const;
+    virtual TOptional<ERichCurveInterpMode> GetCurveKeyInterpolationType(
+        const int32 Index) const;
 
 private:
 

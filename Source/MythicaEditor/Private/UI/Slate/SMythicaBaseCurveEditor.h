@@ -33,8 +33,9 @@ public:
 
 public:
 
-    explicit TMythicaBaseDataProvider(TWeakPtr<IPropertyHandle> InHandle)
-        : ParameterHandle(InHandle)
+    explicit TMythicaBaseDataProvider(TWeakPtr<IPropertyHandle> InHandle, int32_t InParamIndex)
+        : ParamIndex(InParamIndex)
+        , ParamHandle(InHandle)
     {
     }
 
@@ -119,17 +120,35 @@ private:
 
     ParamType* GetParameter() const
     {
-        if (!ParameterHandle || !ParameterHandle->IsValidHandle())
+        if (!ParamHandle || !ParamHandle->IsValidHandle())
         {
             return nullptr;
         }
 
-        //ParameterHandle->
+        ParamType* OutParam;
+        ParamHandle->EnumerateRawData([&OutParam](void* RawData, const int32 /*DataIndex*/, const int32 /*NumDatas*/)
+            {
+                if (FMythicaParameters* Params = static_cast<FMythicaParameters*>(RawData))
+                {
+                    ensure(Params->Parameters.IsValidIndex(ParamIndex));
+
+                    OutParam = Params->Parameters[ParamIndex].ValueCurve;
+
+                    return false;
+                }
+                return true;
+            });
+
+        return OutParam;
     }
 
 private:
 
-    TWeakPtr<IPropertyHandle> ParameterHandle;
+    /** The index of the parameter this data provider points to */
+    int32_t ParamIndex = -1;
+
+    /** The property that is being modified/viewed */
+    TWeakPtr<IPropertyHandle> ParamHandle;
 
 };
 
@@ -146,6 +165,8 @@ DECLARE_DELEGATE(FOnCurveChanged);
 template<typename BaseClass, typename DataProviderType>
 class SMythicaBaseCurveEditor : public BaseClass/*, public IMythicaCurveEditor*/
 {
+
+public:
 
     using ProviderType = DataProviderType;
     using ValueType = typename DataProviderType::ValueType;
@@ -168,6 +189,11 @@ protected:
 
     void OnCurveChanged()
     {
+        if (!DataProvider.IsValid())
+        {
+            return;
+        }
+
         UE_LOG(LogMythicaEditor, Warning, TEXT("Curve Updated %s"), *DataProvider->ParameterHandle->GeneratePathToProperty());
     }
 

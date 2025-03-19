@@ -4,7 +4,7 @@
 #include "IDetailChildrenBuilder.h"
 #include "IPropertyUtilities.h"
 #include "MythicaTypes.h"
-#include "UI/Slate/MythicaCurveEditor.h"
+#include "UI/Slate/SMythicaFloatCurveEditor.h"
 #include "Widgets/Input/SComboBox.h"
 #include "Widgets/Input/SButton.h"
 #include "ScopedTransaction.h"
@@ -94,30 +94,34 @@ void FMythicaParametersDetails::CustomizeHeader(TSharedRef<IPropertyHandle> Stru
     PropUtils = StructCustomizationUtils.GetPropertyUtilities();
 
     {
-        FScopedTransaction Transaction(LOCTEXT("On Random Number Changed", "Customize Header"));
+        //FScopedTransaction Transaction(LOCTEXT("On Random Number Changed", "Customize Header"));
 
-        UE_LOG(LogMythicaEditor, Warning, TEXT("Raw Params: "));
-        FMythicaParameters* OutParams;
-        StructProperty->EnumerateRawData([&OutParams](void* RawData, const int32 /*DataIndex*/, const int32 /*NumDatas*/)
-            {
-                if (FMythicaParameters* Params = static_cast<FMythicaParameters*>(RawData))
-                {
-                    OutParams = Params;
-                    for (const FMythicaParameter& Param : Params->Parameters)
-                    {
-                        UE_LOG(LogMythicaEditor, Warning, TEXT("\tName: %s"), *Param.Name);
-                    }
-                }
-                return true;
-            });
+        //StructProperty->NotifyPreChange();
 
-        StructProperty->NotifyPreChange();
+        //UE_LOG(LogMythicaEditor, Warning, TEXT("Raw Params: "));
+        //FMythicaParameters* OutParams;
+        //StructProperty->EnumerateRawData([&OutParams](void* RawData, const int32 /*DataIndex*/, const int32 /*NumDatas*/)
+        //    {
+        //        if (FMythicaParameters* Params = static_cast<FMythicaParameters*>(RawData))
+        //        {
+        //            OutParams = Params;
+        //            for (FMythicaParameter& Param : Params->Parameters)
+        //            {
+        //                UE_LOG(LogMythicaEditor, Warning, TEXT("\tName: %s"), *Param.Name);
+        //                if (Param.Name == TEXT("Random"))
+        //                {
+        //                    Param.ValueFloat.Values[0] = 3.0f;
+        //                }
+        //            }
+        //        }
+        //        return true;
+        //    });
 
-        OutParams->Parameters[2].ValueFloat.Values.Empty();
-        OutParams->Parameters[2].ValueFloat.Values.Add(3.0f);
+        /*OutParams->Parameters[2].ValueFloat.Values.Empty();
+        OutParams->Parameters[2].ValueFloat.Values.Add(3.0f);*/
 
-        StructProperty->NotifyPostChange(EPropertyChangeType::ValueSet);
-        StructProperty->NotifyFinishedChangingProperties();
+        //StructProperty->NotifyPostChange(EPropertyChangeType::ValueSet);
+        //StructProperty->NotifyFinishedChangingProperties();
 
         // Property tree will be invalid after changing the struct type, force update.
         //if (PropUtils.IsValid())
@@ -126,26 +130,26 @@ void FMythicaParametersDetails::CustomizeHeader(TSharedRef<IPropertyHandle> Stru
         //}
     }
 
-    FString OutString;
-    StructProperty->GetValueAsDisplayString(OutString);
+    //FString OutString;
+    //StructProperty->GetValueAsDisplayString(OutString);
 
-    UE_LOG(LogMythicaEditor, Warning, TEXT("As Value String: %s"), *OutString);
+    //UE_LOG(LogMythicaEditor, Warning, TEXT("As Value String: %s"), *OutString);
 
-    TArray<void *> RawData;
-    StructProperty->AccessRawData(RawData);
+    //TArray<void *> RawData;
+    //StructProperty->AccessRawData(RawData);
 
-    FMythicaParameters* Params;
-    for (void* Data : RawData)
-    {
-        if (FMythicaParameters* PotentialParams = static_cast<FMythicaParameters*>(Data))
-        {
-            Params = PotentialParams;
-            for (const FMythicaParameter& Param : Params->Parameters)
-            {
-                UE_LOG(LogMythicaEditor, Warning, TEXT("\tName: %s"), *Param.Name);
-            }
-        }
-    }
+    //FMythicaParameters* Params;
+    //for (void* Data : RawData)
+    //{
+    //    if (FMythicaParameters* PotentialParams = static_cast<FMythicaParameters*>(Data))
+    //    {
+    //        Params = PotentialParams;
+    //        for (const FMythicaParameter& Param : Params->Parameters)
+    //        {
+    //            UE_LOG(LogMythicaEditor, Warning, TEXT("\tName: %s"), *Param.Name);
+    //        }
+    //    }
+    //}
 
     // A callback when the object gets compiled
     OnObjectsReinstancedHandle = FCoreUObjectDelegates::OnObjectsReinstanced.AddSP(this, &FMythicaParametersDetails::OnObjectsReinstanced);
@@ -646,7 +650,7 @@ void FMythicaParametersDetails::CustomizeChildren(TSharedRef<IPropertyHandle> St
             }
             case EMythicaParameterType::Curve:
             {
-                ValueWidget = SNew(SMythicaCurveEditor).FloatCurve(nullptr);
+                ValueWidget = SNew(SMythicaFloatCurveEditor);
                 DesiredWidthScalar = 3;
 
                 ResetToDefaultVisible = [this, ParamIndex]()

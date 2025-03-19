@@ -45,6 +45,7 @@ public class MythicaEditor : ModuleRules
                 "AssetTools",
                 "Blutility",
                 "Boost",
+                "CurveEditor",
                 "DeveloperSettings",
                 "EditorSubsystem",
                 "FileUtilities",
