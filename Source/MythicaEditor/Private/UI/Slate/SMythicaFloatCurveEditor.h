@@ -34,10 +34,12 @@ class SMythicaFloatCurveEditor : public SMythicaBaseCurveEditor<SCurveEditor, FM
 public:
 
     SLATE_BEGIN_ARGS(SMythicaFloatCurveEditor)
-        : _ViewMinInput(0.0f)
-        , _ViewMaxInput(1.0f)
-        , _ViewMinOutput(0.0f)
-        , _ViewMaxOutput(1.0f)
+        : _ViewMinInput(-0.01f)
+        , _ViewMaxInput(1.01f)
+        , _DataMinInput(0.0f)
+        , _DataMaxInput(1.0f)
+        , _ViewMinOutput(-0.01f)
+        , _ViewMaxOutput(1.01f)
         , _InputSnap(0.1f)
         , _OutputSnap(0.05f)
         , _InputSnappingEnabled(false)
@@ -106,6 +108,7 @@ public:
 
     FReply OnMouseButtonUp(const FGeometry& MyGeometry, const FPointerEvent& MouseEvent) override;
     FReply OnMouseButtonDown(const FGeometry& MyGeometry, const FPointerEvent& MouseEvent) override;
+    FReply OnMouseWheel(const FGeometry& MyGeometry, const FPointerEvent& MouseEvent) override;
 
 protected:
 

@@ -30,6 +30,8 @@ void SMythicaFloatCurveEditor::Construct(const FArguments& InArgs)
         SCurveEditor::FArguments()
         .ViewMinInput(InArgs._ViewMinInput)
         .ViewMaxInput(InArgs._ViewMaxInput)
+        .DataMinInput(InArgs._DataMinInput)
+        .DataMaxInput(InArgs._DataMaxInput)
         .ViewMinOutput(InArgs._ViewMinOutput)
         .ViewMaxOutput(InArgs._ViewMaxOutput)
         .XAxisName(InArgs._XAxisName)
@@ -86,6 +88,11 @@ FReply SMythicaFloatCurveEditor::OnMouseButtonDown(const FGeometry& MyGeometry, 
     return SCurveEditor::OnMouseButtonDown(MyGeometry, MouseEvent);
 }
 
+FReply SMythicaFloatCurveEditor::OnMouseWheel(const FGeometry& MyGeometry, const FPointerEvent& MouseEvent)
+{
+    return FReply::Handled();
+}
+
 TOptional<int32> SMythicaFloatCurveEditor::GetNumCurveKeys() const
 {
     if (!Curve)
@@ -130,6 +137,26 @@ TOptional<ERichCurveInterpMode> SMythicaFloatCurveEditor::GetCurveKeyInterpolati
 
 void SMythicaFloatCurveEditor::ResetToDefault()
 {
+    if (!Curve || !DataProvider.IsValid())
+    {
+        return;
+    }
+
+    FRichCurve& FloatCurve = Curve->FloatCurve;
+
+    /*FloatCurve.Reset();
+
+    const int32 PointCount = DataProvider->GetPointCount();
+    for (int32 i = 0; i < PointCount; ++i)
+    {
+        ERichCurveInterpMode RichCurveInterpMode = DataProvider->GetPointRichCurveInterpolationType(i).GetValue();
+
+        const FKeyHandle KeyHandle = FloatCurve.AddKey(
+            DataProvider->GetPointPosition(i).GetValue(),
+            DataProvider->GetPointValue(i).GetValue());
+
+        FloatCurve.SetKeyInterpMode(KeyHandle, RichCurveInterpMode);
+    }*/
 }
 
 void SMythicaFloatCurveEditor::SyncCurveKeys()
@@ -165,49 +192,4 @@ void SMythicaFloatCurveEditor::OnUpdateCurve(UCurveBase* Base, EPropertyChangeTy
     }
 
     OnCurveChanged();
-
-    // It only sets the Value Set flag for every action, which is completely crazy. We can fix that.
-    FString TypeString;
-    if (Type & EPropertyChangeType::ArrayAdd)
-    {
-        TypeString += TEXT("- Array Add");
-    }
-    if (Type & EPropertyChangeType::ArrayRemove)
-    {
-        TypeString += TEXT("- Array Add");
-    }
-    if (Type & EPropertyChangeType::ArrayClear)
-    {
-        TypeString += TEXT("- Array Clear");
-    }
-    if (Type & EPropertyChangeType::ArrayMove)
-    {
-        TypeString += TEXT("- Array Move");
-    }
-    if (Type & EPropertyChangeType::Interactive)
-    {
-        TypeString += TEXT("- Interactive");
-    }
-    if (Type & EPropertyChangeType::ValueSet)
-    {
-        TypeString += TEXT("- ValueSet");
-    }
-    if (Type & EPropertyChangeType::Duplicate)
-    {
-        TypeString += TEXT("- Duplicate");
-    }
-    if (Type & EPropertyChangeType::Redirected)
-    {
-        TypeString += TEXT("- Redirected");
-    }
-    if (Type & EPropertyChangeType::ToggleEditable)
-    {
-        TypeString += TEXT("- Toggle Editable");
-    }
-    if (Type & EPropertyChangeType::Unspecified)
-    {
-        TypeString += TEXT("- Unspecified");
-    }
-
-    UE_LOG(LogMythicaEditor, Warning, TEXT("Curve Update: %s"), *TypeString);
 }

@@ -133,16 +133,6 @@ void FMythicaParameterFile::Copy(const FMythicaParameterFile& Source)
     *this = Source;
 }
 
-//bool FMythicaCurvePoint::operator==(const FMythicaParameterCurve& Other) const
-//{
-//    return false;
-//}
-//
-//bool FMythicaCurvePoint::operator==(const FRichCurveKey& Other) const
-//{
-//    return false;
-//}
-
 void FMythicaParameterCurve::Copy(const FMythicaParameterCurve& Source)
 {
     *this = Source;
@@ -152,6 +142,34 @@ bool FMythicaParameterCurve::IsDataValid()
 {
     return Type != EMythicaCurveType::MCT_Invalid;
 }
+
+bool FMythicaParameterCurve::IsDefault() const
+{
+    if (DefaultPoints.Num() != Points.Num())
+    {
+        return false;
+    }
+
+    for (int Index = 0; Index < DefaultPoints.Num(); Index++)
+    {
+        if (DefaultPoints[Index] != Points[Index])
+        {
+            return false;
+        }
+    }
+
+    return true;
+}
+
+bool FMythicaCurvePoint::operator==(const FMythicaCurvePoint& Other) const
+{
+    return Pos == Other.Pos
+        && FloatValue == Other.FloatValue
+        && ColorValue == Other.ColorValue
+        && VectorValue == Other.VectorValue
+        && InterpType == Other.InterpType;
+}
+
 
 const TCHAR* SystemParameters[] =
 {
@@ -360,6 +378,7 @@ void Mythica::ReadParameters(const TSharedPtr<FJsonObject>& ParamsSchema, FMythi
                     float FloatValue = PointObject->GetNumberField(TEXT("value"));
                     UE_LOG(LogTemp, Warning, TEXT("\t{%f, %f} - %s"), Pos, FloatValue, *InterpType);
 
+                    Parameter.ValueCurve.DefaultPoints.Emplace(FMythicaCurvePoint(Pos, FloatValue, InterpMode));
                     Parameter.ValueCurve.Points.Emplace(FMythicaCurvePoint(Pos, FloatValue, InterpMode));
                     break;
                 }
@@ -375,6 +394,7 @@ void Mythica::ReadParameters(const TSharedPtr<FJsonObject>& ParamsSchema, FMythi
                     FLinearColor Color = FLinearColor{ R, G, B };
                     UE_LOG(LogTemp, Warning, TEXT("\t{%f, %s} - %s"), Pos, *Color.ToString(), *InterpType);
 
+                    Parameter.ValueCurve.DefaultPoints.Emplace(FMythicaCurvePoint(Pos, Color, InterpMode));
                     Parameter.ValueCurve.Points.Emplace(FMythicaCurvePoint(Pos, Color, InterpMode));
 
                     break;

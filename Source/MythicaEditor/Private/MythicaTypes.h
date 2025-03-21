@@ -256,7 +256,7 @@ public:
         return VectorValue;
     };
 
-    //bool operator==(const FMythicaParameterCurve& Other) const;
+    bool operator==(const FMythicaCurvePoint& Other) const;
     //bool operator==(const FRichCurveKey& Other) const;
 
     ///**
@@ -279,13 +279,18 @@ public:
     UPROPERTY(EditAnywhere, BlueprintReadWrite)
     EMythicaCurveType Type = EMythicaCurveType::MCT_Invalid;
 
-    UPROPERTY(EditANywhere, BlueprintReadWrite)
+    UPROPERTY()
+    TArray<FMythicaCurvePoint> DefaultPoints = TArray<FMythicaCurvePoint>();
+
+    UPROPERTY()
     TArray<FMythicaCurvePoint> Points = TArray<FMythicaCurvePoint>();
 
 public:
 
     void Copy(const FMythicaParameterCurve& Source);
     bool IsDataValid();
+
+    bool IsDefault() const;
 
     //bool operator==(const FMythicaParameterCurve& Other) const;
 
