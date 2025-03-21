@@ -219,6 +219,54 @@ public:
     UPROPERTY(EditAnywhere, BlueprintReadWrite)
     EMythicaCurveInterpolationType InterpType;
 
+public:
+
+    FMythicaCurvePoint() = default;
+    FMythicaCurvePoint(float InPos, float InValue, EMythicaCurveInterpolationType InInterpType)
+        : Pos(InPos), FloatValue(InValue), InterpType(InInterpType)
+    {}
+    FMythicaCurvePoint(float InPos, FLinearColor InValue, EMythicaCurveInterpolationType InInterpType)
+        : Pos(InPos), ColorValue(InValue), InterpType(InInterpType)
+    {}
+    FMythicaCurvePoint(float InPos, FVector InValue, EMythicaCurveInterpolationType InInterpType)
+        : Pos(InPos), VectorValue(InValue), InterpType(InInterpType)
+    {}
+
+    template <typename ValueType>
+    ValueType GetValueWithType() const
+    {
+        return ValueType();
+    };
+
+    template<>
+    float GetValueWithType<float>() const
+    {
+        return FloatValue;
+    };
+
+    template<>
+    FLinearColor GetValueWithType<FLinearColor>() const
+    {
+        return ColorValue;
+    };
+
+    template<>
+    FVector GetValueWithType<FVector>() const
+    {
+        return VectorValue;
+    };
+
+    //bool operator==(const FMythicaParameterCurve& Other) const;
+    //bool operator==(const FRichCurveKey& Other) const;
+
+    ///**
+    // * These operator overloads are intended to help keep the Point array in order based on the Pos
+    // */
+    //bool operator<(const FMythicaParameterCurve& Other) const;
+    //bool operator<=(const FMythicaParameterCurve& Other) const;
+    //bool operator>(const FMythicaParameterCurve& Other) const;
+    //bool operator>=(const FMythicaParameterCurve& Other) const;
+
 };
 
 USTRUCT(BlueprintType)
@@ -236,12 +284,10 @@ public:
 
 public:
 
-    //FMythicaParameterCurve() = default;
-    //FMythicaParameterCurve(EMythicaCurveType InType);
-    //~FMythicaParameterCurve();
-
     void Copy(const FMythicaParameterCurve& Source);
     bool IsDataValid();
+
+    //bool operator==(const FMythicaParameterCurve& Other) const;
 
 };
 

@@ -23,6 +23,9 @@ void SMythicaFloatCurveEditor::Construct(const FArguments& InArgs)
     OnUpdateCurveDelegateHandle = Curve->OnUpdateCurve.AddRaw(
         this, &SMythicaFloatCurveEditor::OnUpdateCurve);
 
+    DataProvider = InArgs._DataProvider;
+    OnCurveChangedDelegate = InArgs._OnCurveChanged;
+
     SCurveEditor::Construct(
         SCurveEditor::FArguments()
         .ViewMinInput(InArgs._ViewMinInput)
@@ -51,6 +54,8 @@ void SMythicaFloatCurveEditor::Construct(const FArguments& InArgs)
     EnableToolTipForceField(true);
 
     SetCurveOwner(Curve);
+
+    SyncCurveKeys();
 }
 END_SLATE_FUNCTION_BUILD_OPTIMIZATION
 
@@ -69,44 +74,99 @@ SMythicaFloatCurveEditor::~SMythicaFloatCurveEditor()
 
 FReply SMythicaFloatCurveEditor::OnMouseButtonUp(const FGeometry& MyGeometry, const FPointerEvent& MouseEvent)
 {
+    bIsMouseButtonDown = false;
+
     return SCurveEditor::OnMouseButtonUp(MyGeometry, MouseEvent);
 }
 
 FReply SMythicaFloatCurveEditor::OnMouseButtonDown(const FGeometry& MyGeometry, const FPointerEvent& MouseEvent)
 {
+    bIsMouseButtonDown = true;
+
     return SCurveEditor::OnMouseButtonDown(MyGeometry, MouseEvent);
 }
 
 TOptional<int32> SMythicaFloatCurveEditor::GetNumCurveKeys() const
 {
-    return TOptional<int32>();
+    if (!Curve)
+    {
+        return TOptional<int32>();
+    }
+
+    return Curve->FloatCurve.GetNumKeys();
 }
 
 TOptional<float> SMythicaFloatCurveEditor::GetCurveKeyPosition(const int32 Index) const
 {
-    return TOptional<float>();
+    if (!Curve || !Curve->FloatCurve.Keys.IsValidIndex(Index))
+    {
+        return TOptional<float>();
+    }
+
+    // Time is treated as the X Component of the Unreal Curve graph. Equivalent to Houdini's Position.
+    return Curve->FloatCurve.Keys[Index].Time;
 }
 
 TOptional<float> SMythicaFloatCurveEditor::GetCurveKeyValue(const int32 Index) const
 {
-    return TOptional<float>();
+    if (!Curve || !Curve->FloatCurve.Keys.IsValidIndex(Index))
+    {
+        return TOptional<float>();
+    }
+
+    // Value is treated as the Y Component of the Unreal Curve graph. Equivalent to Houdini's Value.
+    return Curve->FloatCurve.Keys[Index].Value;
 }
 
 TOptional<ERichCurveInterpMode> SMythicaFloatCurveEditor::GetCurveKeyInterpolationType(const int32 Index) const
 {
-    return TOptional<ERichCurveInterpMode>();
+    if (!Curve || !Curve->FloatCurve.Keys.IsValidIndex(Index))
+    {
+        return TOptional<ERichCurveInterpMode>();
+    }
+
+    return Curve->FloatCurve.Keys[Index].InterpMode.GetValue();
+}
+
+void SMythicaFloatCurveEditor::ResetToDefault()
+{
+}
+
+void SMythicaFloatCurveEditor::SyncCurveKeys()
+{
+    if (!Curve || !DataProvider.IsValid())
+    {
+        return;
+    }
+
+    FRichCurve& FloatCurve = Curve->FloatCurve;
+
+    FloatCurve.Reset();
+
+    const int32 PointCount = DataProvider->GetPointCount();
+    for (int32 i = 0; i < PointCount; ++i)
+    {
+        ERichCurveInterpMode RichCurveInterpMode = DataProvider->GetPointRichCurveInterpolationType(i).GetValue();
+
+        const FKeyHandle KeyHandle = FloatCurve.AddKey(
+            DataProvider->GetPointPosition(i).GetValue(),
+            DataProvider->GetPointValue(i).GetValue());
+
+        FloatCurve.SetKeyInterpMode(KeyHandle, RichCurveInterpMode);
+    }
 }
 
 void SMythicaFloatCurveEditor::OnUpdateCurve(UCurveBase* Base, EPropertyChangeType::Type Type)
 {
     // To prevent updating data while actively moving points.
-    //if (bIsMouseButtonDown)
-    //{
-    //    return; // See comment in declaration of bIsMouseButtonDown
-    //}
+    if (bIsMouseButtonDown)
+    {
+        return;
+    }
 
     OnCurveChanged();
 
+    // It only sets the Value Set flag for every action, which is completely crazy. We can fix that.
     FString TypeString;
     if (Type & EPropertyChangeType::ArrayAdd)
     {

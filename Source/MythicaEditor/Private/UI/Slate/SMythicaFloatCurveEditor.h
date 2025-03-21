@@ -61,7 +61,10 @@ public:
         {
             _Clipping = EWidgetClipping::ClipToBounds;
         }
-
+        // ~Begin Mythica Extensions
+        SLATE_ARGUMENT(TSharedPtr<FMythicaFloatCurveProvider>, DataProvider)
+        SLATE_EVENT(FOnCurveChanged, OnCurveChanged)
+        // ~End Mythica Extensions
         SLATE_ATTRIBUTE(float, ViewMinInput)
         SLATE_ATTRIBUTE(float, ViewMaxInput)
         SLATE_ATTRIBUTE(TOptional<float>, DataMinInput)
@@ -115,12 +118,25 @@ protected:
     virtual TOptional<ERichCurveInterpMode> GetCurveKeyInterpolationType(
         const int32 Index) const;
 
+    virtual void ResetToDefault();
+    virtual void SyncCurveKeys();
+
 private:
 
     void OnUpdateCurve(UCurveBase*, EPropertyChangeType::Type);
 
 private:
 
+    /**
+     * We only commit the values to the parameter stack after they have been committed.
+     * Otherwise, OnUpdateCurve would get called every tick while doing a drag move.
+     */
+    bool bIsMouseButtonDown = false;
+
+    /**
+     * The visual representation of our internal curves so that we dont have to redesign an entire curve editor.
+     * This is stored as transient on the widget so do not rely on this to stored persistent state.
+     */
     UCurveFloat* Curve;
 
     FDelegateHandle OnUpdateCurveDelegateHandle;

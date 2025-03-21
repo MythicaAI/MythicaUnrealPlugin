@@ -133,83 +133,14 @@ void FMythicaParameterFile::Copy(const FMythicaParameterFile& Source)
     *this = Source;
 }
 
-//FMythicaParameterCurve::FMythicaParameterCurve(EMythicaCurveType InType)
+//bool FMythicaCurvePoint::operator==(const FMythicaParameterCurve& Other) const
 //{
-//    Type = InType;
-//
-//    switch (Type)
-//    {
-//    case EMythicaCurveType::MCT_Float:
-//    {
-//        if (!IsValid(FloatCurve))
-//        {
-//            FloatCurve = NewObject<UCurveFloat>(
-//                GetTransientPackage(),
-//                UCurveFloat::StaticClass(),
-//                NAME_None,
-//                RF_Transactional | RF_Public);
-//            ensure(FloatCurve);
-//
-//            FloatCurve->AddToRoot();
-//        }
-//        break;
-//    }
-//    case EMythicaCurveType::MCT_Vector:
-//    {
-//        if (!IsValid(VectorCurve))
-//        {
-//            VectorCurve = NewObject<UCurveVector>(
-//                GetTransientPackage(),
-//                UCurveVector::StaticClass(),
-//                NAME_None,
-//                RF_Transactional | RF_Public);
-//            ensure(VectorCurve);
-//
-//            VectorCurve->AddToRoot();
-//        }
-//        break;
-//    }
-//    case EMythicaCurveType::MCT_Color:
-//    {
-//        if (!IsValid(ColorCurve))
-//        {
-//            ColorCurve = NewObject<UCurveLinearColor>(
-//                GetTransientPackage(),
-//                UCurveLinearColor::StaticClass(),
-//                NAME_None,
-//                RF_Transactional | RF_Public);
-//            ensure(ColorCurve);
-//
-//            ColorCurve->AddToRoot();
-//        }
-//        break;
-//    }
-//    case EMythicaCurveType::MCT_Invalid:
-//    default:
-//        UE_LOG(LogTemp, Warning, TEXT("An invalid MythicaParameterCurve has been instaniated."));
-//        break;
-//    }
+//    return false;
 //}
-
-//FMythicaParameterCurve::~FMythicaParameterCurve()
+//
+//bool FMythicaCurvePoint::operator==(const FRichCurveKey& Other) const
 //{
-//    if (IsValid(FloatCurve))
-//    {
-//        FloatCurve->RemoveFromRoot();
-//        FloatCurve = nullptr;
-//    }
-//    
-//    if (IsValid(VectorCurve))
-//    {
-//        VectorCurve->RemoveFromRoot();
-//        VectorCurve = nullptr;
-//    }
-//    
-//    if (IsValid(ColorCurve))
-//    {
-//        ColorCurve->RemoveFromRoot();
-//        ColorCurve = nullptr;
-//    }
+//    return false;
 //}
 
 void FMythicaParameterCurve::Copy(const FMythicaParameterCurve& Source)
@@ -219,10 +150,7 @@ void FMythicaParameterCurve::Copy(const FMythicaParameterCurve& Source)
 
 bool FMythicaParameterCurve::IsDataValid()
 {
-    return Type != EMythicaCurveType::MCT_Invalid; /*&&
-        ((Type == EMythicaCurveType::MCT_Float && IsValid(FloatCurve)) ||
-        (Type == EMythicaCurveType::MCT_Color && IsValid(ColorCurve)) ||
-        (Type == EMythicaCurveType::MCT_Vector && IsValid(VectorCurve)));*/
+    return Type != EMythicaCurveType::MCT_Invalid;
 }
 
 const TCHAR* SystemParameters[] =
@@ -394,22 +322,7 @@ void Mythica::ReadParameters(const TSharedPtr<FJsonObject>& ParamsSchema, FMythi
                 float Pos = PointObject->GetNumberField(TEXT("pos"));
                 FString InterpType = PointObject->GetStringField(TEXT("interp"));
 
-                //ERichCurveInterpMode InterpMode;
-                //if (InterpType == TEXT("Linear"))
-                //{
-                //    InterpMode = ERichCurveInterpMode::RCIM_Linear;
-                //}
-                //else if (InterpType == TEXT("Constant"))
-                //{
-                //    InterpMode = ERichCurveInterpMode::RCIM_Constant;
-                //}
-                //else if (InterpType == TEXT("Bezier") || InterpType == TEXT("BSpline")
-                //    || InterpType == TEXT("CatmullRom") || InterpType == TEXT("Hermite") || InterpType == TEXT("MonotoneCubic"))
-                //{
-                //    InterpMode = ERichCurveInterpMode::RCIM_Cubic;
-                //}
-
-                EMythicaCurveInterpolationType InterpMode;
+                EMythicaCurveInterpolationType InterpMode = EMythicaCurveInterpolationType::MCIT_Invalid;
                 if (InterpType == TEXT("Linear"))
                 {
                     InterpMode = EMythicaCurveInterpolationType::MCIT_Linear;
@@ -447,9 +360,7 @@ void Mythica::ReadParameters(const TSharedPtr<FJsonObject>& ParamsSchema, FMythi
                     float FloatValue = PointObject->GetNumberField(TEXT("value"));
                     UE_LOG(LogTemp, Warning, TEXT("\t{%f, %f} - %s"), Pos, FloatValue, *InterpType);
 
-                    //FKeyHandle Key = Parameter.ValueCurve.FloatCurve->FloatCurve.AddKey(Pos, FloatValue);
-                    //Parameter.ValueCurve.FloatCurve->FloatCurve.SetKeyInterpMode(Key, InterpMode);
-                    Parameter.ValueCurve.Points.Emplace(FMythicaCurvePoint(Pos, FloatValue, FLinearColor::Black, FVector::ZeroVector, InterpMode));
+                    Parameter.ValueCurve.Points.Emplace(FMythicaCurvePoint(Pos, FloatValue, InterpMode));
                     break;
                 }
                 case EMythicaCurveType::MCT_Color:
@@ -464,15 +375,7 @@ void Mythica::ReadParameters(const TSharedPtr<FJsonObject>& ParamsSchema, FMythi
                     FLinearColor Color = FLinearColor{ R, G, B };
                     UE_LOG(LogTemp, Warning, TEXT("\t{%f, %s} - %s"), Pos, *Color.ToString(), *InterpType);
 
-                    Parameter.ValueCurve.Points.Emplace(FMythicaCurvePoint(Pos, 0.0, Color, FVector::ZeroVector, InterpMode));
-
-                    //FKeyHandle RKey = Parameter.ValueCurve.ColorCurve->FloatCurves[0].AddKey(Pos, R);
-                    //FKeyHandle GKey = Parameter.ValueCurve.ColorCurve->FloatCurves[1].AddKey(Pos, G);
-                    //FKeyHandle BKey = Parameter.ValueCurve.ColorCurve->FloatCurves[2].AddKey(Pos, B);
-
-                    //Parameter.ValueCurve.ColorCurve->FloatCurves[0].SetKeyInterpMode(RKey, InterpMode);
-                    //Parameter.ValueCurve.ColorCurve->FloatCurves[1].SetKeyInterpMode(GKey, InterpMode);
-                    //Parameter.ValueCurve.ColorCurve->FloatCurves[2].SetKeyInterpMode(BKey, InterpMode);
+                    Parameter.ValueCurve.Points.Emplace(FMythicaCurvePoint(Pos, Color, InterpMode));
 
                     break;
                 }

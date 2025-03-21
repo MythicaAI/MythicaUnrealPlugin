@@ -650,7 +650,12 @@ void FMythicaParametersDetails::CustomizeChildren(TSharedRef<IPropertyHandle> St
             }
             case EMythicaParameterType::Curve:
             {
-                ValueWidget = SNew(SMythicaFloatCurveEditor);
+                FString OutString;
+                StructProperty->GetValueAsDisplayString(OutString);
+                
+                UE_LOG(LogMythicaEditor, Warning, TEXT("As Value String: %s"), *OutString);
+
+                ValueWidget = SNew(SMythicaFloatCurveEditor).DataProvider(MakeShared<FMythicaFloatCurveProvider>(StructProperty, ParamIndex));
                 DesiredWidthScalar = 3;
 
                 ResetToDefaultVisible = [this, ParamIndex]()
