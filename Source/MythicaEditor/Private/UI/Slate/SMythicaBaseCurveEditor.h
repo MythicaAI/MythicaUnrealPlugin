@@ -32,6 +32,29 @@ public:
     {
     }
 
+    const TArray<PointType> GetDefaultPoints() const
+    {
+        TArray<PointType> Defaults = TArray<PointType>();
+        if (!ParamHandle.IsValid() || !ParamHandle.Pin()->IsValidHandle())
+        {
+            return Defaults;
+        }
+
+        TSharedPtr<IPropertyHandle> PinnedHandle = ParamHandle.Pin();
+        PinnedHandle->EnumerateRawData([this, &Defaults](void* RawData, const int32 /*DataIndex*/, const int32 /*NumDatas*/)
+            {
+                if (FMythicaParameters* Params = static_cast<FMythicaParameters*>(RawData))
+                {
+                    Defaults = Params->Parameters[ParamIndex].ValueCurve.DefaultPoints;
+
+                    return false;
+                }
+                return true;
+            });
+
+        return MoveTemp(Defaults);
+    }
+
     bool GetPoint(const int32 Index, PointType& OutPoint) const
     {
         if (!ParamHandle.IsValid() || !ParamHandle.Pin()->IsValidHandle())
