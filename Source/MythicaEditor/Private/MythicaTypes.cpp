@@ -189,6 +189,66 @@ bool Mythica::IsSystemParameter(const FString& Name)
     return false;
 }
 
+FString InterpTypeAsString(EMythicaCurveInterpType InterpType)
+{
+    switch (InterpType)
+    {
+    case EMythicaCurveInterpType::MCIT_Linear:
+        return TEXT("Linear");
+    case EMythicaCurveInterpType::MCIT_Constant:
+        return TEXT("Constant");
+    case EMythicaCurveInterpType::MCIT_Catmull_Rom:
+        return TEXT("CatmullRom");
+    case EMythicaCurveInterpType::MCIT_Monotone_Cubic:
+        return TEXT("MonotoneCubic");
+    case EMythicaCurveInterpType::MCIT_Bezier:
+        return TEXT("Bezier");
+    case EMythicaCurveInterpType::MCIT_BSpline:
+        return TEXT("BSpline");
+    case EMythicaCurveInterpType::MCIT_Hermite:
+        return TEXT("Hermite");
+    case EMythicaCurveInterpType::MCIT_Invalid:
+    default:
+        break;
+    }
+
+    return TEXT("");
+}
+
+EMythicaCurveInterpType InterpTypeAsEnum(const FString& InterpType)
+{
+    if (InterpType == TEXT("Linear"))
+    {
+        return EMythicaCurveInterpType::MCIT_Linear;
+    }
+    else if (InterpType == TEXT("Constant"))
+    {
+        return EMythicaCurveInterpType::MCIT_Constant;
+    }
+    else if (InterpType == TEXT("CatmullRom"))
+    {
+        return EMythicaCurveInterpType::MCIT_Catmull_Rom;
+    }
+    else if (InterpType == TEXT("MonotoneCubic"))
+    {
+        return EMythicaCurveInterpType::MCIT_Monotone_Cubic;
+    }
+    else if (InterpType == TEXT("Bezier"))
+    {
+        return EMythicaCurveInterpType::MCIT_Bezier;
+    }
+    else if (InterpType == TEXT("BSpline"))
+    {
+        return EMythicaCurveInterpType::MCIT_BSpline;
+    }
+    else if (InterpType == TEXT("Hermite"))
+    {
+        return EMythicaCurveInterpType::MCIT_Hermite;
+    }
+
+    return EMythicaCurveInterpType::MCIT_Invalid;
+}
+
 void Mythica::ReadParameters(const TSharedPtr<FJsonObject>& ParamsSchema, FMythicaParameters& OutParameters)
 {
     for (auto It = ParamsSchema->Values.CreateConstIterator(); It; ++It)
@@ -330,46 +390,15 @@ void Mythica::ReadParameters(const TSharedPtr<FJsonObject>& ParamsSchema, FMythi
                 continue;
             }
 
-            UE_LOG(LogTemp, Warning, TEXT("The content %s"), (Parameter.ValueCurve.IsDataValid() ? TEXT("is valid") : TEXT("is NOT valid")));
-
             TArray<TSharedPtr<FJsonValue>> ValuesArray = ParameterObject->GetArrayField(TEXT("default"));
             for (TSharedPtr<FJsonValue> Point : ValuesArray)
             {
                 TSharedPtr<FJsonObject> PointObject = Point->AsObject();
 
                 float Pos = PointObject->GetNumberField(TEXT("pos"));
+
                 FString InterpType = PointObject->GetStringField(TEXT("interp"));
-
-                EMythicaCurveInterpolationType InterpMode = EMythicaCurveInterpolationType::MCIT_Invalid;
-                if (InterpType == TEXT("Linear"))
-                {
-                    InterpMode = EMythicaCurveInterpolationType::MCIT_Linear;
-                }
-                else if (InterpType == TEXT("Constant"))
-                {
-                    InterpMode = EMythicaCurveInterpolationType::MCIT_Constant;
-                }
-                else if (InterpType == TEXT("Bezier"))
-                {
-                    InterpMode = EMythicaCurveInterpolationType::MCIT_Bezier;
-                }
-                else if (InterpType == TEXT("BSpline"))
-                {
-                    InterpMode = EMythicaCurveInterpolationType::MCIT_BSpline;
-                }
-                else if (InterpType == TEXT("CatmullRom"))
-                {
-                    InterpMode = EMythicaCurveInterpolationType::MCIT_Catmull_Rom;
-                }
-                else if (InterpType == TEXT("Hermite"))
-                {
-                    InterpMode = EMythicaCurveInterpolationType::MCIT_Hermite;
-                }
-                else if (InterpType == TEXT("MonotoneCubic"))
-                {
-                    InterpMode = EMythicaCurveInterpolationType::MCIT_Monotone_Cubic;
-                }
-
+                EMythicaCurveInterpType InterpMode = InterpTypeAsEnum(InterpType);
 
                 switch (Parameter.ValueCurve.Type)
                 {
@@ -476,8 +505,27 @@ void Mythica::WriteParameters(const TArray<FString>& InputFileIds, const FMythic
                 break;
             }
             case EMythicaParameterType::Curve:
-                OutParamsSet->SetStringField(Param.Name, Param.ValueEnum.Value);
+            {
+                TSharedPtr<FJsonObject> CurveObject = MakeShareable(new FJsonObject());
+
+                CurveObject->SetStringField(TEXT("ramp_parm_type"), ((Param.ValueCurve.Type == EMythicaCurveType::MCT_Float) ? TEXT("Float") : TEXT("Color")));
+
+                TArray<TSharedPtr<FJsonValue>> Array;
+                for (FMythicaCurvePoint Point : Param.ValueCurve.Points)
+                {
+                    TSharedPtr<FJsonObject> PointObject = MakeShareable(new FJsonObject());
+                    PointObject->SetNumberField(TEXT("pos"), Point.Pos);
+                    PointObject->SetNumberField(TEXT("value"), Point.FloatValue);
+                    PointObject->SetStringField(TEXT("interp"), InterpTypeAsString(Point.InterpType));
+
+                    TSharedPtr<FJsonValueObject> PointValueObject = MakeShareable(new FJsonValueObject(PointObject));
+                    Array.Add(PointValueObject);
+                }
+                CurveObject->SetArrayField(TEXT("value"), Array);
+
+                OutParamsSet->SetObjectField(Param.Name, CurveObject);
                 break;
+            }
         }
     }
 }

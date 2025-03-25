@@ -10,7 +10,10 @@
 /**
  * Mythica Float Curve Provider
  *
+ * This provides an interface into the Mythica data set that allows us direct access to the
+ * property handle. This allows for us to manage the data flow from the editor to our backend.
  * 
+ * Note: We may want to introduce a new asset type for the Curves themselves though.
  */
 class FMythicaFloatCurveProvider : public TMythicaBaseDataProvider<
     float, FMythicaParameterCurve, FMythicaCurvePoint>
@@ -26,7 +29,8 @@ public:
 /**
  * Mythica Float Curve Editor
  *
- * 
+ * A widget that is designed to utilize the base curve editor in a limited context. This allows us to easily
+ * edit any float curve data directly in the details pannel.
  */
 class SMythicaFloatCurveEditor : public SMythicaBaseCurveEditor<SCurveEditor, FMythicaFloatCurveProvider>
 {
@@ -121,7 +125,6 @@ protected:
     virtual TOptional<ERichCurveInterpMode> GetCurveKeyInterpolationType(
         const int32 Index) const;
 
-    virtual void ResetToDefault();
     virtual void SyncCurveKeys();
 
 private:
@@ -142,6 +145,7 @@ private:
      */
     UCurveFloat* Curve;
 
+    /** A managed event that eliminates event spamming while actively interacting with the UI. */
     FDelegateHandle OnUpdateCurveDelegateHandle;
 
 };

@@ -184,7 +184,7 @@ enum class EMythicaCurveType : uint8
 };
 
 UENUM(BlueprintType)
-enum class EMythicaCurveInterpolationType : uint8
+enum class EMythicaCurveInterpType : uint8
 {
     MCIT_Invalid = 0        UMETA(Hidden),
     MCIT_Constant = 1       UMETA(DisplayName = "Constant"),
@@ -217,18 +217,18 @@ public:
     FVector VectorValue;
 
     UPROPERTY(EditAnywhere, BlueprintReadWrite)
-    EMythicaCurveInterpolationType InterpType;
+    EMythicaCurveInterpType InterpType;
 
 public:
 
     FMythicaCurvePoint() = default;
-    FMythicaCurvePoint(float InPos, float InValue, EMythicaCurveInterpolationType InInterpType)
+    FMythicaCurvePoint(float InPos, float InValue, EMythicaCurveInterpType InInterpType)
         : Pos(InPos), FloatValue(InValue), InterpType(InInterpType)
     {}
-    FMythicaCurvePoint(float InPos, FLinearColor InValue, EMythicaCurveInterpolationType InInterpType)
+    FMythicaCurvePoint(float InPos, FLinearColor InValue, EMythicaCurveInterpType InInterpType)
         : Pos(InPos), ColorValue(InValue), InterpType(InInterpType)
     {}
-    FMythicaCurvePoint(float InPos, FVector InValue, EMythicaCurveInterpolationType InInterpType)
+    FMythicaCurvePoint(float InPos, FVector InValue, EMythicaCurveInterpType InInterpType)
         : Pos(InPos), VectorValue(InValue), InterpType(InInterpType)
     {}
 
@@ -257,15 +257,6 @@ public:
     };
 
     bool operator==(const FMythicaCurvePoint& Other) const;
-    //bool operator==(const FRichCurveKey& Other) const;
-
-    ///**
-    // * These operator overloads are intended to help keep the Point array in order based on the Pos
-    // */
-    //bool operator<(const FMythicaParameterCurve& Other) const;
-    //bool operator<=(const FMythicaParameterCurve& Other) const;
-    //bool operator>(const FMythicaParameterCurve& Other) const;
-    //bool operator>=(const FMythicaParameterCurve& Other) const;
 
 };
 

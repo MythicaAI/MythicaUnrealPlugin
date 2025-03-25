@@ -135,50 +135,6 @@ TOptional<ERichCurveInterpMode> SMythicaFloatCurveEditor::GetCurveKeyInterpolati
     return Curve->FloatCurve.Keys[Index].InterpMode.GetValue();
 }
 
-void SMythicaFloatCurveEditor::ResetToDefault()
-{
-    if (!Curve || !DataProvider.IsValid())
-    {
-        return;
-    }
-
-    FRichCurve& FloatCurve = Curve->FloatCurve;
-
-    FloatCurve.Reset();
-
-    TArray<FMythicaCurvePoint> Defaults = DataProvider->GetDefaultPoints();
-    for (const FMythicaCurvePoint& Default : Defaults)
-    {
-        ERichCurveInterpMode RichCurveInterpMode;
-        switch (Default.InterpType)
-        {
-        case EMythicaCurveInterpolationType::MCIT_Linear:
-            RichCurveInterpMode = RCIM_Linear;
-            break;
-        case EMythicaCurveInterpolationType::MCIT_Constant:
-            RichCurveInterpMode = RCIM_Constant;
-            break;
-        case EMythicaCurveInterpolationType::MCIT_Bezier:
-        case EMythicaCurveInterpolationType::MCIT_BSpline:
-        case EMythicaCurveInterpolationType::MCIT_Catmull_Rom:
-        case EMythicaCurveInterpolationType::MCIT_Hermite:
-        case EMythicaCurveInterpolationType::MCIT_Monotone_Cubic:
-            RichCurveInterpMode = RCIM_Cubic;
-            break;
-        case EMythicaCurveInterpolationType::MCIT_Invalid:
-        default:
-            RichCurveInterpMode = RCIM_None;
-            break;
-        }
-
-        const FKeyHandle KeyHandle = FloatCurve.AddKey(
-            Default.Pos,
-            Default.GetValueWithType<float>());
-
-        FloatCurve.SetKeyInterpMode(KeyHandle, RichCurveInterpMode);
-    }
-}
-
 void SMythicaFloatCurveEditor::SyncCurveKeys()
 {
     if (!Curve || !DataProvider.IsValid())

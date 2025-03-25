@@ -650,11 +650,6 @@ void FMythicaParametersDetails::CustomizeChildren(TSharedRef<IPropertyHandle> St
             }
             case EMythicaParameterType::Curve:
             {
-                FString OutString;
-                StructProperty->GetValueAsDisplayString(OutString);
-                
-                UE_LOG(LogMythicaEditor, Warning, TEXT("As Value String: %s"), *OutString);
-
                 ValueWidget = SNew(SMythicaFloatCurveEditor).DataProvider(MakeShared<FMythicaFloatCurveProvider>(StructProperty, ParamIndex));
                 DesiredWidthScalar = 3;
 
@@ -663,28 +658,29 @@ void FMythicaParametersDetails::CustomizeChildren(TSharedRef<IPropertyHandle> St
                     FMythicaParameters* Parameters = GetParametersFromHandleWeak(HandleWeak);
                     if (Parameters)
                     {
-                        //const FMythicaParameterCurve& CurveParam = Parameters->Parameters[ParamIndex].ValueCurve;
-                        //if (CurveParam.Value != CurveParam.DefaultValue)
-                        //{
-                        //    return EVisibility::Visible;
-                        //}
+                        const FMythicaParameterCurve& CurveParam = Parameters->Parameters[ParamIndex].ValueCurve;
+                        if (!CurveParam.IsDefault())
+                        {
+                            return EVisibility::Visible;
+                        }
                     }
 
                     return EVisibility::Collapsed;
                 };
 
-                OnResetToDefault = [this, ParamIndex]()
+                OnResetToDefault = [this, ParamIndex, ValueWidget]()
                 {
+                    SMythicaFloatCurveEditor& CurveEditor = static_cast<SMythicaFloatCurveEditor&>(ValueWidget.Get());
+
                     UObject* Object = nullptr;
                     FMythicaParameters* Parameters = GetParametersFromHandleWeak(HandleWeak, &Object);
-                    if (Parameters)
+
+                    if (IsValid(Object))
                     {
-                        const FScopedTransaction Transaction(LOCTEXT("MythicaChangeParameter", "Parameter Value Reset"));
+                        const FScopedTransaction Transaction(LOCTEXT("MythicaCurveSetDefault", "Parameter Curve Reset Defaults"));
                         Object->Modify();
 
-                        FMythicaParameterBool& BoolParam = Parameters->Parameters[ParamIndex].ValueBool;
-                        BoolParam.Value = BoolParam.DefaultValue;
-                        HandleWeak.Pin()->NotifyPostChange(EPropertyChangeType::ValueSet);
+                        CurveEditor.ResetToDefault();
                     }
 
                     return FReply::Handled();

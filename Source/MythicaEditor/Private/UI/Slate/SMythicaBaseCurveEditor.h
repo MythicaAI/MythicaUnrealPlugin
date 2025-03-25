@@ -45,7 +45,7 @@ public:
             {
                 if (FMythicaParameters* Params = static_cast<FMythicaParameters*>(RawData))
                 {
-                    Defaults = Params->Parameters[ParamIndex].ValueCurve.DefaultPoints;
+                    Defaults.Append(Params->Parameters[ParamIndex].ValueCurve.DefaultPoints);
 
                     return false;
                 }
@@ -55,7 +55,7 @@ public:
         return MoveTemp(Defaults);
     }
 
-    bool GetPoint(const int32 Index, PointType& OutPoint) const
+    const bool ResetToDefaults() const
     {
         if (!ParamHandle.IsValid() || !ParamHandle.Pin()->IsValidHandle())
         {
@@ -64,7 +64,33 @@ public:
 
         TSharedPtr<IPropertyHandle> PinnedHandle = ParamHandle.Pin();
 
-        PinnedHandle->EnumerateRawData([this, Index, &OutPoint](void* RawData, const int32 /*DataIndex*/, const int32 /*NumDatas*/)
+        PinnedHandle->NotifyPreChange();
+        PinnedHandle->EnumerateRawData([this](void* RawData, const int32 /*DataIndex*/, const int32 /*NumDatas*/)
+            {
+                if (FMythicaParameters* Params = static_cast<FMythicaParameters*>(RawData))
+                {
+                    FMythicaParameterCurve& CurveData = Params->Parameters[ParamIndex].ValueCurve;
+                    CurveData.Points = CurveData.DefaultPoints;
+
+                    return false;
+                }
+                return true;
+            });
+
+        PinnedHandle->NotifyPostChange(EPropertyChangeType::ArrayRemove);
+        PinnedHandle->NotifyFinishedChangingProperties();
+
+        return true;
+    }
+
+    bool GetPoint(const int32 Index, PointType& OutPoint) const
+    {
+        if (!ParamHandle.IsValid() || !ParamHandle.Pin()->IsValidHandle())
+        {
+            return false;
+        }
+
+        ParamHandle.Pin()->EnumerateRawData([this, Index, &OutPoint](void* RawData, const int32 /*DataIndex*/, const int32 /*NumDatas*/)
             {
                 if (FMythicaParameters* Params = static_cast<FMythicaParameters*>(RawData))
                 {
@@ -109,7 +135,7 @@ public:
             const int32 Index,
             const float Position,
             const ValueType Value,
-            const EMythicaCurveInterpolationType InterpolationType)
+            const EMythicaCurveInterpType InterpolationType)
     {
         if (!ParamHandle.IsValid() || !ParamHandle.Pin()->IsValidHandle())
         {
@@ -224,7 +250,7 @@ public:
         return TOptional<ValueType>();
     }
 
-    TOptional<EMythicaCurveInterpolationType> GetPointInterpolationType(const int32 Index) const
+    TOptional<EMythicaCurveInterpType> GetPointInterpolationType(const int32 Index) const
     {
         PointType Point;
         if (GetPoint(Index, Point))
@@ -232,7 +258,7 @@ public:
             return Point.InterpType;
         }
 
-        return TOptional<EMythicaCurveInterpolationType>();
+        return TOptional<EMythicaCurveInterpType>();
     }
 
     /** @returns Interpolation if successful, unset optional if unsuccessful. */
@@ -245,17 +271,17 @@ public:
         {
             switch (Point.InterpType)
             {
-            case EMythicaCurveInterpolationType::MCIT_Linear:
+            case EMythicaCurveInterpType::MCIT_Linear:
                 return RCIM_Linear;
-            case EMythicaCurveInterpolationType::MCIT_Constant:
+            case EMythicaCurveInterpType::MCIT_Constant:
                 return RCIM_Constant;
-            case EMythicaCurveInterpolationType::MCIT_Bezier:
-            case EMythicaCurveInterpolationType::MCIT_BSpline:
-            case EMythicaCurveInterpolationType::MCIT_Catmull_Rom:
-            case EMythicaCurveInterpolationType::MCIT_Hermite:
-            case EMythicaCurveInterpolationType::MCIT_Monotone_Cubic:
+            case EMythicaCurveInterpType::MCIT_Bezier:
+            case EMythicaCurveInterpType::MCIT_BSpline:
+            case EMythicaCurveInterpType::MCIT_Catmull_Rom:
+            case EMythicaCurveInterpType::MCIT_Hermite:
+            case EMythicaCurveInterpType::MCIT_Monotone_Cubic:
                 return RCIM_Cubic;
-            case EMythicaCurveInterpolationType::MCIT_Invalid:
+            case EMythicaCurveInterpType::MCIT_Invalid:
             default:
                 return RCIM_None;
             }
@@ -295,6 +321,19 @@ public:
     using ParamType = typename DataProviderType::ParamType;
     using PointType = typename DataProviderType::PointType;
 
+    /** Should reset the curve data to the data providers defaults. Then we make sure to sync our data. */
+    virtual void ResetToDefault()
+    {
+        if (!DataProvider.IsValid())
+        {
+            return;
+        }
+
+        DataProvider->ResetToDefaults();
+
+        SyncCurveKeys();
+    }
+
 protected:
 
     /**
@@ -309,10 +348,7 @@ protected:
     virtual TOptional<ERichCurveInterpMode> GetCurveKeyInterpolationType(
         const int32 Index) const = 0;
 
-    /** Should reset the curve data to the data providers defaults. Then OnCurveChanged will update the current point data. */
-    virtual void ResetToDefault() = 0;
-
-    /** Syncs the curve data with the data providers. Usually only good when external sorces change the paramters data directly. */
+    /** Syncs the curve data with the data providers. Used when we need to modify curve data externally (Resetting defaults). */
     virtual void SyncCurveKeys() = 0;
 
     /** We want to check to make sure our internal data matches the curves. */
@@ -374,56 +410,72 @@ protected:
         OnCurveChangedDelegate.ExecuteIfBound();
     }
 
-private:
+protected:
 
     /**
      * Since there are fewer Unreal interpolation types than Houdini interpolation types, we map
      * multiple of our Mythica interpolation types to Unreal's cubic interpolation type.
      */
-    static bool
-        IsInterpolationEquivalent(
-            const ERichCurveInterpMode UnrealInterpolation,
-            const EMythicaCurveInterpolationType MythicaInterpolation)
+    static bool IsInterpolationEquivalent(const ERichCurveInterpMode UnrealInterpolation, const EMythicaCurveInterpType MythicaInterpolation)
     {
         switch (UnrealInterpolation)
         {
-        case RCIM_Linear:
-            return MythicaInterpolation == EMythicaCurveInterpolationType::MCIT_Linear;
-        case RCIM_Constant:
-            return MythicaInterpolation == EMythicaCurveInterpolationType::MCIT_Constant;
-        case RCIM_Cubic:
+        case ERichCurveInterpMode::RCIM_Linear:
+            return MythicaInterpolation == EMythicaCurveInterpType::MCIT_Linear;
+        case ERichCurveInterpMode::RCIM_Constant:
+            return MythicaInterpolation == EMythicaCurveInterpType::MCIT_Constant;
+        case ERichCurveInterpMode::RCIM_Cubic:
             switch (MythicaInterpolation)
             {
-            case EMythicaCurveInterpolationType::MCIT_Bezier:
-            case EMythicaCurveInterpolationType::MCIT_BSpline:
-            case EMythicaCurveInterpolationType::MCIT_Catmull_Rom:
-            case EMythicaCurveInterpolationType::MCIT_Hermite:
-            case EMythicaCurveInterpolationType::MCIT_Monotone_Cubic:
+            case EMythicaCurveInterpType::MCIT_Bezier:
+            case EMythicaCurveInterpType::MCIT_BSpline:
+            case EMythicaCurveInterpType::MCIT_Catmull_Rom:
+            case EMythicaCurveInterpType::MCIT_Hermite:
+            case EMythicaCurveInterpType::MCIT_Monotone_Cubic:
                 return true;
             default:
                 return false;
             }
-        case RCIM_None:
+        case ERichCurveInterpMode::RCIM_None:
         default:
-            return MythicaInterpolation == EMythicaCurveInterpolationType::MCIT_Invalid;
+            return MythicaInterpolation == EMythicaCurveInterpType::MCIT_Invalid;
         }
     }
 
     /** Converts Unreal interpolation type to the most appropriate Mythica interpolation type. */
-    static EMythicaCurveInterpolationType
-        TranslateInterpolation(const ERichCurveInterpMode InterpMode)
+    static EMythicaCurveInterpType TranslateInterpolation(const ERichCurveInterpMode InterpMode)
     {
         switch (InterpMode)
         {
-        case RCIM_Linear:
-            return EMythicaCurveInterpolationType::MCIT_Linear;
-        case RCIM_Constant:
-            return EMythicaCurveInterpolationType::MCIT_Constant;
-        case RCIM_Cubic:
-            return EMythicaCurveInterpolationType::MCIT_Catmull_Rom;
-        case RCIM_None:
+        case ERichCurveInterpMode::RCIM_Linear:
+            return EMythicaCurveInterpType::MCIT_Linear;
+        case ERichCurveInterpMode::RCIM_Constant:
+            return EMythicaCurveInterpType::MCIT_Constant;
+        case ERichCurveInterpMode::RCIM_Cubic:
+            return EMythicaCurveInterpType::MCIT_Catmull_Rom;
+        case ERichCurveInterpMode::RCIM_None:
         default:
-            return EMythicaCurveInterpolationType::MCIT_Invalid;
+            return EMythicaCurveInterpType::MCIT_Invalid;
+        }
+    }
+
+    static ERichCurveInterpMode TranslateInterpolation(const EMythicaCurveInterpType InterpType)
+    {
+        switch (InterpType)
+        {
+        case EMythicaCurveInterpType::MCIT_Linear:
+            return ERichCurveInterpMode::RCIM_Linear;
+        case EMythicaCurveInterpType::MCIT_Constant:
+            return ERichCurveInterpMode::RCIM_Constant;
+        case EMythicaCurveInterpType::MCIT_Bezier:
+        case EMythicaCurveInterpType::MCIT_BSpline:
+        case EMythicaCurveInterpType::MCIT_Catmull_Rom:
+        case EMythicaCurveInterpType::MCIT_Hermite:
+        case EMythicaCurveInterpType::MCIT_Monotone_Cubic:
+            return ERichCurveInterpMode::RCIM_Cubic;
+        case EMythicaCurveInterpType::MCIT_Invalid:
+        default:
+            return ERichCurveInterpMode::RCIM_None;
         }
     }
 
