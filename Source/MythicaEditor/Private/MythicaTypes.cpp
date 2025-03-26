@@ -506,24 +506,36 @@ void Mythica::WriteParameters(const TArray<FString>& InputFileIds, const FMythic
             }
             case EMythicaParameterType::Curve:
             {
-                TSharedPtr<FJsonObject> CurveObject = MakeShareable(new FJsonObject());
-
-                CurveObject->SetStringField(TEXT("ramp_parm_type"), ((Param.ValueCurve.Type == EMythicaCurveType::MCT_Float) ? TEXT("Float") : TEXT("Color")));
-
                 TArray<TSharedPtr<FJsonValue>> Array;
                 for (FMythicaCurvePoint Point : Param.ValueCurve.Points)
                 {
                     TSharedPtr<FJsonObject> PointObject = MakeShareable(new FJsonObject());
                     PointObject->SetNumberField(TEXT("pos"), Point.Pos);
-                    PointObject->SetNumberField(TEXT("value"), Point.FloatValue);
+
+                    switch (Param.ValueCurve.Type)
+                    {
+                    case EMythicaCurveType::MCT_Color:
+                    {
+                        TArray<TSharedPtr<FJsonValue>> ColorArray;
+                        ColorArray.Insert(MakeShareable(new FJsonValueNumber(Point.ColorValue.R)), 0);
+                        ColorArray.Insert(MakeShareable(new FJsonValueNumber(Point.ColorValue.G)), 1);
+                        ColorArray.Insert(MakeShareable(new FJsonValueNumber(Point.ColorValue.B)), 2);
+                        PointObject->SetArrayField(TEXT("c"), ColorArray);
+                        break;
+                    }
+                    case EMythicaCurveType::MCT_Float:
+                    default:
+                        PointObject->SetNumberField(TEXT("value"), Point.FloatValue);
+                        break;
+                    }
+                    
                     PointObject->SetStringField(TEXT("interp"), InterpTypeAsString(Point.InterpType));
 
                     TSharedPtr<FJsonValueObject> PointValueObject = MakeShareable(new FJsonValueObject(PointObject));
                     Array.Add(PointValueObject);
                 }
-                CurveObject->SetArrayField(TEXT("value"), Array);
 
-                OutParamsSet->SetObjectField(Param.Name, CurveObject);
+                OutParamsSet->SetArrayField(Param.Name, Array);
                 break;
             }
         }

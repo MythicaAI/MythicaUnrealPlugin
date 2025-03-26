@@ -270,10 +270,10 @@ public:
     UPROPERTY(EditAnywhere, BlueprintReadWrite)
     EMythicaCurveType Type = EMythicaCurveType::MCT_Invalid;
 
-    UPROPERTY()
+    UPROPERTY(EditAnywhere, BlueprintReadWrite)
     TArray<FMythicaCurvePoint> DefaultPoints = TArray<FMythicaCurvePoint>();
 
-    UPROPERTY()
+    UPROPERTY(EditAnywhere, BlueprintReadWrite)
     TArray<FMythicaCurvePoint> Points = TArray<FMythicaCurvePoint>();
 
 public:

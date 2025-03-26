@@ -74,6 +74,8 @@ static FMythicaParameters* GetParametersFromHandleWeak(TWeakPtr<IPropertyHandle>
 //    }
 //}
 
+// See GameplayTagContainerCustomization.h for a copy paste example
+
 FMythicaParametersDetails::~FMythicaParametersDetails()
 {
     if (OnObjectsReinstancedHandle.IsValid())
@@ -650,7 +652,7 @@ void FMythicaParametersDetails::CustomizeChildren(TSharedRef<IPropertyHandle> St
             }
             case EMythicaParameterType::Curve:
             {
-                ValueWidget = SNew(SMythicaFloatCurveEditor).DataProvider(MakeShared<FMythicaFloatCurveProvider>(StructProperty, ParamIndex));
+                ValueWidget = SNew(SMythicaFloatCurveEditor).DataProvider(MakeShared<FMythicaFloatCurveProvider>(StructPropertyHandle, ParamIndex));
                 DesiredWidthScalar = 3;
 
                 ResetToDefaultVisible = [this, ParamIndex]()
@@ -670,6 +672,7 @@ void FMythicaParametersDetails::CustomizeChildren(TSharedRef<IPropertyHandle> St
 
                 OnResetToDefault = [this, ParamIndex, ValueWidget]()
                 {
+                    UE_LOG(LogMythicaEditor, Warning, TEXT("%hs"), __func__);
                     SMythicaFloatCurveEditor& CurveEditor = static_cast<SMythicaFloatCurveEditor&>(ValueWidget.Get());
 
                     UObject* Object = nullptr;
@@ -720,10 +723,10 @@ END_SLATE_FUNCTION_BUILD_OPTIMIZATION
 void FMythicaParametersDetails::OnObjectsReinstanced(const FReplacementObjectMap& ObjectMap)
 {
     // Force update the details when BP is compiled, since we may cached hold references to the old object or class.
-    //if (!ObjectMap.IsEmpty() && PropUtils.IsValid())
-    //{
-    //    PropUtils->RequestRefresh();
-    //}
+    if (!ObjectMap.IsEmpty() && PropUtils.IsValid())
+    {
+        PropUtils->RequestRefresh();
+    }
 }
 
 #undef LOCTEXT_NAMESPACE

@@ -32,29 +32,6 @@ public:
     {
     }
 
-    const TArray<PointType> GetDefaultPoints() const
-    {
-        TArray<PointType> Defaults = TArray<PointType>();
-        if (!ParamHandle.IsValid() || !ParamHandle.Pin()->IsValidHandle())
-        {
-            return Defaults;
-        }
-
-        TSharedPtr<IPropertyHandle> PinnedHandle = ParamHandle.Pin();
-        PinnedHandle->EnumerateRawData([this, &Defaults](void* RawData, const int32 /*DataIndex*/, const int32 /*NumDatas*/)
-            {
-                if (FMythicaParameters* Params = static_cast<FMythicaParameters*>(RawData))
-                {
-                    Defaults.Append(Params->Parameters[ParamIndex].ValueCurve.DefaultPoints);
-
-                    return false;
-                }
-                return true;
-            });
-
-        return MoveTemp(Defaults);
-    }
-
     const bool ResetToDefaults() const
     {
         if (!ParamHandle.IsValid() || !ParamHandle.Pin()->IsValidHandle())
@@ -77,7 +54,7 @@ public:
                 return true;
             });
 
-        PinnedHandle->NotifyPostChange(EPropertyChangeType::ArrayRemove);
+        PinnedHandle->NotifyPostChange(EPropertyChangeType::ValueSet);
         PinnedHandle->NotifyFinishedChangingProperties();
 
         return true;
@@ -90,9 +67,9 @@ public:
             return false;
         }
 
-        ParamHandle.Pin()->EnumerateRawData([this, Index, &OutPoint](void* RawData, const int32 /*DataIndex*/, const int32 /*NumDatas*/)
+        ParamHandle.Pin()->EnumerateConstRawData([this, Index, &OutPoint](const void* RawData, const int32 /*DataIndex*/, const int32 /*NumDatas*/)
             {
-                if (FMythicaParameters* Params = static_cast<FMythicaParameters*>(RawData))
+                if (const FMythicaParameters* Params = static_cast<const FMythicaParameters*>(RawData))
                 {
                     ensure(Params->Parameters[ParamIndex].ValueCurve.Points.IsValidIndex(Index));
 
@@ -117,9 +94,9 @@ public:
         TSharedPtr<IPropertyHandle> PinnedHandle = ParamHandle.Pin();
 
         int32 OutCount = 0;
-        PinnedHandle->EnumerateRawData([this, &OutCount](void* RawData, const int32 /*DataIndex*/, const int32 /*NumDatas*/)
+        PinnedHandle->EnumerateConstRawData([this, &OutCount](const void* RawData, const int32 /*DataIndex*/, const int32 /*NumDatas*/)
             {
-                if (FMythicaParameters* Params = static_cast<FMythicaParameters*>(RawData))
+                if (const FMythicaParameters* Params = static_cast<const FMythicaParameters*>(RawData))
                 {
                     OutCount = Params->Parameters[ParamIndex].ValueCurve.Points.Num();
 
@@ -144,7 +121,7 @@ public:
 
         TSharedPtr<IPropertyHandle> PinnedHandle = ParamHandle.Pin();
 
-        PinnedHandle->NotifyPreChange();
+        //PinnedHandle->NotifyPreChange();
 
         PointType NewPoint{Position, Value, InterpolationType};
         PinnedHandle->EnumerateRawData([this, Index, NewPoint](void* RawData, const int32 /*DataIndex*/, const int32 /*NumDatas*/)
@@ -158,8 +135,7 @@ public:
                 return true;
             });
 
-        PinnedHandle->NotifyPostChange(EPropertyChangeType::ArrayRemove);
-        PinnedHandle->NotifyFinishedChangingProperties();
+        //PinnedHandle->NotifyPostChange(EPropertyChangeType::ArrayAdd);
 
         return true;
     }
@@ -173,7 +149,7 @@ public:
 
         TSharedPtr<IPropertyHandle> PinnedHandle = ParamHandle.Pin();
 
-        PinnedHandle->NotifyPreChange();
+        //PinnedHandle->NotifyPreChange();
 
         PinnedHandle->EnumerateRawData([this, Indices](void* RawData, const int32 /*DataIndex*/, const int32 /*NumDatas*/)
             {
@@ -189,8 +165,8 @@ public:
                 return true;
             });
 
-        PinnedHandle->NotifyPostChange(EPropertyChangeType::ArrayRemove);
-        PinnedHandle->NotifyFinishedChangingProperties();
+        //PinnedHandle->NotifyPostChange(EPropertyChangeType::ArrayRemove);
+        //PinnedHandle->NotifyFinishedChangingProperties();
 
         return true;
     }
@@ -209,7 +185,7 @@ public:
 
         TSharedPtr<IPropertyHandle> PinnedHandle = ParamHandle.Pin();
 
-        PinnedHandle->NotifyPreChange();
+        //PinnedHandle->NotifyPreChange();
 
         PinnedHandle->EnumerateRawData([this](void* RawData, const int32 /*DataIndex*/, const int32 /*NumDatas*/)
         {
@@ -222,8 +198,33 @@ public:
             return true;
         });
 
-        PinnedHandle->NotifyPostChange(EPropertyChangeType::ArrayClear);
-        PinnedHandle->NotifyFinishedChangingProperties();
+        //PinnedHandle->NotifyPostChange(EPropertyChangeType::ArrayClear);
+        //PinnedHandle->NotifyFinishedChangingProperties();
+
+        return true;
+    }
+
+    bool PreChange()
+    {
+        if (!ParamHandle.IsValid() || !ParamHandle.Pin()->IsValidHandle())
+        {
+            return false;
+        }
+
+        ParamHandle.Pin()->NotifyPreChange();
+
+        return true;
+    }
+
+    bool PostChange()
+    {
+        if (!ParamHandle.IsValid() || !ParamHandle.Pin()->IsValidHandle())
+        {
+            return false;
+        }
+
+        ParamHandle.Pin()->NotifyPostChange(EPropertyChangeType::ValueSet);
+        ParamHandle.Pin()->NotifyFinishedChangingProperties();
 
         return true;
     }
@@ -324,6 +325,8 @@ public:
     /** Should reset the curve data to the data providers defaults. Then we make sure to sync our data. */
     virtual void ResetToDefault()
     {
+        UE_LOG(LogMythicaEditor, Warning, TEXT("%hs"), __func__);
+
         if (!DataProvider.IsValid())
         {
             return;
@@ -354,12 +357,12 @@ protected:
     /** We want to check to make sure our internal data matches the curves. */
     void OnCurveChanged()
     {
+        UE_LOG(LogMythicaEditor, Warning, TEXT("%hs"), __func__);
+
         if (!DataProvider.IsValid())
         {
             return;
         }
-
-        //UE_LOG(LogMythicaEditor, Warning, TEXT("Curve Updated %s"), *DataProvider->ToString());
 
         const int32 NumPoints = DataProvider->GetPointCount();
         const TOptional<int32> NumCurveKeys = GetNumCurveKeys();
@@ -369,6 +372,9 @@ protected:
             return;
         }
 
+        UE_LOG(LogMythicaEditor, Warning, TEXT("Curve Dirty: # of Curve Keys %d - # of Points %d"), NumCurveKeys.GetValue(), NumPoints);
+
+        DataProvider->PreChange();
         DataProvider->ClearPoints();
 
         for (int Index = 0; Index < NumCurveKeys.GetValue(); Index++)
@@ -379,6 +385,21 @@ protected:
 
             DataProvider->InsertPoint(Index, Pos, Value, TranslateInterpolation(Interp));
         }
+
+        for (int Index = 0; Index < DataProvider->GetPointCount(); Index++)
+        {
+            FMythicaCurvePoint Point;
+            if (DataProvider->GetPoint(Index, Point))
+            {
+                UE_LOG(LogMythicaEditor, Warning, TEXT("{%f, %f, %s}"), Point.Pos, Point.FloatValue, *UEnum::GetValueAsString(Point.InterpType));
+            }
+            else
+            {
+                UE_LOG(LogMythicaEditor, Warning, TEXT("Point was invalid @%d"), Index);
+            }
+        }
+
+        DataProvider->PostChange();
 
         //// Note! The EPropertyChangeType is (unintuitively) always EPropertyChangeType::ValueSet
         //const bool bIsAddingPoints = NumCurveKeys.GetValue() > NumPoints;
