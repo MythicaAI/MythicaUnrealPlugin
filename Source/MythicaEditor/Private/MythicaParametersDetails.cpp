@@ -75,6 +75,7 @@ static FMythicaParameters* GetParametersFromHandleWeak(TWeakPtr<IPropertyHandle>
 //}
 
 // See GameplayTagContainerCustomization.h for a copy paste example
+// See ComponentReferenceCustomization.h for proper property access
 
 FMythicaParametersDetails::~FMythicaParametersDetails()
 {

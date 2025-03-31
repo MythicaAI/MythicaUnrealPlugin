@@ -11,8 +11,6 @@
 BEGIN_SLATE_FUNCTION_BUILD_OPTIMIZATION
 void SMythicaFloatCurveEditor::Construct(const FArguments& InArgs)
 {
-    UE_LOG(LogMythicaEditor, Warning, TEXT("%hs"), __func__);
-
     Curve = NewObject<UCurveFloat>(
         GetTransientPackage(),
         UCurveFloat::StaticClass(),
@@ -139,8 +137,6 @@ TOptional<ERichCurveInterpMode> SMythicaFloatCurveEditor::GetCurveKeyInterpolati
 
 void SMythicaFloatCurveEditor::SyncCurveKeys()
 {
-    UE_LOG(LogMythicaEditor, Warning, TEXT("%hs"), __func__);
-
     if (!Curve || !DataProvider.IsValid())
     {
         return;

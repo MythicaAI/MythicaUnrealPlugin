@@ -312,7 +312,7 @@ DECLARE_DELEGATE(FOnCurveChanged);
  * @type CurveParserType: The data type we are converting from.
  */
 template<typename BaseClass, typename DataProviderType>
-class SMythicaBaseCurveEditor : public BaseClass/*, public IMythicaCurveEditor*/
+class SMythicaBaseCurveEditor : public BaseClass
 {
 
 public:
@@ -372,8 +372,6 @@ protected:
             return;
         }
 
-        UE_LOG(LogMythicaEditor, Warning, TEXT("Curve Dirty: # of Curve Keys %d - # of Points %d"), NumCurveKeys.GetValue(), NumPoints);
-
         DataProvider->PreChange();
         DataProvider->ClearPoints();
 
@@ -384,19 +382,6 @@ protected:
             ERichCurveInterpMode Interp = GetCurveKeyInterpolationType(Index).GetValue();
 
             DataProvider->InsertPoint(Index, Pos, Value, TranslateInterpolation(Interp));
-        }
-
-        for (int Index = 0; Index < DataProvider->GetPointCount(); Index++)
-        {
-            FMythicaCurvePoint Point;
-            if (DataProvider->GetPoint(Index, Point))
-            {
-                UE_LOG(LogMythicaEditor, Warning, TEXT("{%f, %f, %s}"), Point.Pos, Point.FloatValue, *UEnum::GetValueAsString(Point.InterpType));
-            }
-            else
-            {
-                UE_LOG(LogMythicaEditor, Warning, TEXT("Point was invalid @%d"), Index);
-            }
         }
 
         DataProvider->PostChange();
