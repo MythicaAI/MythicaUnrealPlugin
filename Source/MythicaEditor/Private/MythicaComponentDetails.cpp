@@ -12,6 +12,7 @@
 #include "Widgets/Input/SButton.h"
 #include "Widgets/Notifications/SProgressBar.h"
 #include "Widgets/Text/STextBlock.h"
+#include "SlateOptMacros.h"
 
 #include "MythicaEditorPrivatePCH.h"
 
@@ -21,9 +22,10 @@ const float ProgressBarHeight = 3.0f;
 
 TSharedRef<IDetailCustomization> FMythicaComponentDetails::MakeInstance()
 {
-    return MakeShareable(new FMythicaComponentDetails);
+    return MakeShared<FMythicaComponentDetails>();
 }
 
+BEGIN_SLATE_FUNCTION_BUILD_OPTIMIZATION
 void FMythicaComponentDetails::CustomizeDetails(IDetailLayoutBuilder& DetailBuilder)
 {
     TArray<TWeakObjectPtr<UObject>> ObjectsBeingCustomized;
@@ -358,6 +360,7 @@ void FMythicaComponentDetails::CustomizeDetails(IDetailLayoutBuilder& DetailBuil
                 ]
         ];
 }
+END_SLATE_FUNCTION_BUILD_OPTIMIZATION
 
 void FMythicaComponentDetails::PopulateToolOptions()
 {

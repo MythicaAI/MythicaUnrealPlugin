@@ -1,6 +1,9 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "Curves/CurveFloat.h"
+#include "Curves/CurveVector.h"
+#include "Curves/CurveLinearColor.h"
 #include "Misc/TVariant.h"
 #include "MythicaUSDUtil.h"
 
@@ -27,7 +30,8 @@ enum class EMythicaParameterType : uint8
     Bool,
     String,
     Enum,
-    File
+    File,
+    Curve
 };
 
 USTRUCT(BlueprintType)
@@ -170,6 +174,119 @@ struct FMythicaParameterFile
     void Copy(const FMythicaParameterFile& Source);
 };
 
+UENUM(BlueprintType)
+enum class EMythicaCurveType : uint8
+{
+    MCT_Invalid = 0     UMETA(Hidden),
+    MCT_Float = 1       UMETA(DisplayName = "Float"),
+    MCT_Vector = 2      UMETA(DisplayName = "Vector"),
+    MCT_Color = 3       UMETA(DisplayName = "Color")
+};
+
+UENUM(BlueprintType)
+enum class EMythicaCurveInterpType : uint8
+{
+    MCIT_Invalid = 0        UMETA(Hidden),
+    MCIT_Constant = 1       UMETA(DisplayName = "Constant"),
+    MCIT_Linear = 2         UMETA(DisplayName = "Linear"),
+    MCIT_Catmull_Rom = 3    UMETA(DisplayName = "Catmull_Rom"),
+    MCIT_Monotone_Cubic = 4 UMETA(DisplayName = "Monotone_Cubic"),
+    MCIT_Bezier = 5         UMETA(DisplayName = "Bezier"),
+    MCIT_BSpline = 6        UMETA(DisplayName = "BSpline"),
+    MCIT_Hermite = 7        UMETA(DisplayName = "Hermite")
+};
+
+USTRUCT(BlueprintType)
+struct FMythicaCurvePoint
+{
+
+    GENERATED_BODY()
+
+public:
+
+    UPROPERTY(EditAnywhere, BlueprintReadWrite)
+    float Pos;
+
+    UPROPERTY(EditAnywhere, BlueprintReadWrite)
+    float FloatValue;
+
+    UPROPERTY(EditAnywhere, BlueprintReadWrite)
+    FLinearColor ColorValue;
+
+    UPROPERTY(EditAnywhere, BlueprintReadWrite)
+    FVector VectorValue;
+
+    UPROPERTY(EditAnywhere, BlueprintReadWrite)
+    EMythicaCurveInterpType InterpType;
+
+public:
+
+    FMythicaCurvePoint() = default;
+    FMythicaCurvePoint(float InPos, float InValue, EMythicaCurveInterpType InInterpType)
+        : Pos(InPos), FloatValue(InValue), InterpType(InInterpType)
+    {}
+    FMythicaCurvePoint(float InPos, FLinearColor InValue, EMythicaCurveInterpType InInterpType)
+        : Pos(InPos), ColorValue(InValue), InterpType(InInterpType)
+    {}
+    FMythicaCurvePoint(float InPos, FVector InValue, EMythicaCurveInterpType InInterpType)
+        : Pos(InPos), VectorValue(InValue), InterpType(InInterpType)
+    {}
+
+    template <typename ValueType>
+    ValueType GetValueWithType() const
+    {
+        return ValueType();
+    };
+
+    template<>
+    float GetValueWithType<float>() const
+    {
+        return FloatValue;
+    };
+
+    template<>
+    FLinearColor GetValueWithType<FLinearColor>() const
+    {
+        return ColorValue;
+    };
+
+    template<>
+    FVector GetValueWithType<FVector>() const
+    {
+        return VectorValue;
+    };
+
+    bool operator==(const FMythicaCurvePoint& Other) const;
+
+};
+
+USTRUCT(BlueprintType)
+struct FMythicaParameterCurve
+{
+    GENERATED_BODY()
+
+public:
+
+    UPROPERTY(EditAnywhere, BlueprintReadWrite)
+    EMythicaCurveType Type = EMythicaCurveType::MCT_Invalid;
+
+    UPROPERTY(EditAnywhere, BlueprintReadWrite)
+    TArray<FMythicaCurvePoint> DefaultPoints = TArray<FMythicaCurvePoint>();
+
+    UPROPERTY(EditAnywhere, BlueprintReadWrite)
+    TArray<FMythicaCurvePoint> Points = TArray<FMythicaCurvePoint>();
+
+public:
+
+    void Copy(const FMythicaParameterCurve& Source);
+    bool IsDataValid();
+
+    bool IsDefault() const;
+
+    //bool operator==(const FMythicaParameterCurve& Other) const;
+
+};
+
 USTRUCT(BlueprintType)
 struct FMythicaParameter
 {
@@ -201,6 +318,10 @@ struct FMythicaParameter
  
     UPROPERTY(EditAnywhere, BlueprintReadWrite)
     FMythicaParameterFile ValueFile;
+
+    UPROPERTY(EditAnywhere, BlueprintReadWrite)
+    FMythicaParameterCurve ValueCurve;
+
 };
 
 USTRUCT(BlueprintType)

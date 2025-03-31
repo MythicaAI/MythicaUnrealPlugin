@@ -133,6 +133,44 @@ void FMythicaParameterFile::Copy(const FMythicaParameterFile& Source)
     *this = Source;
 }
 
+void FMythicaParameterCurve::Copy(const FMythicaParameterCurve& Source)
+{
+    *this = Source;
+}
+
+bool FMythicaParameterCurve::IsDataValid()
+{
+    return Type != EMythicaCurveType::MCT_Invalid;
+}
+
+bool FMythicaParameterCurve::IsDefault() const
+{
+    if (DefaultPoints.Num() != Points.Num())
+    {
+        return false;
+    }
+
+    for (int Index = 0; Index < DefaultPoints.Num(); Index++)
+    {
+        if (DefaultPoints[Index] != Points[Index])
+        {
+            return false;
+        }
+    }
+
+    return true;
+}
+
+bool FMythicaCurvePoint::operator==(const FMythicaCurvePoint& Other) const
+{
+    return Pos == Other.Pos
+        && FloatValue == Other.FloatValue
+        && ColorValue == Other.ColorValue
+        && VectorValue == Other.VectorValue
+        && InterpType == Other.InterpType;
+}
+
+
 const TCHAR* SystemParameters[] =
 {
     TEXT("format"),
@@ -149,6 +187,66 @@ bool Mythica::IsSystemParameter(const FString& Name)
         }
     }
     return false;
+}
+
+FString InterpTypeAsString(EMythicaCurveInterpType InterpType)
+{
+    switch (InterpType)
+    {
+    case EMythicaCurveInterpType::MCIT_Linear:
+        return TEXT("Linear");
+    case EMythicaCurveInterpType::MCIT_Constant:
+        return TEXT("Constant");
+    case EMythicaCurveInterpType::MCIT_Catmull_Rom:
+        return TEXT("CatmullRom");
+    case EMythicaCurveInterpType::MCIT_Monotone_Cubic:
+        return TEXT("MonotoneCubic");
+    case EMythicaCurveInterpType::MCIT_Bezier:
+        return TEXT("Bezier");
+    case EMythicaCurveInterpType::MCIT_BSpline:
+        return TEXT("BSpline");
+    case EMythicaCurveInterpType::MCIT_Hermite:
+        return TEXT("Hermite");
+    case EMythicaCurveInterpType::MCIT_Invalid:
+    default:
+        break;
+    }
+
+    return TEXT("");
+}
+
+EMythicaCurveInterpType InterpTypeAsEnum(const FString& InterpType)
+{
+    if (InterpType == TEXT("Linear"))
+    {
+        return EMythicaCurveInterpType::MCIT_Linear;
+    }
+    else if (InterpType == TEXT("Constant"))
+    {
+        return EMythicaCurveInterpType::MCIT_Constant;
+    }
+    else if (InterpType == TEXT("CatmullRom"))
+    {
+        return EMythicaCurveInterpType::MCIT_Catmull_Rom;
+    }
+    else if (InterpType == TEXT("MonotoneCubic"))
+    {
+        return EMythicaCurveInterpType::MCIT_Monotone_Cubic;
+    }
+    else if (InterpType == TEXT("Bezier"))
+    {
+        return EMythicaCurveInterpType::MCIT_Bezier;
+    }
+    else if (InterpType == TEXT("BSpline"))
+    {
+        return EMythicaCurveInterpType::MCIT_BSpline;
+    }
+    else if (InterpType == TEXT("Hermite"))
+    {
+        return EMythicaCurveInterpType::MCIT_Hermite;
+    }
+
+    return EMythicaCurveInterpType::MCIT_Invalid;
 }
 
 void Mythica::ReadParameters(const TSharedPtr<FJsonObject>& ParamsSchema, FMythicaParameters& OutParameters)
@@ -174,6 +272,7 @@ void Mythica::ReadParameters(const TSharedPtr<FJsonObject>& ParamsSchema, FMythi
 
         FString Type = ParameterObject->GetStringField(TEXT("param_type"));
         bool IsArray = ParameterObject->HasTypedField<EJson::Array>(TEXT("default"));
+
         if (Type == "int")
         {
             TArray<int> DefaultValues;
@@ -269,6 +368,72 @@ void Mythica::ReadParameters(const TSharedPtr<FJsonObject>& ParamsSchema, FMythi
             Parameter.Type = EMythicaParameterType::File;
             Parameter.ValueFile = FMythicaParameterFile{};
         }
+        else if (Type == "ramp")
+        {
+            Parameter.Type = EMythicaParameterType::Curve;
+
+            FString RampType = ParameterObject->GetStringField(TEXT("ramp_parm_type"));
+            UE_LOG(LogTemp, Warning, TEXT("- Param: %s\n - Label: %s\n - Curve Type: %s\nDefault:"), *Parameter.Name, *Parameter.Label, *RampType);
+
+            if (RampType.Contains(TEXT("Float")))
+            {
+                Parameter.ValueCurve = FMythicaParameterCurve{ EMythicaCurveType::MCT_Float };
+            }
+            else if (RampType.Contains(TEXT("Color")))
+            {
+                Parameter.ValueCurve = FMythicaParameterCurve{ EMythicaCurveType::MCT_Color };
+            }
+            else
+            {
+                UE_LOG(LogTemp, Error, TEXT("Param [%s] Contained an unsupported Curve Type {%s}"), *Parameter.Name, *RampType);
+                check(false);
+                continue;
+            }
+
+            TArray<TSharedPtr<FJsonValue>> ValuesArray = ParameterObject->GetArrayField(TEXT("default"));
+            for (TSharedPtr<FJsonValue> Point : ValuesArray)
+            {
+                TSharedPtr<FJsonObject> PointObject = Point->AsObject();
+
+                float Pos = PointObject->GetNumberField(TEXT("pos"));
+
+                FString InterpType = PointObject->GetStringField(TEXT("interp"));
+                EMythicaCurveInterpType InterpMode = InterpTypeAsEnum(InterpType);
+
+                switch (Parameter.ValueCurve.Type)
+                {
+                case EMythicaCurveType::MCT_Float:
+                {
+                    float FloatValue = PointObject->GetNumberField(TEXT("value"));
+                    UE_LOG(LogTemp, Warning, TEXT("\t{%f, %f} - %s"), Pos, FloatValue, *InterpType);
+
+                    Parameter.ValueCurve.DefaultPoints.Emplace(FMythicaCurvePoint(Pos, FloatValue, InterpMode));
+                    Parameter.ValueCurve.Points.Emplace(FMythicaCurvePoint(Pos, FloatValue, InterpMode));
+                    break;
+                }
+                case EMythicaCurveType::MCT_Color:
+                {
+                    TArray<TSharedPtr<FJsonValue>> ColorArray = PointObject->GetArrayField(TEXT("c"));
+                    ensure(ColorArray.Num() == 3);
+
+                    float R = ColorArray[0]->AsNumber();
+                    float G = ColorArray[1]->AsNumber();
+                    float B = ColorArray[2]->AsNumber();
+
+                    FLinearColor Color = FLinearColor{ R, G, B };
+                    UE_LOG(LogTemp, Warning, TEXT("\t{%f, %s} - %s"), Pos, *Color.ToString(), *InterpType);
+
+                    Parameter.ValueCurve.DefaultPoints.Emplace(FMythicaCurvePoint(Pos, Color, InterpMode));
+                    Parameter.ValueCurve.Points.Emplace(FMythicaCurvePoint(Pos, Color, InterpMode));
+
+                    break;
+                }
+                case EMythicaCurveType::MCT_Vector:
+                    break;
+                }
+            }
+
+        }
         else
         {
             continue;
@@ -330,13 +495,49 @@ void Mythica::WriteParameters(const TArray<FString>& InputFileIds, const FMythic
                 break;
 
             case EMythicaParameterType::File:
+            {
                 FString FileId = InputFileIds.IsValidIndex(i) ? InputFileIds[i] : FString();
 
-                TSharedPtr<FJsonObject> FileObject = MakeShareable(new FJsonObject);
+                TSharedPtr<FJsonObject> FileObject = MakeShareable(new FJsonObject());
                 FileObject->SetStringField(TEXT("file_id"), FileId);
 
                 OutParamsSet->SetObjectField(Param.Name, FileObject);
                 break;
+            }
+            case EMythicaParameterType::Curve:
+            {
+                TArray<TSharedPtr<FJsonValue>> Array;
+                for (FMythicaCurvePoint Point : Param.ValueCurve.Points)
+                {
+                    TSharedPtr<FJsonObject> PointObject = MakeShareable(new FJsonObject());
+                    PointObject->SetNumberField(TEXT("pos"), Point.Pos);
+
+                    switch (Param.ValueCurve.Type)
+                    {
+                    case EMythicaCurveType::MCT_Color:
+                    {
+                        TArray<TSharedPtr<FJsonValue>> ColorArray;
+                        ColorArray.Insert(MakeShareable(new FJsonValueNumber(Point.ColorValue.R)), 0);
+                        ColorArray.Insert(MakeShareable(new FJsonValueNumber(Point.ColorValue.G)), 1);
+                        ColorArray.Insert(MakeShareable(new FJsonValueNumber(Point.ColorValue.B)), 2);
+                        PointObject->SetArrayField(TEXT("c"), ColorArray);
+                        break;
+                    }
+                    case EMythicaCurveType::MCT_Float:
+                    default:
+                        PointObject->SetNumberField(TEXT("value"), Point.FloatValue);
+                        break;
+                    }
+                    
+                    PointObject->SetStringField(TEXT("interp"), InterpTypeAsString(Point.InterpType));
+
+                    TSharedPtr<FJsonValueObject> PointValueObject = MakeShareable(new FJsonValueObject(PointObject));
+                    Array.Add(PointValueObject);
+                }
+
+                OutParamsSet->SetArrayField(Param.Name, Array);
+                break;
+            }
         }
     }
 }
@@ -390,6 +591,11 @@ void Mythica::CopyParameterValues(const FMythicaParameters& Source, FMythicaPara
             case EMythicaParameterType::File:
             {
                 TargetParam->ValueFile.Copy(SourceParam.ValueFile);
+                break;
+            }
+            case EMythicaParameterType::Curve:
+            {
+                TargetParam->ValueCurve.Copy(SourceParam.ValueCurve);
                 break;
             }
         }

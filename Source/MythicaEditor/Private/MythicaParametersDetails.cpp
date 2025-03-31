@@ -2,13 +2,16 @@
 
 #include "DetailWidgetRow.h"
 #include "IDetailChildrenBuilder.h"
+#include "IPropertyUtilities.h"
 #include "MythicaTypes.h"
+#include "UI/Slate/SMythicaFloatCurveEditor.h"
 #include "Widgets/Input/SComboBox.h"
 #include "Widgets/Input/SButton.h"
 #include "ScopedTransaction.h"
 #include "Styling/AppStyle.h"
 #include "Widgets/Text/SMultiLineEditableText.h"
 #include "Widgets/Input/SNumericEntryBox.h"
+#include "SlateOptMacros.h"
 
 #include <functional>
 
@@ -45,13 +48,57 @@ static FMythicaParameters* GetParametersFromHandleWeak(TWeakPtr<IPropertyHandle>
     return GetParametersFromHandle(*Handle, OutObject);
 }
 
-TSharedRef<IPropertyTypeCustomization> FMythicaParametersDetails::MakeInstance()
+// See InstancedStructDetails.h. How unreal updates properties
+//if (StructProperty && StructProperty->IsValidHandle())
+//{
+//    FScopedTransaction Transaction(LOCTEXT("OnStructPicked", "Set Struct"));
+//
+//    StructProperty->NotifyPreChange();
+//
+//    StructProperty->EnumerateRawData([InStruct](void* RawData, const int32 /*DataIndex*/, const int32 /*NumDatas*/)
+//        {
+//            if (FInstancedStruct* InstancedStruct = static_cast<FInstancedStruct*>(RawData))
+//            {
+//                InstancedStruct->InitializeAs(InStruct);
+//            }
+//            return true;
+//        });
+//
+//    StructProperty->NotifyPostChange(EPropertyChangeType::ValueSet);
+//    StructProperty->NotifyFinishedChangingProperties();
+//
+//    // Property tree will be invalid after changing the struct type, force update.
+//    if (PropUtils.IsValid())
+//    {
+//        PropUtils->ForceRefresh();
+//    }
+//}
+
+// See GameplayTagContainerCustomization.h for a copy paste example
+// See ComponentReferenceCustomization.h for proper property access
+
+FMythicaParametersDetails::~FMythicaParametersDetails()
 {
-    return MakeShareable(new FMythicaParametersDetails);
+    if (OnObjectsReinstancedHandle.IsValid())
+    {
+        FCoreUObjectDelegates::OnObjectsReinstanced.Remove(OnObjectsReinstancedHandle);
+    }
 }
 
+TSharedRef<IPropertyTypeCustomization> FMythicaParametersDetails::MakeInstance()
+{
+    return MakeShared<FMythicaParametersDetails>();
+}
+
+BEGIN_SLATE_FUNCTION_BUILD_OPTIMIZATION
 void FMythicaParametersDetails::CustomizeHeader(TSharedRef<IPropertyHandle> StructPropertyHandle, FDetailWidgetRow& HeaderRow, IPropertyTypeCustomizationUtils& StructCustomizationUtils)
 {
+    StructProperty = StructPropertyHandle;
+    PropUtils = StructCustomizationUtils.GetPropertyUtilities();
+
+    // A callback when the object gets compiled
+    OnObjectsReinstancedHandle = FCoreUObjectDelegates::OnObjectsReinstanced.AddSP(this, &FMythicaParametersDetails::OnObjectsReinstanced);
+
     HeaderRow.ShouldAutoExpand(true);
 }
 
@@ -124,7 +171,7 @@ void FMythicaParametersDetails::CustomizeChildren(TSharedRef<IPropertyHandle> St
                         }
                     };
 
-                    auto OnBeginSliderMovement = [this]() 
+                    auto OnBeginSliderMovement = [this]()
                     {
                         UsingSlider = true;
                         GEditor->BeginTransaction(TEXT("Mythica"), LOCTEXT("MythicaChangeParameter", "Parameter Value Changed"), nullptr);
@@ -546,14 +593,55 @@ void FMythicaParametersDetails::CustomizeChildren(TSharedRef<IPropertyHandle> St
 
                 continue;
             }
+            case EMythicaParameterType::Curve:
+            {
+                ValueWidget = SNew(SMythicaFloatCurveEditor).DataProvider(MakeShared<FMythicaFloatCurveProvider>(StructPropertyHandle, ParamIndex));
+                DesiredWidthScalar = 3;
+
+                ResetToDefaultVisible = [this, ParamIndex]()
+                {
+                    FMythicaParameters* Parameters = GetParametersFromHandleWeak(HandleWeak);
+                    if (Parameters)
+                    {
+                        const FMythicaParameterCurve& CurveParam = Parameters->Parameters[ParamIndex].ValueCurve;
+                        if (!CurveParam.IsDefault())
+                        {
+                            return EVisibility::Visible;
+                        }
+                    }
+
+                    return EVisibility::Collapsed;
+                };
+
+                OnResetToDefault = [this, ParamIndex, ValueWidget]()
+                {
+                    UE_LOG(LogMythicaEditor, Warning, TEXT("%hs"), __func__);
+                    SMythicaFloatCurveEditor& CurveEditor = static_cast<SMythicaFloatCurveEditor&>(ValueWidget.Get());
+
+                    UObject* Object = nullptr;
+                    FMythicaParameters* Parameters = GetParametersFromHandleWeak(HandleWeak, &Object);
+
+                    if (IsValid(Object))
+                    {
+                        const FScopedTransaction Transaction(LOCTEXT("MythicaCurveSetDefault", "Parameter Curve Reset Defaults"));
+                        Object->Modify();
+
+                        CurveEditor.ResetToDefault();
+                    }
+
+                    return FReply::Handled();
+                };
+                break;
+            }
         }
 
         StructBuilder.AddCustomRow(FText::FromString(Parameter.Label))
             .NameContent()
             [
-                SNew(STextBlock)
-                    .Text(FText::FromString(Parameter.Label))
-                    .Font(FAppStyle::GetFontStyle(TEXT("PropertyWindow.NormalFont")))
+                //SNew(STextBlock)
+                //    .Text(FText::FromString(Parameter.Label))
+                //    .Font(FAppStyle::GetFontStyle(TEXT("PropertyWindow.NormalFont")))
+                StructPropertyHandle->CreatePropertyNameWidget(FText::FromString(Parameter.Label))
             ]
             .ValueContent()
             .MinDesiredWidth(DesiredWidthScalar * 128)
@@ -572,6 +660,16 @@ void FMythicaParametersDetails::CustomizeChildren(TSharedRef<IPropertyHandle> St
                             .Image(FAppStyle::Get().GetBrush("PropertyWindow.DiffersFromDefault"))
                     ]
             ];
+    }
+}
+END_SLATE_FUNCTION_BUILD_OPTIMIZATION
+
+void FMythicaParametersDetails::OnObjectsReinstanced(const FReplacementObjectMap& ObjectMap)
+{
+    // Force update the details when BP is compiled, since we may cached hold references to the old object or class.
+    if (!ObjectMap.IsEmpty() && PropUtils.IsValid())
+    {
+        PropUtils->RequestRefresh();
     }
 }
 
